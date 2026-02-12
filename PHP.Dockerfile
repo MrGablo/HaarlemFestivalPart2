@@ -11,6 +11,16 @@ RUN apt-get update \
 
 WORKDIR /app
 
+RUN echo "#!/bin/bash\n\
+service mariadb start\n\
+sleep 10\n\
+mysql -u root -e \"CREATE DATABASE IF NOT EXISTS HaarlemFestival;\"\n\
+mysql -u root -e \"CREATE USER IF NOT EXISTS 'haarlemfestival'@'%' IDENTIFIED BY '!HaarlemFestival2025'\"\n\
+mysql -u root -e \"GRANT ALL PRIVILEGES ON HaarlemFestival.* TO 'haarlemfestival'@'%' WITH GRANT OPTION; FLUSH PRIVILEGES;\"\n\
+php artisan migrate --force\n\
+php artisan db:seed --force\n\
+exit 0" > /var/www/setup.sh && chmod +x /var/www/setup.sh
+
 # Allow running Composer as root within the container
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
