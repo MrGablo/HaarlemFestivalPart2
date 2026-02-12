@@ -12,6 +12,8 @@ services:
         build:
             context: .
             dockerfile: PHP.Dockerfile
+        environment:
+            DB_CONNECTION: "Server=tcp:haarlemfestivaldb.database.windows.net,1433;Initial Catalog=haarlemfestivalgroup3;Persist Security Info=False;User ID=festivaladmin;Password=admin123!;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
         volumes:
             - ./app:/app
     mysql:

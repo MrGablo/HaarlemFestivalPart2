@@ -20,13 +20,17 @@ class Repository
     {
         try
         {
-            //create connection string
-            $connectionString = 'mysql:host=' . Config::DB_SERVER_NAME . ';dbname=' . Config::DB_NAME . ';charset=utf8mb4';
-            //create new PDO connection
+            // Build connection from environment or config
+            $db = Config::getDbConfig();
+            $connectionString = $db['dsn'];
+            $username = $db['user'];
+            $password = $db['pass'];
+
+            // create new PDO connection
             self::$connection = new \PDO(
                 $connectionString,
-                Config::DB_USERNAME,
-                Config::DB_PASSWORD
+                $username,
+                $password
             );
 
             //tell PDO to throw erro
