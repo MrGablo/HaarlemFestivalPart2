@@ -1,22 +1,18 @@
 <?php
-
 namespace App\Repositories\Interfaces;
 
-use App\Models\PresentationModel;
+use App\Models\UserModel;
 
-interface IPresentationRepository
+interface IUserRepository
 {
-    public function create(PresentationModel $presentation): int;
-    public function getById(int $id): ?PresentationModel;
-    public function update(PresentationModel $presentation): void;
-    public function delete(int $id): void;
+    public function getUserById(int $id): ?UserModel;
+    public function getAllUsers(): array;
 
-    // targets (presentation_targets)
-    public function setTargets(int $presentationId, array $roleIds): void;
-    public function getTargetRoleIds(int $presentationId): array;
+    public function createUser(UserModel $user): int;
 
-    // feed (filtered by role)
-    public function getFeedForRole(int $roleId, int $offset, int $limit): array; // assoc rows including view status if you want later
-    public function searchFeedForRole(int $roleId, string $query): array;
-    public function getAllForAdmin(): array;
+    public function updateUser(int $id, UserModel $user): bool;
+    public function deleteUser(int $id): bool;
+
+    public function findByEmail(string $email): ?UserModel;
+    public function findByUserName(string $userName): ?UserModel;
 }
