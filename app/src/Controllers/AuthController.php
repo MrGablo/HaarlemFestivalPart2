@@ -10,42 +10,92 @@ class AuthController
     public function __construct()
     {
         $this->authService = new AuthService();
+
+        // Ensure session is available for errors/flash/user_id
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
     }
-    
+
     public function showLogin(): void
     {
+        // Pull errors/flash from session (one-time)
+        $errors = $_SESSION['errors'] ?? [];
+        $flashSuccess = $_SESSION['flash_success'] ?? null;
+
+        unset($_SESSION['errors'], $_SESSION['flash_success']);
+
         require __DIR__ . '/../Views/auth/login.php';
     }
 
     public function showRegister(): void
     {
-        // simplest: include a PHP view
-        require __DIR__ . '/../Views/register.php';
+        // Pull errors/old values from session (one-time)
+        $errors = $_SESSION['errors'] ?? [];
+        $old = $_SESSION['old'] ?? [];
+
+        unset($_SESSION['errors'], $_SESSION['old']);
+
+        require __DIR__ . '/../Views/auth/register.php';
     }
 
     public function register(): void
     {
-        try {
-            $result = $this->authService->register($_POST);
+        // Keep old input (except password) so you can re-fill the form on error
+        $_SESSION['old'] = [
+            'firstName' => $_POST['firstName'] ?? '',
+            'lastName'  => $_POST['lastName'] ?? '',
+            'userName'  => $_POST['userName'] ?? '',
+            'email'     => $_POST['email'] ?? '',
+            'phoneNumber' => $_POST['phoneNumber'] ?? '',
+        ];
 
-            http_response_code(201);
-            header('Content-Type: application/json');
-            echo json_encode([
-                'message' => 'User created',
-                'user_id' => $result,
-            ]);
+        try {
+            // Your existing service signature: register($_POST)
+            $userId = $this->authService->register($_POST);
+
+            // Option A: after registering, go to login page with success message
+            $_SESSION['flash_success'] = 'Account created. Please log in.';
+            unset($_SESSION['old']);
+
+            header('Location: /login', true, 302);
+            exit;
         } catch (\Throwable $e) {
-            http_response_code(400);
-            header('Content-Type: application/json');
-            echo json_encode([
-                'error' => $e->getMessage()
-            ]);
+            // Store error(s) and redirect back to form (PRG pattern)
+            $_SESSION['errors'] = [
+                'general' => $e->getMessage()
+            ];
+
+            header('Location: /register', true, 302);
+            exit;
         }
     }
+
     public function login(): void
     {
-        // We’ll implement real login later; placeholder
-        $error = "Login not implemented yet.";
-        require __DIR__ . '/../Views/auth/login.php';
+        // Placeholder (until you implement real login in AuthService)
+        $_SESSION['errors'] = [
+            'general' => 'Login not implemented yet.'
+        ];
+
+        header('Location: /login', true, 302);
+        exit;
+    }
+
+    public function logout(): void
+    {
+        // Minimal logout without needing to change other code
+        $_SESSION = [];
+        if (ini_get('session.use_cookies')) {
+            $params = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000,
+                $params['path'], $params['domain'],
+                $params['secure'], $params['httponly']
+            );
+        }
+        session_destroy();
+
+        header('Location: /login', true, 302);
+        exit;
     }
 }

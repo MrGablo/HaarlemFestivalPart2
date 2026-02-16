@@ -33,7 +33,7 @@ class UserRepository extends Repository implements IUserRepository
 
     public function findByEmail(string $email): ?UserModel
     {
-        $stmt = $this->getConnection()->prepare("SELECT * FROM users WHERE email = :email LIMIT 1");
+        $stmt = $this->getConnection()->prepare("SELECT * FROM users WHERE email = :email");
         $stmt->execute([':email' => $email]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -42,8 +42,8 @@ class UserRepository extends Repository implements IUserRepository
 
     public function findByUserName(string $userName): ?UserModel
     {
-        $stmt = $this->getConnection()->prepare("SELECT * FROM users WHERE user_name = :u LIMIT 1");
-        $stmt->execute([':u' => $userName]);
+        $stmt = $this->getConnection()->prepare("SELECT * FROM users WHERE user_name = :userName");
+        $stmt->execute([':userName' => $userName]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $row ? $this->mapRowToUser($row) : null;

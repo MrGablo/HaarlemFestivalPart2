@@ -19,7 +19,7 @@
               <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
             <?php endif; ?>
 
-            <form method="POST" action="/register" novalidate>
+            <form method="POST" action="/register">
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label class="form-label">First name</label>
@@ -48,7 +48,7 @@
 
               <div class="mb-3">
                 <label class="form-label">Password</label>
-                <input name="password" type="password" class="form-control" autocomplete="new-password" required>
+                <input name="password" type="password" class="form-control" autocomplete="new-password" required minlength="8">
                 <div class="form-text">Minimum 8 characters.</div>
               </div>
 
