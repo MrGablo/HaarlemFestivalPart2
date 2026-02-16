@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Repositories;
 
 use App\Framework\Repository;
