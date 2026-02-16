@@ -49,10 +49,51 @@ class UserRepository extends Repository implements IUserRepository
         return $row ? $this->mapRowToUser($row) : null;
     }
 
-    public function getUserById(int $id): ?UserModel { return null; } // implement later
-    public function getAllUsers(): array { return []; } // implement later
-    public function updateUser(int $id, UserModel $user): bool { return false; } // implement later
-    public function deleteUser(int $id): bool { return false; } // implement later
+    public function getUserById(int $id): ?UserModel
+    {
+        $stmt = $this->getConnection()->prepare("SELECT * FROM users WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ? $this->mapRowToUser($row) : null;
+    }
+
+    public function getAllUsers(): array
+    {
+        $stmt = $this->getConnection()->query("SELECT * FROM users");
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return array_map(fn(array $row) => $this->mapRowToUser($row), $rows);
+    }
+
+    public function updateUser(int $id, UserModel $user): bool
+    {
+        $sql = "UPDATE users
+                SET first_name = :first_name,
+                    last_name = :last_name,
+                    email = :email,
+                    password_hash = :password_hash,
+                    profile_picture_path = :profile_picture_path,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = :id";
+
+        $stmt = $this->getConnection()->prepare($sql);
+
+        return $stmt->execute([
+            ':first_name' => $user->firstName,
+            ':last_name' => $user->lastName,
+            ':email' => $user->email,
+            ':password_hash' => $user->password_hash,
+            ':profile_picture_path' => $user->profilePicturePath,
+            ':id' => $id,
+        ]);
+    }
+
+    public function deleteUser(int $id): bool
+    {
+        $stmt = $this->getConnection()->prepare("DELETE FROM users WHERE id = :id");
+        return $stmt->execute([':id' => $id]);
+    }
 
     private function mapRowToUser(array $row): UserModel
     {
@@ -68,6 +109,6 @@ class UserRepository extends Repository implements IUserRepository
         $user->created_at = $row['created_at'] ?? null;
         $user->updated_at = $row['updated_at'] ?? null;
         $user->profilePicturePath = $row['profile_picture_path'] ?? null;
-        return $u;
+        return $user;
     }
 }
