@@ -20,12 +20,17 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     $r->addRoute('GET', '/hello/{name}', ['App\Controllers\HelloController', 'greet']);
 
 
-
+    //user authorization
     $r->addRoute('GET',  '/login',    ['App\Controllers\AuthController', 'showLogin']);
     $r->addRoute('POST', '/login',    ['App\Controllers\AuthController', 'login']);
+    $r->addRoute('GET',  '/logout',   ['App\Controllers\AuthController', 'logout']);
     //user registration
     $r->addRoute('GET',  '/register', ['App\Controllers\AuthController', 'showRegister']);
     $r->addRoute('POST', '/register', ['App\Controllers\AuthController', 'register']);
+
+    // account management (backend only)
+    $r->addRoute('POST', '/account/update', ['App\Controllers\UserController', 'updateAccount']);
+    $r->addRoute('POST', '/account/delete', ['App\Controllers\UserController', 'deleteAccount']);
 });
 
 
@@ -71,6 +76,5 @@ switch ($routeInfo[0]) {
 
         // Pass dynamic route params (e.g. /hello/{name})
         call_user_func_array([$controller, $method], array_values($vars));
-    break;
-
+        break;
 }
