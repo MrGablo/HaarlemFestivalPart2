@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Register</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-light">
   <div class="container py-5">
@@ -84,12 +85,12 @@
                 <div class="form-text">Minimum 8 characters.</div>
               </div>
 
-              <button type="submit" class="btn btn-success w-100">Register</button>
+              <button type="submit" class="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300">Register</button>
             </form>
 
             <div class="text-center mt-3">
               <small class="text-muted">Already have an account?</small>
-              <a href="/login" class="ms-1">Login</a>
+              <a href="/login" class="ml-1 font-medium text-blue-600 hover:text-blue-700">Login</a>
             </div>
           </div>
         </div>
