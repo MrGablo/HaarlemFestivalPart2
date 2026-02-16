@@ -15,18 +15,18 @@
           <div class="card-body p-4">
             <h1 class="h4 mb-3">Sign in</h1>
 
-            <?php if (!empty($_GET['registered'])): ?>
-              <div class="alert alert-success">Account created. You can log in now.</div>
+            <?php if (!empty($flashSuccess)): ?>
+              <div class="alert alert-success"><?= htmlspecialchars($flashSuccess) ?></div>
             <?php endif; ?>
 
-            <?php if (!empty($error)): ?>
-              <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
+            <?php if (!empty($errors['general'])): ?>
+              <div class="alert alert-danger"><?= htmlspecialchars($errors['general']) ?></div>
             <?php endif; ?>
 
-            <form method="POST" action="/login" novalidate>
+            <form method="POST" action="/login">
               <div class="mb-3">
-                <label class="form-label">Email</label>
-                <input name="email" type="email" class="form-control" autocomplete="email" required>
+                <label class="form-label">UserName</label>
+                <input name="userName" type="text" class="form-control" autocomplete="username" required>
               </div>
 
               <div class="mb-3">
