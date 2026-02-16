@@ -52,20 +52,49 @@ class UserRepository extends Repository implements IUserRepository
 
     public function getUserById(int $id): ?UserModel
     {
-        return null;
-    } // implement later
+        $stmt = $this->getConnection()->prepare("SELECT * FROM users WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ? $this->mapRowToUser($row) : null;
+    }
+
     public function getAllUsers(): array
     {
-        return [];
-    } // implement later
+        $stmt = $this->getConnection()->query("SELECT * FROM users");
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return array_map(fn(array $row) => $this->mapRowToUser($row), $rows);
+    }
+
     public function updateUser(int $id, UserModel $user): bool
     {
-        return false;
-    } // implement later
+        $sql = "UPDATE users
+                SET first_name = :first_name,
+                    last_name = :last_name,
+                    email = :email,
+                    password_hash = :password_hash,
+                    profile_picture_path = :profile_picture_path,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = :id";
+
+        $stmt = $this->getConnection()->prepare($sql);
+
+        return $stmt->execute([
+            ':first_name' => $user->firstName,
+            ':last_name' => $user->lastName,
+            ':email' => $user->email,
+            ':password_hash' => $user->password_hash,
+            ':profile_picture_path' => $user->profilePicturePath,
+            ':id' => $id,
+        ]);
+    }
+
     public function deleteUser(int $id): bool
     {
-        return false;
-    } // implement later
+        $stmt = $this->getConnection()->prepare("DELETE FROM users WHERE id = :id");
+        return $stmt->execute([':id' => $id]);
+    }
 
     private function mapRowToUser(array $row): UserModel
     {
