@@ -1,184 +1,73 @@
 <?php
-
 namespace App\Repositories;
 
 use App\Framework\Repository;
-use App\Models\PresentationModel;
-use App\Repositories\Interfaces\IPresentationRepository;
+use App\Models\UserModel;
+use App\Models\UserRole;
+use App\Repositories\Interfaces\IUserRepository;
 use PDO;
 
-class PresentationRepository extends Repository implements IPresentationRepository
+class UserRepository extends Repository implements IUserRepository
 {
-    public function create(PresentationModel $presentation): int
+    public function createUser(UserModel $user): int
     {
-        $sql = "INSERT INTO presentations (title, description, youtube_video_id, created_by_user_id, published_at)
-                VALUES (:title, :description, :youtube_video_id, :created_by_user_id, :published_at)";
+        $sql = "INSERT INTO users
+                (first_name, last_name, user_name, email, password_hash, phone_number, role, profile_picture_path)
+                VALUES
+                (:first_name, :last_name, :user_name, :email, :password_hash, :phone_number, :role, :profile_picture_path)";
+
         $stmt = $this->getConnection()->prepare($sql);
         $stmt->execute([
-            'title' => $presentation->title,
-            'description' => $presentation->description,
-            'youtube_video_id' => $presentation->youtube_video_id,
-            'created_by_user_id' => $presentation->created_by_user_id,
-            'published_at' => $presentation->published_at ?? date('Y-m-d H:i:s')
+            ':first_name' => $user->firstName,
+            ':last_name' => $user->lastName,
+            ':user_name' => $user->userName,
+            ':email' => $user->email,
+            ':password_hash' => $user->password_hash,
+            ':phone_number' => $user->phoneNumber,
+            ':role' => $user->role->value,
+            ':profile_picture_path' => $user->profilePicturePath,
         ]);
 
         return (int)$this->getConnection()->lastInsertId();
     }
 
-    public function getById(int $id): ?PresentationModel
+    public function findByEmail(string $email): ?UserModel
     {
-        $sql = "SELECT id, title, description, youtube_video_id, created_by_user_id, published_at, created_at
-                FROM presentations
-                WHERE id = :id";
-        $stmt = $this->getConnection()->prepare($sql);
-        $stmt->execute(['id' => $id]);
+        $stmt = $this->getConnection()->prepare("SELECT * FROM users WHERE email = :email LIMIT 1");
+        $stmt->execute([':email' => $email]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        $stmt->setFetchMode(PDO::FETCH_CLASS, PresentationModel::class);
-        $p = $stmt->fetch();
-
-        return $p ?: null;
+        return $row ? $this->mapRowToUser($row) : null;
     }
 
-    public function update(PresentationModel $presentation): void
+    public function findByUserName(string $userName): ?UserModel
     {
-        $sql = "UPDATE presentations
-                SET title = :title,
-                    description = :description,
-                    youtube_video_id = :youtube_video_id,
-                    published_at = :published_at
-                WHERE id = :id";
-        $stmt = $this->getConnection()->prepare($sql);
-        $stmt->execute([
-            'title' => $presentation->title,
-            'description' => $presentation->description,
-            'youtube_video_id' => $presentation->youtube_video_id,
-            'published_at' => $presentation->published_at,
-            'id' => $presentation->id
-        ]);
+        $stmt = $this->getConnection()->prepare("SELECT * FROM users WHERE user_name = :u LIMIT 1");
+        $stmt->execute([':u' => $userName]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ? $this->mapRowToUser($row) : null;
     }
 
-    public function delete(int $id): void
+    public function getUserById(int $id): ?UserModel { return null; } // implement later
+    public function getAllUsers(): array { return []; } // implement later
+    public function updateUser(int $id, UserModel $user): bool { return false; } // implement later
+    public function deleteUser(int $id): bool { return false; } // implement later
+
+    private function mapRowToUser(array $row): UserModel
     {
-        $pdo = $this->getConnection();
-        $pdo->beginTransaction();
-
-        try {
-            $pdo->prepare("DELETE FROM presentation_targets WHERE presentation_id = :id")->execute(['id' => $id]);
-            $pdo->prepare("DELETE FROM presentation_comments WHERE presentation_id = :id")->execute(['id' => $id]);
-            $pdo->prepare("DELETE FROM presentation_views WHERE presentation_id = :id")->execute(['id' => $id]);
-
-            $pdo->prepare("DELETE FROM presentations WHERE id = :id")->execute(['id' => $id]);
-
-            $pdo->commit();
-        } catch (\Throwable $e) {
-            $pdo->rollBack();
-            throw $e;
-        }
-    }
-
-
-    public function setTargets(int $presentationId, array $roleIds): void
-    {
-        // Reset targets then insert new ones
-        $deleteSql = "DELETE FROM presentation_targets WHERE presentation_id = :pid";
-        $del = $this->getConnection()->prepare($deleteSql);
-        $del->execute(['pid' => $presentationId]);
-
-        if (count($roleIds) === 0) {
-            return;
-        }
-
-        $insertSql = "INSERT INTO presentation_targets (presentation_id, role_id)
-                      VALUES (:pid, :rid)";
-        $ins = $this->getConnection()->prepare($insertSql);
-
-        foreach ($roleIds as $rid) {
-            $ins->execute([
-                'pid' => $presentationId,
-                'rid' => (int)$rid
-            ]);
-        }
-    }
-
-    public function getTargetRoleIds(int $presentationId): array
-    {
-        $sql = "SELECT role_id
-                FROM presentation_targets
-                WHERE presentation_id = :pid";
-        $stmt = $this->getConnection()->prepare($sql);
-        $stmt->execute(['pid' => $presentationId]);
-
-        return array_map(
-            fn($row) => (int)$row['role_id'],
-            $stmt->fetchAll(PDO::FETCH_ASSOC)
-        );
-    }
-
-    public function getFeedForRole(int $roleId, int $offset, int $limit): array
-    {
-        $sql = "SELECT DISTINCT
-                p.id,
-                p.title,
-                p.description,
-                p.youtube_video_id,
-                p.created_by_user_id,
-                p.published_at
-            FROM presentations p
-            INNER JOIN presentation_targets pt ON pt.presentation_id = p.id
-            WHERE pt.role_id = :role_id
-            ORDER BY p.published_at DESC
-            LIMIT :limit OFFSET :offset";
-
-        $stmt = $this->getConnection()->prepare($sql);
-
-        // IMPORTANT: bindValue for limit/offset as integers
-        $stmt->bindValue(':role_id', $roleId, \PDO::PARAM_INT);
-        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
-        $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
-
-        $stmt->execute();
-
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
-    }
-
-
-    public function searchFeedForRole(int $roleId, string $query): array
-    {
-        $sql = "SELECT DISTINCT
-                    p.id,
-                    p.title,
-                    p.description,
-                    p.youtube_video_id,
-                    p.created_by_user_id,
-                    p.published_at
-                FROM presentations p
-                INNER JOIN presentation_targets pt ON pt.presentation_id = p.id
-                WHERE pt.role_id = :role_id
-                  AND (p.title LIKE :q OR p.description LIKE :q)
-                ORDER BY p.published_at DESC";
-        $stmt = $this->getConnection()->prepare($sql);
-        $stmt->execute([
-            'role_id' => $roleId,
-            'q' => '%' . $query . '%'
-        ]);
-
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-    public function getAllForAdmin(): array
-    {
-        $sql = "SELECT
-                p.id,
-                p.title,
-                p.description,
-                p.youtube_video_id,
-                p.published_at,
-                u.name AS creator_name,
-                u.email AS creator_email
-            FROM presentations p
-            LEFT JOIN users u ON u.id = p.created_by_user_id
-            ORDER BY p.published_at DESC";
-
-        $stmt = $this->getConnection()->query($sql);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $user = new UserModel();
+        $user->id = (int)$row['id'];
+        $user->firstName = $row['first_name'];
+        $user->lastName = $row['last_name'];
+        $user->userName = $row['user_name'];
+        $user->email = $row['email'];
+        $user->password_hash = $row['password_hash'];
+        $user->phoneNumber = $row['phone_number'] ?? '';
+        $user->role = UserRole::from($row['role']);
+        $user->created_at = $row['created_at'] ?? null;
+        $user->updated_at = $row['updated_at'] ?? null;
+        $user->profilePicturePath = $row['profile_picture_path'] ?? null;
+        return $u;
     }
 }

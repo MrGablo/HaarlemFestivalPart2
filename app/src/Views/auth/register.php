@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Register</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-12 col-md-7 col-lg-6">
+
+        <div class="card shadow-sm">
+          <div class="card-body p-4">
+            <h1 class="h4 mb-3">Create account</h1>
+
+            <?php if (!empty($error)): ?>
+              <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
+            <?php endif; ?>
+
+            <form method="POST" action="/register" novalidate>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">First name</label>
+                  <input name="firstName" class="form-control" required value="<?= htmlspecialchars($_POST['firstName'] ?? '') ?>">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Last name</label>
+                  <input name="lastName" class="form-control" required value="<?= htmlspecialchars($_POST['lastName'] ?? '') ?>">
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Username</label>
+                <input name="userName" class="form-control" required value="<?= htmlspecialchars($_POST['userName'] ?? '') ?>">
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input name="email" type="email" class="form-control" required value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Phone number (optional)</label>
+                <input name="phoneNumber" class="form-control" value="<?= htmlspecialchars($_POST['phoneNumber'] ?? '') ?>">
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Password</label>
+                <input name="password" type="password" class="form-control" autocomplete="new-password" required>
+                <div class="form-text">Minimum 8 characters.</div>
+              </div>
+
+              <!-- Profile picture path intentionally omitted/empty for now -->
+
+              <button type="submit" class="btn btn-success w-100">Register</button>
+            </form>
+
+            <div class="text-center mt-3">
+              <small class="text-muted">Already have an account?</small>
+              <a href="/login" class="ms-1">Login</a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</body>
+</html>

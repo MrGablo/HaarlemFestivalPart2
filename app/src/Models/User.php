@@ -7,7 +7,7 @@ enum UserRole: string {
 }
 class UserModel
 {
-    public int $id = null;
+    public int $id;
     public string $firstName;
     public string $lastName;
     public string $userName;
