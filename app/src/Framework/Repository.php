@@ -11,15 +11,14 @@ class Repository
     private static ?PDO $connection = null;
     protected function getConnection(): PDO
     {
-        if(self::$connection === null){
+        if (self::$connection === null) {
             $this->connect();
         }
         return self::$connection;
     }
     private function connect(): void
     {
-        try
-        {
+        try {
             // Build connection from environment or config
             $db = Config::getDbConfig();
             $connectionString = $db['dsn'];
@@ -35,12 +34,10 @@ class Repository
 
             //tell PDO to throw erro
             self::$connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-        }
-        catch(\PDOException $e){
+        } catch (\PDOException $e) {
             //Handle connection error
             error_log($e->getMessage());
             die("Database Connection Failed: " . $e->getMessage());
         }
     }
-    
 }

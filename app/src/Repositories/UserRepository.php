@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Repositories;
 
 use App\Framework\Repository;
@@ -49,10 +50,22 @@ class UserRepository extends Repository implements IUserRepository
         return $row ? $this->mapRowToUser($row) : null;
     }
 
-    public function getUserById(int $id): ?UserModel { return null; } // implement later
-    public function getAllUsers(): array { return []; } // implement later
-    public function updateUser(int $id, UserModel $user): bool { return false; } // implement later
-    public function deleteUser(int $id): bool { return false; } // implement later
+    public function getUserById(int $id): ?UserModel
+    {
+        return null;
+    } // implement later
+    public function getAllUsers(): array
+    {
+        return [];
+    } // implement later
+    public function updateUser(int $id, UserModel $user): bool
+    {
+        return false;
+    } // implement later
+    public function deleteUser(int $id): bool
+    {
+        return false;
+    } // implement later
 
     private function mapRowToUser(array $row): UserModel
     {
@@ -68,6 +81,6 @@ class UserRepository extends Repository implements IUserRepository
         $user->created_at = $row['created_at'] ?? null;
         $user->updated_at = $row['updated_at'] ?? null;
         $user->profilePicturePath = $row['profile_picture_path'] ?? null;
-        return $u;
+        return $user;
     }
 }
