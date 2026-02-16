@@ -26,6 +26,10 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     //user registration
     $r->addRoute('GET',  '/register', ['App\Controllers\AuthController', 'showRegister']);
     $r->addRoute('POST', '/register', ['App\Controllers\AuthController', 'register']);
+
+    // account management (backend only)
+    $r->addRoute('POST', '/account/update', ['App\Controllers\UserController', 'updateAccount']);
+    $r->addRoute('POST', '/account/delete', ['App\Controllers\UserController', 'deleteAccount']);
 });
 
 
