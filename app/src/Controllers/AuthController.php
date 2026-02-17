@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Controllers;
 
 use App\Services\AuthService;
@@ -22,8 +23,9 @@ class AuthController
         // Pull errors/flash from session (one-time)
         $errors = $_SESSION['errors'] ?? [];
         $flashSuccess = $_SESSION['flash_success'] ?? null;
+        $old = $_SESSION['old'] ?? [];
 
-        unset($_SESSION['errors'], $_SESSION['flash_success']);
+        unset($_SESSION['errors'], $_SESSION['flash_success'], $_SESSION['old']);
 
         require __DIR__ . '/../Views/auth/login.php';
     }
@@ -73,13 +75,30 @@ class AuthController
 
     public function login(): void
     {
-        // Placeholder (until you implement real login in AuthService)
-        $_SESSION['errors'] = [
-            'general' => 'Login not implemented yet.'
+        $_SESSION['old'] = [
+            'userName' => $_POST['userName'] ?? '',
         ];
 
-        header('Location: /login', true, 302);
-        exit;
+        try {
+            $user = $this->authService->login($_POST);
+
+            session_regenerate_id(true);
+            $_SESSION['user_id'] = $user->id;
+            $_SESSION['user_name'] = $user->userName;
+            $_SESSION['user_role'] = $user->role->value;
+
+            unset($_SESSION['errors'], $_SESSION['old']);
+
+            header('Location: /', true, 302);
+            exit;
+        } catch (\Throwable $e) {
+            $_SESSION['errors'] = [
+                'general' => $e->getMessage()
+            ];
+
+            header('Location: /login', true, 302);
+            exit;
+        }
     }
 
     public function logout(): void
@@ -88,9 +107,14 @@ class AuthController
         $_SESSION = [];
         if (ini_get('session.use_cookies')) {
             $params = session_get_cookie_params();
-            setcookie(session_name(), '', time() - 42000,
-                $params['path'], $params['domain'],
-                $params['secure'], $params['httponly']
+            setcookie(
+                session_name(),
+                '',
+                time() - 42000,
+                $params['path'],
+                $params['domain'],
+                $params['secure'],
+                $params['httponly']
             );
         }
         session_destroy();
