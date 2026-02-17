@@ -22,6 +22,33 @@
             line-height: 1.6;
         }
 
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 10px 0;
+        }
+
+        .topbar-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: #111;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .topbar-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #e5e7eb;
+            background: #f3f4f6;
+        }
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -539,6 +566,20 @@
 <body>
 
     <div class="container">
+
+        <div class="topbar">
+            <?php if (!empty($isLoggedIn)): ?>
+                <a class="topbar-link" href="/account/manage" title="Manage account" aria-label="Manage account">
+                    <img
+                        class="topbar-avatar"
+                        src="<?php echo htmlspecialchars($profilePicturePath ?: '/assets/img/default-user.png'); ?>"
+                        alt="Account">
+                    <span>Account</span>
+                </a>
+            <?php else: ?>
+                <a class="topbar-link" href="/login">Login</a>
+            <?php endif; ?>
+        </div>
 
         <header class="hero">
             <div class="hero-text">
