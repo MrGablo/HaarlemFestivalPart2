@@ -16,8 +16,14 @@ class HomeController
 
     public function home()
     {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
         // Get data from Azure
         $content = $this->homeRepository->getHomePageContent();
+        $isLoggedIn = isset($_SESSION['user_id']);
+        $profilePicturePath = $_SESSION['profile_picture_path'] ?? '/assets/img/default-user.png';
 
         // 2. Load the file from the public folder
         require __DIR__ . '/../../public/home.php';

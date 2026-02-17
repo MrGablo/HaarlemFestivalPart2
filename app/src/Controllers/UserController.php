@@ -16,6 +16,98 @@ class UserController
         }
     }
 
+    public function showManageAccount(): void
+    {
+        $userId = $this->getAuthenticatedUserId();
+        if ($userId === null) {
+            header('Location: /login', true, 302);
+            exit;
+        }
+
+        $user = $this->userService->getAccountById($userId);
+        if ($user === null) {
+            $_SESSION['errors'] = ['general' => 'User not found.'];
+            header('Location: /login', true, 302);
+            exit;
+        }
+
+        $errors = $_SESSION['errors'] ?? [];
+        $flashSuccess = $_SESSION['flash_success'] ?? null;
+        $old = $_SESSION['old'] ?? [];
+
+        unset($_SESSION['errors'], $_SESSION['flash_success'], $_SESSION['old']);
+
+        require __DIR__ . '/../Views/account/manage.php';
+    }
+
+    public function updateAccountForm(): void
+    {
+        $userId = $this->getAuthenticatedUserId();
+        if ($userId === null) {
+            header('Location: /login', true, 302);
+            exit;
+        }
+
+        $_SESSION['old'] = [
+            'firstName' => $_POST['firstName'] ?? '',
+            'lastName' => $_POST['lastName'] ?? '',
+            'email' => $_POST['email'] ?? '',
+            'profilePicturePath' => $_POST['profilePicturePath'] ?? '',
+        ];
+
+        try {
+            $this->userService->updateAccount($userId, $_POST, $_FILES);
+            $updatedUser = $this->userService->getAccountById($userId);
+            if ($updatedUser !== null) {
+                $_SESSION['profile_picture_path'] = $updatedUser->profilePicturePath ?: '/assets/img/default-user.png';
+            }
+            $_SESSION['flash_success'] = 'Account updated successfully.';
+            unset($_SESSION['old']);
+        } catch (\Throwable $e) {
+            $_SESSION['errors'] = ['general' => $e->getMessage()];
+        }
+
+        header('Location: /account/manage', true, 302);
+        exit;
+    }
+
+    public function deleteAccountForm(): void
+    {
+        $userId = $this->getAuthenticatedUserId();
+        if ($userId === null) {
+            header('Location: /login', true, 302);
+            exit;
+        }
+
+        try {
+            $this->userService->deleteAccount($userId, $_POST);
+
+            $_SESSION = [];
+            if (ini_get('session.use_cookies')) {
+                $params = session_get_cookie_params();
+                setcookie(
+                    session_name(),
+                    '',
+                    time() - 42000,
+                    $params['path'],
+                    $params['domain'],
+                    $params['secure'],
+                    $params['httponly']
+                );
+            }
+            session_destroy();
+
+            session_start();
+            $_SESSION['flash_success'] = 'Account deleted successfully.';
+            header('Location: /login', true, 302);
+            exit;
+        } catch (\Throwable $e) {
+            $_SESSION['errors'] = ['general' => $e->getMessage()];
+            header('Location: /account/manage', true, 302);
+            exit;
+        }
+    }
+
     public function updateAccount(): void
     {
         $userId = $this->getAuthenticatedUserId();

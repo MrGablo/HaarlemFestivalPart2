@@ -86,6 +86,7 @@ class AuthController
             $_SESSION['user_id'] = $user->id;
             $_SESSION['user_name'] = $user->userName;
             $_SESSION['user_role'] = $user->role->value;
+            $_SESSION['profile_picture_path'] = $user->profilePicturePath ?: '/assets/img/default-user.png';
 
             unset($_SESSION['errors'], $_SESSION['old']);
 

@@ -1,6 +1,7 @@
 <?php
 namespace App\Services;
 
+use App\Models\UserModel;
 use App\Repositories\UserRepository;
 
 class UserService
@@ -10,6 +11,11 @@ class UserService
     public function __construct()
     {
         $this->users = new UserRepository();
+    }
+
+    public function getAccountById(int $userId): ?UserModel
+    {
+        return $this->users->getUserById($userId);
     }
 
     public function updateAccount(int $userId, array $data, array $files = []): void

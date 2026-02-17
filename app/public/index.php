@@ -31,6 +31,11 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     // account management (backend only)
     $r->addRoute('POST', '/account/update', ['App\Controllers\UserController', 'updateAccount']);
     $r->addRoute('POST', '/account/delete', ['App\Controllers\UserController', 'deleteAccount']);
+
+    // account management (view + form submit)
+    $r->addRoute('GET', '/account/manage', ['App\Controllers\UserController', 'showManageAccount']);
+    $r->addRoute('POST', '/account/manage/update', ['App\Controllers\UserController', 'updateAccountForm']);
+    $r->addRoute('POST', '/account/manage/delete', ['App\Controllers\UserController', 'deleteAccountForm']);
 });
 
 
