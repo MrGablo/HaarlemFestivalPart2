@@ -57,22 +57,6 @@ switch ($routeInfo[0]) {
 
     // Handle found routes
     case FastRoute\Dispatcher::FOUND:
-<<<<<<< HEAD
-        $handler = $routeInfo[1]; // ['App\Controllers\HomeController', 'home']
-        $vars = $routeInfo[2];    // URL parameters
-        
-        list($class, $method) = $handler;
-        
-        // 1. Create the controller
-        $controller = new $class();
-        
-        // 2. Call the method
-        call_user_func_array([$controller, $method], $vars);
-        
-        break;
-}
-
-=======
         [$controllerClass, $method] = $routeInfo[1];
         $vars = $routeInfo[2] ?? [];
 
@@ -95,4 +79,3 @@ switch ($routeInfo[0]) {
     break;
 
 }
->>>>>>> origin/Development
