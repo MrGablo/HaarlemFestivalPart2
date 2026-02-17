@@ -2,12 +2,24 @@
 
 namespace App\Controllers;
 
+use App\Repositories\Interfaces\IHomeRepository;
+use App\Repositories\HomeRepository;
+
 class HomeController
 {
-    public function home($vars = [])
+    private IHomeRepository $homeRepository;
+
+    public function __construct()
     {
-        // normally we don't want to echo from a controller method directly
-        // but rather load a view template
-        echo "Welcome home!";
+        $this->homeRepository = new HomeRepository();
+    }
+
+    public function home()
+    {
+        // Get data from Azure
+        $content = $this->homeRepository->getHomePageContent();
+
+        // 2. Load the file from the public folder
+        require __DIR__ . '/../../public/home.php';
     }
 }

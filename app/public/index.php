@@ -44,17 +44,22 @@ $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
 /**
  * Switch on the dispatcher result and call the appropriate controller method if found.
  */
+/**
+ * Switch on the dispatcher result and call the appropriate controller method if found.
+ */
 switch ($routeInfo[0]) {
     // Handle not found routes
     case FastRoute\Dispatcher::NOT_FOUND:
         http_response_code(404);
         echo 'Not Found';
         break;
+
     // Handle routes that were invoked with the wrong HTTP method
     case FastRoute\Dispatcher::METHOD_NOT_ALLOWED:
         http_response_code(405);
         echo 'Method Not Allowed';
         break;
+
     // Handle found routes
     case FastRoute\Dispatcher::FOUND:
         [$controllerClass, $method] = $routeInfo[1];
