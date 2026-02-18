@@ -11,7 +11,7 @@ class Repository
     private static ?PDO $connection = null;
     protected function getConnection(): PDO
     {
-        if(self::$connection === null){
+        if (self::$connection === null) {
             $this->connect();
         }
         return self::$connection;
@@ -19,19 +19,18 @@ class Repository
     private function connect(): void
     {
         try {
-            $serverName = Config::getDbServerName();
-            $dbName = Config::getDbName();
-            $username = Config::getDbUsername();
-            $password = Config::getDbPassword();
-            $port = Config::getDbPort();
+            // Build connection from environment or config
+            $db = Config::getDbConfig();
+            $connectionString = $db['dsn'];
+            $username = $db['user'];
+            $password = $db['pass'];
 
-            if (Config::isSqlServer()) {
-                $connectionString = "sqlsrv:Server={$serverName},{$port};Database={$dbName}";
-            } else {
-                $connectionString = "mysql:host={$serverName};port={$port};dbname={$dbName};charset=utf8mb4";
-            }
-
-            self::$connection = new \PDO($connectionString, $username, $password);
+            // Create new PDO connection
+            self::$connection = new \PDO(
+                $connectionString,
+                $username,
+                $password
+            );
             self::$connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
             self::$connection->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
         } catch (\PDOException $e) {
@@ -39,5 +38,4 @@ class Repository
             die("Database Connection Failed: " . htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8'));
         }
     }
-    
 }

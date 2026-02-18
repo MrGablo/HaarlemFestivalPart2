@@ -21,11 +21,24 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     
     // Hello route (example)
     $r->addRoute('GET', '/hello/{name}', ['App\Controllers\HelloController', 'greet']);
-    
-    // Authentication routes
+
+    // Authentication routes (login-logout feature)
     $r->addRoute('GET', '/login', ['App\Controllers\LoginController', 'showLoginForm']);
     $r->addRoute('POST', '/login', ['App\Controllers\LoginController', 'processLogin']);
     $r->addRoute(['GET', 'POST'], '/logout', ['App\Controllers\LogoutController', 'logout']);
+
+    // User registration
+    $r->addRoute('GET',  '/register', ['App\Controllers\AuthController', 'showRegister']);
+    $r->addRoute('POST', '/register', ['App\Controllers\AuthController', 'register']);
+
+    // Account management (backend only)
+    $r->addRoute('POST', '/account/update', ['App\Controllers\UserController', 'updateAccount']);
+    $r->addRoute('POST', '/account/delete', ['App\Controllers\UserController', 'deleteAccount']);
+
+    // Account management (view + form submit)
+    $r->addRoute('GET', '/account/manage', ['App\Controllers\UserController', 'showManageAccount']);
+    $r->addRoute('POST', '/account/manage/update', ['App\Controllers\UserController', 'updateAccountForm']);
+    $r->addRoute('POST', '/account/manage/delete', ['App\Controllers\UserController', 'deleteAccountForm']);
 });
 
 
@@ -45,30 +58,33 @@ switch ($routeInfo[0]) {
         http_response_code(404);
         echo 'Not Found';
         break;
+
     // Handle routes that were invoked with the wrong HTTP method
     case FastRoute\Dispatcher::METHOD_NOT_ALLOWED:
         http_response_code(405);
         echo 'Method Not Allowed';
         break;
+
     // Handle found routes
     case FastRoute\Dispatcher::FOUND:
-        /**
-         * $routeInfo contains the data about the matched route.
-         * 
-         * $routeInfo[1] is the whatever we define as the third argument the `$r->addRoute` method.
-         *  For instance for: `$r->addRoute('GET', '/hello/{name}', ['App\Controllers\HelloController', 'greet']);`
-         *  $routeInfo[1] will be `['App\Controllers\HelloController', 'greet']`
-         * 
-         * $routeInfo[2] contains any dynamic parameters parsed from the URL.
-         * For instance, if we add a route like:
-         *  $r->addRoute('GET', '/hello/{name}', ['App\Controllers\HelloController', 'greet']);
-         * and the URL is `/hello/dan-the-man`, then `$routeInfo[2]['name']` will be `dan-the-man`.
-         */
         [$controllerClass, $method] = $routeInfo[1];
         $vars = $routeInfo[2] ?? [];
-        
+
+        if (!class_exists($controllerClass)) {
+            http_response_code(500);
+            echo "Controller not found: " . htmlspecialchars($controllerClass);
+            break;
+        }
+
         $controller = new $controllerClass();
-        $controller->$method($vars);
-        
+
+        if (!method_exists($controller, $method)) {
+            http_response_code(500);
+            echo "Method not found: " . htmlspecialchars($controllerClass . '::' . $method);
+            break;
+        }
+
+        // Pass dynamic route params (e.g. /hello/{name})
+        call_user_func_array([$controller, $method], array_values($vars));
         break;
 }

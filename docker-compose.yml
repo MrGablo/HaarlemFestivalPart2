@@ -10,15 +10,21 @@ services:
         build:
             context: .
             dockerfile: PHP.Dockerfile
+        environment:
+            DB_CONNECTION: "Server=tcp:haarlemfestivaldb.database.windows.net,1433;Initial Catalog=haarlemfestivalgroup3;Persist Security Info=False;User ID=festivaladmin;Password=admin123!;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
         volumes:
             - ./app:/app
+    mysql:
+        image: mariadb:latest
         environment:
-            DB_SERVER_NAME: "haarlemfestivaldb.database.windows.net"
-            DB_NAME: "haarlemfestivalgroup3"
-            DB_USERNAME: "festivaladmin"
-            DB_PASSWORD: "admin123!"
-            DB_PORT: "1433"
-
+            MYSQL_ROOT_PASSWORD: 'secret123'
+            MYSQL_USER: 'developer'
+            MYSQL_PASSWORD: 'secret123'
+            MYSQL_DATABASE: 'developmentdb'
+        volumes:
+            - mysqldata:/var/lib/mysql
+        ports:
+            - 3306:3306
     phpmyadmin:
         image: phpmyadmin:latest
         ports:
