@@ -26,6 +26,6 @@ class HomeController
         $profilePicturePath = $_SESSION['profile_picture_path'] ?? '/assets/img/default-user.png';
 
         // 2. Load the file from the public folder
-        require __DIR__ . '/../../Views/pages/home.php';
+        require __DIR__ . '/../Views/pages/home.php';
     }
 }
