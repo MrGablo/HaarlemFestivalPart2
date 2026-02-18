@@ -13,7 +13,7 @@
     <section class="rounded-2xl bg-white p-6 shadow-xl ring-1 ring-slate-200">
       <div class="flex items-center justify-between">
         <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Manage account</h1>
-        <a href="/logout" class="text-sm font-medium text-slate-600 hover:text-slate-900">Logout</a>
+        <a href="/" class="text-sm font-medium text-slate-600 hover:text-slate-900">← Back to home</a>
       </div>
 
       <div class="mt-4 flex items-center gap-3">
