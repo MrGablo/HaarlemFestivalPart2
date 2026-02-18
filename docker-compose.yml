@@ -1,5 +1,3 @@
-version: '3'
-
 services:
     nginx:
         image: nginx:latest
@@ -10,21 +8,21 @@ services:
             - ./app:/app
     php:
         build:
-        context: .
-        dockerfile: PHP.Dockerfile
+            context: .
+            dockerfile: PHP.Dockerfile
         volumes:
-        - ./app:/app
+            - ./app:/app
         environment:
-            DB_SERVER_NAME: "whatsupapplication.database.windows.net"
-            DB_NAME: "HaarlemFestival"
-            DB_USERNAME: "Wolfik1822"
-            DB_PASSWORD: "Pepapepa1822!"
+            DB_SERVER_NAME: "haarlemfestivaldb.database.windows.net"
+            DB_NAME: "haarlemfestivalgroup3"
+            DB_USERNAME: "festivaladmin"
+            DB_PASSWORD: "admin123!"
+            DB_PORT: "1433"
 
-    
     phpmyadmin:
         image: phpmyadmin:latest
         ports:
-            - 8080:80
+            - "8080:80"
         environment:
             - PMA_HOST=mysql
 volumes:

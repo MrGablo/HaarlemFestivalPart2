@@ -18,24 +18,25 @@ class Repository
     }
     private function connect(): void
     {
-        try
-        {
-            //create connection string
-            $connectionString = 'mysql:host=' . Config::DB_SERVER_NAME . ';dbname=' . Config::DB_NAME . ';charset=utf8mb4';
-            //create new PDO connection
-            self::$connection = new \PDO(
-                $connectionString,
-                Config::DB_USERNAME,
-                Config::DB_PASSWORD
-            );
+        try {
+            $serverName = Config::getDbServerName();
+            $dbName = Config::getDbName();
+            $username = Config::getDbUsername();
+            $password = Config::getDbPassword();
+            $port = Config::getDbPort();
 
-            //tell PDO to throw erro
+            if (Config::isSqlServer()) {
+                $connectionString = "sqlsrv:Server={$serverName},{$port};Database={$dbName}";
+            } else {
+                $connectionString = "mysql:host={$serverName};port={$port};dbname={$dbName};charset=utf8mb4";
+            }
+
+            self::$connection = new \PDO($connectionString, $username, $password);
             self::$connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-        }
-        catch(\PDOException $e){
-            //Handle connection error
-            error_log($e->getMessage());
-            die("Database Connection Failed: " . $e->getMessage());
+            self::$connection->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
+        } catch (\PDOException $e) {
+            error_log("Database Connection Error: " . $e->getMessage());
+            die("Database Connection Failed: " . htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8'));
         }
     }
     

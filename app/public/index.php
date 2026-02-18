@@ -16,8 +16,16 @@ use function FastRoute\simpleDispatcher;
  * Define the routes for the application.
  */
 $dispatcher = simpleDispatcher(function (RouteCollector $r) {
+    // Home route
     $r->addRoute('GET', '/', ['App\Controllers\HomeController', 'home']);
+    
+    // Hello route (example)
     $r->addRoute('GET', '/hello/{name}', ['App\Controllers\HelloController', 'greet']);
+    
+    // Authentication routes
+    $r->addRoute('GET', '/login', ['App\Controllers\LoginController', 'showLoginForm']);
+    $r->addRoute('POST', '/login', ['App\Controllers\LoginController', 'processLogin']);
+    $r->addRoute(['GET', 'POST'], '/logout', ['App\Controllers\LogoutController', 'logout']);
 });
 
 
@@ -51,22 +59,16 @@ switch ($routeInfo[0]) {
          *  For instance for: `$r->addRoute('GET', '/hello/{name}', ['App\Controllers\HelloController', 'greet']);`
          *  $routeInfo[1] will be `['App\Controllers\HelloController', 'greet']`
          * 
-         * Hint: we can use class strings like `App\Controllers\HelloController` to create new instances of that class.
-         * Hint: in PHP we can use a string to call a class method dynamically, like this: `$instance->$methodName($args);`
-         */
-
-        // TODO: invoke the controller and method using the data in $routeInfo[1]
-
-        /**
-         * $route[2] contains any dynamic parameters parsed from the URL.
+         * $routeInfo[2] contains any dynamic parameters parsed from the URL.
          * For instance, if we add a route like:
          *  $r->addRoute('GET', '/hello/{name}', ['App\Controllers\HelloController', 'greet']);
-         * and the URL is `/hello/dan-the-man`, then `$routeInfo[2][name]` will be `dan-the-man`.
+         * and the URL is `/hello/dan-the-man`, then `$routeInfo[2]['name']` will be `dan-the-man`.
          */
-
-        // TODO: pass the dynamic route data to the controller method
-        // When done, visiting `http://localhost/hello/dan-the-man` should output "Hi, dan-the-man!"
-        throw new Exception('Not implemented yet');
-
+        [$controllerClass, $method] = $routeInfo[1];
+        $vars = $routeInfo[2] ?? [];
+        
+        $controller = new $controllerClass();
+        $controller->$method($vars);
+        
         break;
 }
