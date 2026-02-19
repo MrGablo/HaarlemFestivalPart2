@@ -17,9 +17,7 @@ class HomeController
 
     public function home()
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
+        \App\Utils\Session::ensureStarted();
 
         // Get data from Azure
         $content = $this->homeRepository->getHomePageContent();

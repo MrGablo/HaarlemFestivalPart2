@@ -11,6 +11,7 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use FastRoute\RouteCollector;
 use function FastRoute\simpleDispatcher;
+use App\Utils\Session;
 
 /**
  * Define the routes for the application.
@@ -45,6 +46,7 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
 $httpMethod = $_SERVER['REQUEST_METHOD'];
 $uri = strtok($_SERVER['REQUEST_URI'], '?');
 $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
+Session::ensureStarted();
 
 /**
  * Switch on the dispatcher result and call the appropriate controller method if found.
