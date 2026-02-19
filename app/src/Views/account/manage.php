@@ -24,17 +24,8 @@
         <p class="text-sm text-slate-600">Default image is used when no profile picture is set.</p>
       </div>
 
-      <?php if (!empty($flashSuccess)): ?>
-        <div class="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-          <?= htmlspecialchars($flashSuccess) ?>
-        </div>
-      <?php endif; ?>
-
-      <?php if (!empty($errors['general'])): ?>
-        <div class="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-          <?= htmlspecialchars($errors['general']) ?>
-        </div>
-      <?php endif; ?>
+      <?php require __DIR__ . '/../partials/flash_success.php'; ?>
+      <?php require __DIR__ . '/../partials/error_general.php'; ?>
 
       <form method="POST" action="/account/manage/update" enctype="multipart/form-data" class="mt-6 space-y-4">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">

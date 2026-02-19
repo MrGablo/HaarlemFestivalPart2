@@ -2,6 +2,8 @@
 namespace App\Controllers;
 
 use App\Services\UserService;
+use App\Utils\Flash;
+use App\Utils\Session;
 
 class UserController
 {
@@ -11,9 +13,7 @@ class UserController
     {
         $this->userService = new UserService();
 
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
+        Session::ensureStarted();
     }
 
     public function showManageAccount(): void
@@ -31,11 +31,9 @@ class UserController
             exit;
         }
 
-        $errors = $_SESSION['errors'] ?? [];
-        $flashSuccess = $_SESSION['flash_success'] ?? null;
-        $old = $_SESSION['old'] ?? [];
-
-        unset($_SESSION['errors'], $_SESSION['flash_success'], $_SESSION['old']);
+        $errors = Flash::getErrors();
+        $flashSuccess = Flash::getSuccess();
+        $old = Flash::getOld();
 
         require __DIR__ . '/../Views/account/manage.php';
     }
@@ -48,12 +46,12 @@ class UserController
             exit;
         }
 
-        $_SESSION['old'] = [
+        Flash::setOld([
             'firstName' => $_POST['firstName'] ?? '',
             'lastName' => $_POST['lastName'] ?? '',
             'email' => $_POST['email'] ?? '',
             'profilePicturePath' => $_POST['profilePicturePath'] ?? '',
-        ];
+        ]);
 
         try {
             $this->userService->updateAccount($userId, $_POST, $_FILES);
@@ -61,10 +59,11 @@ class UserController
             if ($updatedUser !== null) {
                 $_SESSION['profile_picture_path'] = $updatedUser->profilePicturePath ?: '/assets/img/default-user.png'; // import from config file
             }
-            $_SESSION['flash_success'] = 'Account updated successfully.';
-            unset($_SESSION['old']);
+            Flash::setSuccess('Account updated successfully.');
+            // clear old explicitly
+            Flash::setOld([]);
         } catch (\Throwable $e) {
-            $_SESSION['errors'] = ['general' => $e->getMessage()];
+            Flash::setErrors(['general' => $e->getMessage()]);
         }
 
         header('Location: /account/manage', true, 302);
@@ -97,12 +96,12 @@ class UserController
             }
             session_destroy();
 
-            session_start();
-            $_SESSION['flash_success'] = 'Account deleted successfully.';
+            Session::ensureStarted();
+            Flash::setSuccess('Account deleted successfully.');
             header('Location: /login', true, 302);
             exit;
         } catch (\Throwable $e) {
-            $_SESSION['errors'] = ['general' => $e->getMessage()];
+            Flash::setErrors(['general' => $e->getMessage()]);
             header('Location: /account/manage', true, 302);
             exit;
         }
