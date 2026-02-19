@@ -18,24 +18,6 @@ use function FastRoute\simpleDispatcher;
 $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     $r->addRoute('GET', '/', ['App\Controllers\HomeController', 'home']);
     $r->addRoute('GET', '/hello/{name}', ['App\Controllers\HelloController', 'greet']);
-
-
-    //user authorization
-    $r->addRoute('GET',  '/login',    ['App\Controllers\AuthController', 'showLogin']);
-    $r->addRoute('POST', '/login',    ['App\Controllers\AuthController', 'login']);
-    $r->addRoute('GET',  '/logout',   ['App\Controllers\AuthController', 'logout']);
-    //user registration
-    $r->addRoute('GET',  '/register', ['App\Controllers\AuthController', 'showRegister']);
-    $r->addRoute('POST', '/register', ['App\Controllers\AuthController', 'register']);
-
-    // account management (backend only)
-    $r->addRoute('POST', '/account/update', ['App\Controllers\UserController', 'updateAccount']);
-    $r->addRoute('POST', '/account/delete', ['App\Controllers\UserController', 'deleteAccount']);
-
-    // account management (view + form submit)
-    $r->addRoute('GET', '/account/manage', ['App\Controllers\UserController', 'showManageAccount']);
-    $r->addRoute('POST', '/account/manage/update', ['App\Controllers\UserController', 'updateAccountForm']);
-    $r->addRoute('POST', '/account/manage/delete', ['App\Controllers\UserController', 'deleteAccountForm']);
 });
 
 
@@ -49,42 +31,42 @@ $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
 /**
  * Switch on the dispatcher result and call the appropriate controller method if found.
  */
-/**
- * Switch on the dispatcher result and call the appropriate controller method if found.
- */
 switch ($routeInfo[0]) {
     // Handle not found routes
     case FastRoute\Dispatcher::NOT_FOUND:
         http_response_code(404);
         echo 'Not Found';
         break;
-
     // Handle routes that were invoked with the wrong HTTP method
     case FastRoute\Dispatcher::METHOD_NOT_ALLOWED:
         http_response_code(405);
         echo 'Method Not Allowed';
         break;
-
     // Handle found routes
     case FastRoute\Dispatcher::FOUND:
-        [$controllerClass, $method] = $routeInfo[1];
-        $vars = $routeInfo[2] ?? [];
+        /**
+         * $routeInfo contains the data about the matched route.
+         * 
+         * $routeInfo[1] is the whatever we define as the third argument the `$r->addRoute` method.
+         *  For instance for: `$r->addRoute('GET', '/hello/{name}', ['App\Controllers\HelloController', 'greet']);`
+         *  $routeInfo[1] will be `['App\Controllers\HelloController', 'greet']`
+         * 
+         * Hint: we can use class strings like `App\Controllers\HelloController` to create new instances of that class.
+         * Hint: in PHP we can use a string to call a class method dynamically, like this: `$instance->$methodName($args);`
+         */
 
-        if (!class_exists($controllerClass)) {
-            http_response_code(500);
-            echo "Controller not found: " . htmlspecialchars($controllerClass);
-            break;
-        }
+        // TODO: invoke the controller and method using the data in $routeInfo[1]
 
-        $controller = new $controllerClass();
+        /**
+         * $route[2] contains any dynamic parameters parsed from the URL.
+         * For instance, if we add a route like:
+         *  $r->addRoute('GET', '/hello/{name}', ['App\Controllers\HelloController', 'greet']);
+         * and the URL is `/hello/dan-the-man`, then `$routeInfo[2][name]` will be `dan-the-man`.
+         */
 
-        if (!method_exists($controller, $method)) {
-            http_response_code(500);
-            echo "Method not found: " . htmlspecialchars($controllerClass . '::' . $method);
-            break;
-        }
+        // TODO: pass the dynamic route data to the controller method
+        // When done, visiting `http://localhost/hello/dan-the-man` should output "Hi, dan-the-man!"
+        throw new Exception('Not implemented yet');
 
-        // Pass dynamic route params (e.g. /hello/{name})
-        call_user_func_array([$controller, $method], array_values($vars));
         break;
 }
