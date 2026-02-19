@@ -1,8 +1,10 @@
 <?php
+
 namespace App\Controllers;
 
 use App\Config;
 use App\Services\UserService;
+use App\Utils\AuthSessionData;
 
 class UserController
 {
@@ -60,7 +62,7 @@ class UserController
             $this->userService->updateAccount($userId, $_POST, $_FILES);
             $updatedUser = $this->userService->getAccountById($userId);
             if ($updatedUser !== null) {
-                $_SESSION['profile_picture_path'] = $updatedUser->profilePicturePath ?: Config::DEFAULT_USER_PROFILE_IMAGE_PATH;
+                AuthSessionData::store($updatedUser);
             }
             $_SESSION['flash_success'] = 'Account updated successfully.';
             unset($_SESSION['old']);
@@ -161,11 +163,12 @@ class UserController
 
     private function getAuthenticatedUserId(): ?int
     {
-        if (!isset($_SESSION['user_id'])) {
+        $auth = AuthSessionData::read();
+        if ($auth === null) {
             return null;
         }
 
-        return (int)$_SESSION['user_id'];
+        return (int)$auth['userId'];
     }
 
     private function getRequestData(): array
