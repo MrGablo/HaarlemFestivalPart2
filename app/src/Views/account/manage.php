@@ -18,7 +18,7 @@
 
       <div class="mt-4 flex items-center gap-3">
         <img
-          src="<?= htmlspecialchars(($user->profilePicturePath ?? '') !== '' ? $user->profilePicturePath : '/assets/img/default-user.png') ?>"
+          src="<?= htmlspecialchars(($user->profilePicturePath ?? '') !== '' ? $user->profilePicturePath : '/assets/img/default-user.png') ?>" 
           alt="Profile picture"
           class="h-14 w-14 rounded-full border border-slate-200 object-cover">
         <p class="text-sm text-slate-600">Default image is used when no profile picture is set.</p>

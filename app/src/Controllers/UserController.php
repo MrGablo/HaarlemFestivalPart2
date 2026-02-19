@@ -40,7 +40,7 @@ class UserController
         require __DIR__ . '/../Views/account/manage.php';
     }
 
-    public function updateAccountForm(): void
+    public function updateAccountForm(): void //rename tp upadte user, smae validation as register, no old session handleing - use same routes for post and get methods
     {
         $userId = $this->getAuthenticatedUserId();
         if ($userId === null) {
@@ -59,7 +59,7 @@ class UserController
             $this->userService->updateAccount($userId, $_POST, $_FILES);
             $updatedUser = $this->userService->getAccountById($userId);
             if ($updatedUser !== null) {
-                $_SESSION['profile_picture_path'] = $updatedUser->profilePicturePath ?: '/assets/img/default-user.png';
+                $_SESSION['profile_picture_path'] = $updatedUser->profilePicturePath ?: '/assets/img/default-user.png'; // import from config file
             }
             $_SESSION['flash_success'] = 'Account updated successfully.';
             unset($_SESSION['old']);

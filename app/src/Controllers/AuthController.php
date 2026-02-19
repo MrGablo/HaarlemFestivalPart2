@@ -56,7 +56,7 @@ class AuthController
             // Your existing service signature: register($_POST)
             $userId = $this->authService->register($_POST);
 
-            // Option A: after registering, go to login page with success message
+            //after registering, go to login page with success message
             $_SESSION['flash_success'] = 'Account created. Please log in.';
             unset($_SESSION['old']);
 
