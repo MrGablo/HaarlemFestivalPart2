@@ -37,8 +37,8 @@ use App\Config;
             gap: 8px;
             text-decoration: none;
             color: #111;
-            font-size: 0.95rem;
-            font-weight: 600;
+            font-weight: 700;
+            font-size: 1rem;
         }
 
         .topbar-avatar {
@@ -59,7 +59,6 @@ use App\Config;
         img {
             max-width: 100%;
             display: block;
-            border-radius: 10px;
         }
 
         /* HERO SECTION */
@@ -565,22 +564,10 @@ use App\Config;
 </head>
 
 <body>
+        <?php include __DIR__ . '/../partials/header.php'; ?>
+ 
 
     <div class="container">
-
-        <div class="topbar">
-            <?php if (!empty($isLoggedIn)): ?>
-                <a class="topbar-link" href="/account/manage" title="Manage account" aria-label="Manage account">
-                    <img
-                        class="topbar-avatar"
-                        src="<?php echo htmlspecialchars($profilePicturePath ?: Config::DEFAULT_USER_PROFILE_IMAGE_PATH); ?>"
-                        alt="Account">
-                    <span>Account</span>
-                </a>
-            <?php else: ?>
-                <a class="topbar-link" href="/login">Login</a>
-            <?php endif; ?>
-        </div>
 
         <header class="hero">
             <div class="hero-text">
@@ -721,6 +708,7 @@ use App\Config;
         </section>
 
     </div>
+    <?php include __DIR__ . '/../partials/footer.php'; ?>
 
 </body>
 
