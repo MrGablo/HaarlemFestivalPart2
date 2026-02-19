@@ -10,17 +10,23 @@ services:
             - ./app:/app
     php:
         build:
-        context: .
-        dockerfile: PHP.Dockerfile
-        volumes:
-        - ./app:/app
+            context: .
+            dockerfile: PHP.Dockerfile
         environment:
-            DB_SERVER_NAME: "whatsupapplication.database.windows.net"
-            DB_NAME: "HaarlemFestival"
-            DB_USERNAME: "Wolfik1822"
-            DB_PASSWORD: "Pepapepa1822!"
-
-    
+            DB_CONNECTION: "Server=tcp:haarlemfestivaldb.database.windows.net,1433;Initial Catalog=haarlemfestivalgroup3;Persist Security Info=False;User ID=festivaladmin;Password=admin123!;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+        volumes:
+            - ./app:/app
+    mysql:
+        image: mariadb:latest
+        environment:
+            MYSQL_ROOT_PASSWORD: 'secret123'
+            MYSQL_USER: 'developer'
+            MYSQL_PASSWORD: 'secret123'
+            MYSQL_DATABASE: 'developmentdb'
+        volumes:
+            - mysqldata:/var/lib/mysql
+        ports:
+            - 3308:3306
     phpmyadmin:
         image: phpmyadmin:latest
         ports:

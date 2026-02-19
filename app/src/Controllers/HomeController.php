@@ -2,12 +2,33 @@
 
 namespace App\Controllers;
 
+use App\Config;
+use App\Repositories\Interfaces\IHomeRepository;
+use App\Repositories\HomeRepository;
+use App\Utils\AuthSessionData;
+
 class HomeController
 {
-    public function home($vars = [])
+    private IHomeRepository $homeRepository;
+
+    public function __construct()
     {
-        // normally we don't want to echo from a controller method directly
-        // but rather load a view template
-        echo "Welcome home!";
+        $this->homeRepository = new HomeRepository();
+    }
+
+    public function home()
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        // Get data from Azure
+        $content = $this->homeRepository->getHomePageContent();
+        $auth = AuthSessionData::read();
+        $isLoggedIn = $auth !== null;
+        $profilePicturePath = $auth['profilePicturePath'] ?? Config::DEFAULT_USER_PROFILE_IMAGE_PATH;
+
+        // 2. Load the file from the public folder
+        require __DIR__ . '/../Views/pages/home.php';
     }
 }
