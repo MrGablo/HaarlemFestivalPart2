@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services;
 
 use App\Models\UserModel;
@@ -92,40 +93,59 @@ class UserService
 
     private function resolveProfilePicturePath(array $data, array $files, ?string $currentPath): ?string
     {
+        // 1) Prefer uploaded file if present
+        if (isset($files['profilePicture']) && is_array($files['profilePicture'])) {
+            $file = $files['profilePicture'];
+
+            if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+                $tmpName = (string)($file['tmp_name'] ?? '');
+
+                // Extra safety: ensure it is a real uploaded file
+                if ($tmpName === '' || !is_uploaded_file($tmpName)) {
+                    throw new \Exception('Upload failed (invalid temp file).');
+                }
+
+                $originalName = (string)($file['name'] ?? 'profile-picture');
+                $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+
+                if (!in_array($extension, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true)) {
+                    throw new \Exception('Invalid profile picture file type.');
+                }
+
+                // Ensure target directory exists
+                $targetDir = __DIR__ . '/../../public/assets/img/profiles';
+                if (!is_dir($targetDir) && !mkdir($targetDir, 0775, true) && !is_dir($targetDir)) {
+                    throw new \Exception('Unable to create profile image directory.');
+                }
+
+                // 2) Deterministic filename based on file contents (prevents duplicates)
+                $hash = hash_file('sha256', $tmpName);
+                $fileName = $hash . '.' . $extension;
+
+                $targetPath = $targetDir . '/' . $fileName;
+
+                // If this exact image already exists, do not store a duplicate
+                if (!file_exists($targetPath)) {
+                    if (!move_uploaded_file($tmpName, $targetPath)) {
+                        throw new \Exception('Failed to upload profile picture.');
+                    }
+                }
+
+                // Store path for DB / rendering
+                return '/assets/img/profiles/' . $fileName;
+            }
+        }
+
+        // 3) Otherwise allow URL/path override if user typed one
         if (!empty($data['profilePicturePath'])) {
             return trim((string)$data['profilePicturePath']);
         }
 
-        if (!isset($files['profilePicture']) || !is_array($files['profilePicture'])) {
-            return $currentPath;
-        }
-
-        $file = $files['profilePicture'];
-        if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
-            return $currentPath;
-        }
-
-        $tmpName = (string)($file['tmp_name'] ?? '');
-        $originalName = (string)($file['name'] ?? 'profile-picture');
-        $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
-
-        if (!in_array($extension, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true)) {
-            throw new \Exception('Invalid profile picture file type.');
-        }
-
-        $fileName = 'profile_' . bin2hex(random_bytes(8)) . '.' . $extension;
-        $targetDir = __DIR__ . '/../../public/assets/img/profiles';
-        if (!is_dir($targetDir) && !mkdir($targetDir, 0775, true) && !is_dir($targetDir)) {
-            throw new \Exception('Unable to create profile image directory.');
-        }
-
-        $targetPath = $targetDir . '/' . $fileName;
-        if (!move_uploaded_file($tmpName, $targetPath)) {
-            throw new \Exception('Failed to upload profile picture.');
-        }
-
-        return '/assets/img/profiles/' . $fileName;
+        // 4) Otherwise keep current
+        return $currentPath;
     }
+
+
 
     private function sendAccountUpdateEmail(string $email, string $firstName): void
     {

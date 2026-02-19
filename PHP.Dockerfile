@@ -36,4 +36,4 @@ ARG DB_CONNECTION
 ENV DB_CONNECTION=${DB_CONNECTION}
 
 # On container start, install dependencies if vendor is missing, then start php-fpm
-CMD ["sh", "-lc", "[ -f vendor/autoload.php ] || composer install --no-interaction --no-progress; exec php-fpm"]
+CMD ["sh", "-lc", "mkdir -p public/assets/img/profiles; chmod -R 777 public/assets/img || true; [ -f vendor/autoload.php ] || composer install --no-interaction --no-progress; exec php-fpm"]
