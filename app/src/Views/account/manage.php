@@ -1,3 +1,4 @@
+<?php use App\Config; ?>
 <!doctype html>
 <html lang="en">
 
@@ -18,23 +19,14 @@
 
       <div class="mt-4 flex items-center gap-3">
         <img
-          src="<?= htmlspecialchars(($user->profilePicturePath ?? '') !== '' ? $user->profilePicturePath : '/assets/img/default-user.png') ?>"
+          src="<?= htmlspecialchars(($user->profilePicturePath ?? '') !== '' ? $user->profilePicturePath : Config::DEFAULT_USER_PROFILE_IMAGE_PATH) ?>"
           alt="Profile picture"
           class="h-14 w-14 rounded-full border border-slate-200 object-cover">
         <p class="text-sm text-slate-600">Default image is used when no profile picture is set.</p>
       </div>
 
-      <?php if (!empty($flashSuccess)): ?>
-        <div class="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-          <?= htmlspecialchars($flashSuccess) ?>
-        </div>
-      <?php endif; ?>
-
-      <?php if (!empty($errors['general'])): ?>
-        <div class="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-          <?= htmlspecialchars($errors['general']) ?>
-        </div>
-      <?php endif; ?>
+      <?php require __DIR__ . '/../partials/flash_success.php'; ?>
+      <?php require __DIR__ . '/../partials/error_general.php'; ?>
 
       <form method="POST" action="/account/manage/update" enctype="multipart/form-data" class="mt-6 space-y-4">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -95,7 +87,7 @@
           <input
             name="profilePicturePath"
             type="text"
-            value="<?= htmlspecialchars($old['profilePicturePath'] ?? ($user->profilePicturePath ?? '/assets/img/default-user.png')) ?>"
+            value="<?= htmlspecialchars($old['profilePicturePath'] ?? ($user->profilePicturePath ?? Config::DEFAULT_USER_PROFILE_IMAGE_PATH)) ?>"
             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
           <p class="mt-1 text-xs text-slate-500">Or upload a file below.</p>
         </div>

@@ -1,4 +1,5 @@
 <?php
+use App\Config;
 ?>
 <!DOCTYPE html>
 <html lang="en">
