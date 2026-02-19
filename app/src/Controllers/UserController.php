@@ -1,7 +1,12 @@
 <?php
+
 namespace App\Controllers;
 
+use App\Config;
 use App\Services\UserService;
+use App\Utils\AuthSessionData;
+use App\Utils\Flash;
+use App\Utils\Session;
 
 class UserController
 {
@@ -11,8 +16,97 @@ class UserController
     {
         $this->userService = new UserService();
 
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
+        Session::ensureStarted();
+    }
+
+    public function showManageAccount(): void
+    {
+        $userId = $this->getAuthenticatedUserId();
+        if ($userId === null) {
+            header('Location: /login', true, 302);
+            exit;
+        }
+
+        $user = $this->userService->getAccountById($userId);
+        if ($user === null) {
+            $_SESSION['errors'] = ['general' => 'User not found.'];
+            header('Location: /login', true, 302);
+            exit;
+        }
+
+        $errors = Flash::getErrors();
+        $flashSuccess = Flash::getSuccess();
+        $old = Flash::getOld();
+
+        require __DIR__ . '/../Views/account/manage.php';
+    }
+
+    public function updateAccountForm(): void //rename tp upadte user, smae validation as register, no old session handleing - use same routes for post and get methods
+    {
+        $userId = $this->getAuthenticatedUserId();
+        if ($userId === null) {
+            header('Location: /login', true, 302);
+            exit;
+        }
+
+        Flash::setOld([
+            'firstName' => $_POST['firstName'] ?? '',
+            'lastName' => $_POST['lastName'] ?? '',
+            'email' => $_POST['email'] ?? '',
+            'profilePicturePath' => $_POST['profilePicturePath'] ?? '',
+        ]);
+
+        try {
+            $this->userService->updateAccount($userId, $_POST, $_FILES);
+            $updatedUser = $this->userService->getAccountById($userId);
+            if ($updatedUser !== null) {
+                AuthSessionData::store($updatedUser);
+            }
+            Flash::setSuccess('Account updated successfully.');
+            // clear old explicitly
+            Flash::setOld([]);
+        } catch (\Throwable $e) {
+            Flash::setErrors(['general' => $e->getMessage()]);
+        }
+
+        header('Location: /account/manage', true, 302);
+        exit;
+    }
+
+    public function deleteAccountForm(): void
+    {
+        $userId = $this->getAuthenticatedUserId();
+        if ($userId === null) {
+            header('Location: /login', true, 302);
+            exit;
+        }
+
+        try {
+            $this->userService->deleteAccount($userId, $_POST);
+
+            $_SESSION = [];
+            if (ini_get('session.use_cookies')) {
+                $params = session_get_cookie_params();
+                setcookie(
+                    session_name(),
+                    '',
+                    time() - 42000,
+                    $params['path'],
+                    $params['domain'],
+                    $params['secure'],
+                    $params['httponly']
+                );
+            }
+            session_destroy();
+
+            Session::ensureStarted();
+            Flash::setSuccess('Account deleted successfully.');
+            header('Location: /login', true, 302);
+            exit;
+        } catch (\Throwable $e) {
+            Flash::setErrors(['general' => $e->getMessage()]);
+            header('Location: /account/manage', true, 302);
+            exit;
         }
     }
 
@@ -68,11 +162,12 @@ class UserController
 
     private function getAuthenticatedUserId(): ?int
     {
-        if (!isset($_SESSION['user_id'])) {
+        $auth = AuthSessionData::read();
+        if ($auth === null) {
             return null;
         }
 
-        return (int)$_SESSION['user_id'];
+        return (int)$auth['userId'];
     }
 
     private function getRequestData(): array

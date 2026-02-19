@@ -1,4 +1,5 @@
 <?php
+use App\Config;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -22,6 +23,33 @@
             line-height: 1.6;
         }
 
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 10px 0;
+        }
+
+        .topbar-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: #111;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .topbar-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #e5e7eb;
+            background: #f3f4f6;
+        }
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -31,7 +59,6 @@
         img {
             max-width: 100%;
             display: block;
-            border-radius: 10px;
         }
 
         /* HERO SECTION */
@@ -537,6 +564,8 @@
 </head>
 
 <body>
+        <?php include __DIR__ . '/../partials/header.php'; ?>
+ 
 
     <div class="container">
 
@@ -679,6 +708,7 @@
         </section>
 
     </div>
+    <?php include __DIR__ . '/../partials/footer.php'; ?>
 
 </body>
 

@@ -11,6 +11,7 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use FastRoute\RouteCollector;
 use function FastRoute\simpleDispatcher;
+use App\Utils\Session;
 
 /**
  * Define the routes for the application.
@@ -31,6 +32,11 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     // account management (backend only)
     $r->addRoute('POST', '/account/update', ['App\Controllers\UserController', 'updateAccount']);
     $r->addRoute('POST', '/account/delete', ['App\Controllers\UserController', 'deleteAccount']);
+
+    // account management (view + form submit)
+    $r->addRoute('GET', '/account/manage', ['App\Controllers\UserController', 'showManageAccount']);
+    $r->addRoute('POST', '/account/manage/update', ['App\Controllers\UserController', 'updateAccountForm']);
+    $r->addRoute('POST', '/account/manage/delete', ['App\Controllers\UserController', 'deleteAccountForm']);
 });
 
 
@@ -40,6 +46,7 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
 $httpMethod = $_SERVER['REQUEST_METHOD'];
 $uri = strtok($_SERVER['REQUEST_URI'], '?');
 $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
+Session::ensureStarted();
 
 /**
  * Switch on the dispatcher result and call the appropriate controller method if found.
