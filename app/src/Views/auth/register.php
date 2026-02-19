@@ -16,9 +16,8 @@
           <div class="card-body p-4">
             <h1 class="h4 mb-3">Create account</h1>
 
-            <?php if (!empty($errors['general'])): ?>
-              <div class="alert alert-danger"><?= htmlspecialchars($errors['general']) ?></div>
-            <?php endif; ?>
+            <?php require __DIR__ . '/../partials/flash_success.php'; ?>
+            <?php require __DIR__ . '/../partials/error_general.php'; ?>
 
             <form method="POST" action="/register">
               <div class="row">

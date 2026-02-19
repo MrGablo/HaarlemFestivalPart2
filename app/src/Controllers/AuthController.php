@@ -5,6 +5,8 @@ namespace App\Controllers;
 use App\Config;
 use App\Services\AuthService;
 use App\Utils\AuthSessionData;
+use App\Utils\Flash;
+use App\Utils\Session;
 
 class AuthController
 {
@@ -14,72 +16,66 @@ class AuthController
     {
         $this->authService = new AuthService();
 
-        // Ensure session is available for auth/errors/flash
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
     }
 
     public function showLogin(): void
     {
-        // Pull errors/flash from session (one-time)
-        $errors = $_SESSION['errors'] ?? [];
-        $flashSuccess = $_SESSION['flash_success'] ?? null;
-        $old = $_SESSION['old'] ?? [];
-
-        unset($_SESSION['errors'], $_SESSION['flash_success'], $_SESSION['old']);
+        // Pull errors/flash/old from Flash util (one-time)
+        $errors = Flash::getErrors();
+        $flashSuccess = Flash::getSuccess();
+        $old = Flash::getOld();
 
         require __DIR__ . '/../Views/auth/login.php';
     }
 
     public function showRegister(): void
     {
-        // Pull errors/old values from session (one-time)
-        $errors = $_SESSION['errors'] ?? [];
-        $old = $_SESSION['old'] ?? [];
-
-        unset($_SESSION['errors'], $_SESSION['old']);
+        // Pull errors/old values from Flash util (one-time)
+        $errors = Flash::getErrors();
+        $old = Flash::getOld();
 
         require __DIR__ . '/../Views/auth/register.php';
     }
 
     public function register(): void
     {
-        // Keep old input (except password) so you can re-fill the form on error
-        $_SESSION['old'] = [
-            'firstName' => $_POST['firstName'] ?? '',
-            'lastName'  => $_POST['lastName'] ?? '',
-            'userName'  => $_POST['userName'] ?? '',
-            'email'     => $_POST['email'] ?? '',
-            'phoneNumber' => $_POST['phoneNumber'] ?? '',
-        ];
+        // Do not store old input in session; if validation fails we'll render
+        // the register view directly using the POST data so the form can
+        // be re-filled without using Flash::setOld.
 
         try {
             // Your existing service signature: register($_POST)
             $userId = $this->authService->register($_POST);
 
             //after registering, go to login page with success message
-            $_SESSION['flash_success'] = 'Account created. Please log in.';
-            unset($_SESSION['old']);
+            Flash::setSuccess('Account created. Please log in.');
+            // clear old explicitly
+            Flash::setOld([]);
 
             header('Location: /login', true, 302);
             exit;
         } catch (\Throwable $e) {
-            // Store error(s) and redirect back to form (PRG pattern)
-            $_SESSION['errors'] = [
-                'general' => $e->getMessage()
+            // On error, render the register form in the same request using
+            // the POST data so the form can be re-filled without a redirect.
+            $errors = ['general' => $e->getMessage()];
+            $old = [
+                'firstName' => $_POST['firstName'] ?? '',
+                'lastName'  => $_POST['lastName'] ?? '',
+                'userName'  => $_POST['userName'] ?? '',
+                'email'     => $_POST['email'] ?? '',
+                'phoneNumber' => $_POST['phoneNumber'] ?? '',
             ];
 
-            header('Location: /register', true, 302);
-            exit;
+            require __DIR__ . '/../Views/auth/register.php';
+            return;
         }
     }
 
     public function login(): void
     {
-        $_SESSION['old'] = [
+        Flash::setOld([
             'userName' => $_POST['userName'] ?? '',
-        ];
+        ]);
 
         try {
             $user = $this->authService->login($_POST);
@@ -89,14 +85,16 @@ class AuthController
 
             AuthSessionData::store($user);
 
-            unset($_SESSION['errors'], $_SESSION['old']);
+            // clear any previous errors/old inputs
+            Flash::setErrors([]);
+            Flash::setOld([]);
 
             header('Location: /', true, 302);
             exit;
         } catch (\Throwable $e) {
-            $_SESSION['errors'] = [
+            Flash::setErrors([
                 'general' => $e->getMessage()
-            ];
+            ]);
 
             header('Location: /login', true, 302);
             exit;

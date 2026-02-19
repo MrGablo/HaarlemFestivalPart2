@@ -14,17 +14,8 @@
       <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Sign in</h1>
       <p class="mt-1 text-sm text-slate-500">Welcome back</p>
 
-      <?php if (!empty($flashSuccess)): ?>
-        <div class="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-          <?= htmlspecialchars($flashSuccess) ?>
-        </div>
-      <?php endif; ?>
-
-      <?php if (!empty($errors['general'])): ?>
-        <div class="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-          <?= htmlspecialchars($errors['general']) ?>
-        </div>
-      <?php endif; ?>
+      <?php require __DIR__ . '/../partials/flash_success.php'; ?>
+      <?php require __DIR__ . '/../partials/error_general.php'; ?>
 
       <form method="POST" action="/login" class="mt-6 space-y-4">
         <div>
