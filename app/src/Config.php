@@ -7,6 +7,7 @@ class Config {
     public const DB_USERNAME = 'root';
     public const DB_PASSWORD = 'secret123';
     public const DB_NAME = 'name';
+    public const DEFAULT_USER_PROFILE_IMAGE_PATH = '/assets/img/default-user.png';
 
     // Returns an array with keys: dsn, user, pass.
     public static function getDbConfig(): array

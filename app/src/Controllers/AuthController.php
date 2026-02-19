@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Config;
 use App\Services\AuthService;
 
 class AuthController
@@ -86,7 +87,7 @@ class AuthController
             $_SESSION['user_id'] = $user->id;
             $_SESSION['user_name'] = $user->userName;
             $_SESSION['user_role'] = $user->role->value;
-            $_SESSION['profile_picture_path'] = $user->profilePicturePath ?: '/assets/img/default-user.png';
+            $_SESSION['profile_picture_path'] = $user->profilePicturePath ?: Config::DEFAULT_USER_PROFILE_IMAGE_PATH;
 
             unset($_SESSION['errors'], $_SESSION['old']);
 

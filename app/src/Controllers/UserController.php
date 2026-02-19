@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers;
 
+use App\Config;
 use App\Services\UserService;
 
 class UserController
@@ -59,7 +60,7 @@ class UserController
             $this->userService->updateAccount($userId, $_POST, $_FILES);
             $updatedUser = $this->userService->getAccountById($userId);
             if ($updatedUser !== null) {
-                $_SESSION['profile_picture_path'] = $updatedUser->profilePicturePath ?: '/assets/img/default-user.png'; // import from config file
+                $_SESSION['profile_picture_path'] = $updatedUser->profilePicturePath ?: Config::DEFAULT_USER_PROFILE_IMAGE_PATH;
             }
             $_SESSION['flash_success'] = 'Account updated successfully.';
             unset($_SESSION['old']);

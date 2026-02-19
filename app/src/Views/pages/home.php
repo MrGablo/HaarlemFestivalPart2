@@ -1,4 +1,5 @@
 <?php
+use App\Config;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -572,7 +573,7 @@
                 <a class="topbar-link" href="/account/manage" title="Manage account" aria-label="Manage account">
                     <img
                         class="topbar-avatar"
-                        src="<?php echo htmlspecialchars($profilePicturePath ?: '/assets/img/default-user.png'); ?>"
+                        src="<?php echo htmlspecialchars($profilePicturePath ?: Config::DEFAULT_USER_PROFILE_IMAGE_PATH); ?>"
                         alt="Account">
                     <span>Account</span>
                 </a>
