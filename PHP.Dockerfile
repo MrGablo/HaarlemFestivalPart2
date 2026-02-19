@@ -20,8 +20,11 @@ RUN set -eux; \
     php composer-setup.php --install-dir=/usr/local/bin --filename=composer; \
     rm composer-setup.php; \
     rm -rf /var/lib/apt/lists/*
+    
 
 WORKDIR /app
+RUN echo "upload_max_filesize=20M\npost_max_size=20M" > /usr/local/etc/php/conf.d/uploads.ini
+
 
 
 
