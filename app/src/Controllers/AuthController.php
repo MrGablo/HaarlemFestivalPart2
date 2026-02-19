@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Config;
 use App\Services\AuthService;
+use App\Utils\AuthSessionData;
 use App\Utils\Flash;
 use App\Utils\Session;
 
@@ -79,11 +80,10 @@ class AuthController
         try {
             $user = $this->authService->login($_POST);
 
+            //generate new session ID to prevent session fixation
             session_regenerate_id(true);
-            $_SESSION['user_id'] = $user->id;
-            $_SESSION['user_name'] = $user->userName;
-            $_SESSION['user_role'] = $user->role->value;
-            $_SESSION['profile_picture_path'] = $user->profilePicturePath ?: Config::DEFAULT_USER_PROFILE_IMAGE_PATH;
+
+            AuthSessionData::store($user);
 
             // clear any previous errors/old inputs
             Flash::setErrors([]);
@@ -103,22 +103,8 @@ class AuthController
 
     public function logout(): void
     {
-        // Minimal logout without needing to change other code
-        $_SESSION = [];
-        if (ini_get('session.use_cookies')) {
-            $params = session_get_cookie_params();
-            setcookie(
-                session_name(),
-                '',
-                time() - 42000,
-                $params['path'],
-                $params['domain'],
-                $params['secure'],
-                $params['httponly']
-            );
-        }
+        AuthSessionData::clear();
         session_destroy();
-
         header('Location: /login', true, 302);
         exit;
     }
