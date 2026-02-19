@@ -15,7 +15,6 @@ class AuthController
     public function __construct()
     {
         $this->authService = new AuthService();
-
     }
 
     public function showLogin(): void
@@ -105,7 +104,7 @@ class AuthController
     {
         AuthSessionData::clear();
         session_destroy();
-        header('Location: /login', true, 302);
+        header('Location: /', true, 302);
         exit;
     }
 }
