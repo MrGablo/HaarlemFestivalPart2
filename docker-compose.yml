@@ -18,7 +18,7 @@ services:
       - ./app:/app
       - ./ca.pem:/etc/ssl/certs/aiven-ca.pem:ro
     env_file:
-      - ./app/.env
+      - .env
     environment:
       # Your app will read these:
       DB_SSL_CA: /etc/ssl/certs/aiven-ca.pem
@@ -28,7 +28,7 @@ services:
     ports:
       - "8080:80"
     env_file:
-      - ./app/.env
+      - .env
     environment:
       # phpMyAdmin expects PMA_* variables.
       # We map them from the AIVEN_* variables INSIDE the container using explicit values
