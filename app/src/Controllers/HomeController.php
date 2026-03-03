@@ -4,29 +4,39 @@ namespace App\Controllers;
 
 use App\Config;
 use App\Repositories\Interfaces\IHomeRepository;
-use App\Repositories\HomeRepository;
+use App\Services\HomeService;
 use App\Utils\AuthSessionData;
 
 class HomeController
 {
-    private IHomeRepository $homeRepository;
+    private HomeService $homeService;
 
     public function __construct()
     {
-        $this->homeRepository = new HomeRepository();
+        $this->homeService = new HomeService();
     }
 
     public function home()
     {
-        \App\Utils\Session::ensureStarted();
 
-        // Get data from Azure
-        $content = $this->homeRepository->getHomePageContent();
-        $auth = AuthSessionData::read();
-        $isLoggedIn = $auth !== null;
-        $profilePicturePath = $auth['profilePicturePath'] ?? Config::DEFAULT_USER_PROFILE_IMAGE_PATH;
+        try {
+            // Get data from the service
+            $content = $this->homeService->getHomePageContent();
+            $auth = AuthSessionData::read();
+            $isLoggedIn = $auth !== null;
+            $profilePicturePath = $auth['profilePicturePath'] ?? Config::DEFAULT_USER_PROFILE_IMAGE_PATH;
 
-        // 2. Load the file from the public folder
-        require __DIR__ . '/../Views/pages/home.php';
+            // Load the file
+            require __DIR__ . '/../Views/pages/home.php';
+        } catch (\Throwable $e) {
+            // Render the same view with an errors array so the partial can display it
+            $errors = ['general' => $e->getMessage()];
+            // Ensure variables used by the view exist
+            $content = [];
+            $isLoggedIn = false;
+            $profilePicturePath = Config::DEFAULT_USER_PROFILE_IMAGE_PATH;
+
+            require __DIR__ . '/../Views/pages/home.php';
+        }
     }
 }

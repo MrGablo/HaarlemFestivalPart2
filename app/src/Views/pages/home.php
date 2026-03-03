@@ -23,33 +23,6 @@ use App\Config;
             line-height: 1.6;
         }
 
-        .topbar {
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            gap: 10px;
-            padding: 10px 0;
-        }
-
-        .topbar-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            text-decoration: none;
-            color: #111;
-            font-weight: 700;
-            font-size: 1rem;
-        }
-
-        .topbar-avatar {
-            width: 34px;
-            height: 34px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid #e5e7eb;
-            background: #f3f4f6;
-        }
-
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -68,7 +41,7 @@ use App\Config;
             justify-content: space-between;
             padding: 80px 0;
             gap: 20px;
-            overflow: hidden;
+            overflow: visible;
         }
 
         /* 1. TEXT STYLING */
@@ -108,7 +81,6 @@ use App\Config;
             margin-top: 60px;
         }
 
-        /* The Blue Background Shape */
         .hero-bg-shape {
             position: absolute;
             width: 105%;
@@ -118,11 +90,10 @@ use App\Config;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            /* Centered and straight */
             z-index: 0;
         }
 
-        /* The Grid Container */
+        /* GRID SYSTEM */
         .image-grid {
             display: grid;
             grid-template-columns: 1fr 1.6fr 1fr;
@@ -133,36 +104,42 @@ use App\Config;
             align-items: center;
         }
 
-        /* COLUMN ALIGNMENT */
-
-        .col-left {
+        /* WRAPPER FOR IMG + CAPTION */
+        .img-wrapper {
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            align-items: flex-end;
+            width: fit-content;
         }
 
-        .col-right {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            align-items: flex-start;
+        /* CAPTION STYLING - FIXED SIZE */
+        .img-caption {
+            font-style: italic;
+            font-size: 0.75rem;
+            /* Smaller text */
+            color: #555;
+            margin-top: 6px;
+            font-weight: 500;
+            line-height: 1.2;
+            white-space: nowrap;
+            /* Keeps short captions on one line */
         }
 
-        /* Common Image Styles */
-        .grid-img {
-            background-color: #ccc;
+        /* SHARED IMAGE STYLES (Radius & Shadow fix) */
+        .img-vertical,
+        .img-wide,
+        .img-main {
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
             object-fit: cover;
+            display: block;
         }
 
-        /* SIZE CLASSES  */
-
+        /* Specific Sizes */
         .img-main {
             height: 420px;
             width: 100%;
             border-radius: 20px;
+            /* Slightly rounder for main image */
         }
 
         .img-vertical {
@@ -171,10 +148,47 @@ use App\Config;
         }
 
         .img-wide {
-            height: 130px;
-            width: 140%;
-            max-width: none;
+            height: 200px;
+            width: 100%;
         }
+
+        /* COLUMN ALIGNMENT */
+        .col-left {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: flex-end;
+            /* Pushes wrappers to right edge */
+        }
+
+        /* Left Column Text Align */
+        .col-left .img-wrapper {
+            align-items: flex-end;
+            text-align: right;
+        }
+
+        .col-right {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: flex-start;
+            /* Pushes wrappers to left edge */
+        }
+
+        /* Right Column Text Align */
+        .col-right .img-wrapper,
+        .img-main+.img-caption {
+            align-items: flex-start;
+            text-align: left;
+        }
+
+        /* Center caption padding */
+        .img-main+.img-caption {
+            padding-left: 5px;
+        }
+
+
+        /* --- REST OF THE PAGE STYLES (UNCHANGED) --- */
 
         /* INTRO & STATS */
         .intro {
@@ -184,7 +198,6 @@ use App\Config;
             align-items: center;
         }
 
-        /* Left Side: Text */
         .intro-text {
             flex: 1.2;
         }
@@ -203,7 +216,6 @@ use App\Config;
             white-space: pre-line;
         }
 
-        /* Right Side: Statistics */
         .stats {
             flex: 0.8;
             display: flex;
@@ -235,25 +247,17 @@ use App\Config;
             line-height: 1;
         }
 
-        /* The Colored Line - Thinner & Centered */
         .stat-label::after {
             content: '';
             position: absolute;
             left: -5px;
-            /* Extend slightly left */
             right: -5px;
-            /* Extend slightly right */
-
             bottom: 12px;
-            /* ⚡ MOVED UP to the middle */
             height: 6px;
-            /* ⚡ THINNER line */
-
             z-index: -1;
             opacity: 0.8;
         }
 
-        /* Colors */
         .stat-item:nth-child(1) .stat-label::after {
             background-color: #F8C3D6;
         }
@@ -270,12 +274,11 @@ use App\Config;
             background-color: #E63946;
         }
 
-        /* HIGHLIGHTED EVENTS - REVISED */
+        /* HIGHLIGHTED EVENTS */
         .events-section {
             padding: 60px 0;
         }
 
-        /* 1. Heading Fix: Make it big and bold again */
         .section-title {
             font-size: 2.5rem;
             font-weight: 800;
@@ -283,41 +286,32 @@ use App\Config;
             color: #000;
         }
 
-        /* Grid Layout */
         .events-grid {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
-            /* 3 Columns */
             grid-template-rows: auto auto;
             gap: 30px;
         }
 
-        /* 2. Container Structure: No Background, No Shadow */
         .event-card {
             display: flex;
             flex-direction: column;
-            /* Removed background: #fff and padding */
         }
 
-        /* 3. Image Styling: THIS gets the "Card" look */
         .event-img {
             width: 100%;
             height: 220px;
             object-fit: cover;
             border-radius: 20px;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-            /* Shadow on image only */
             margin-bottom: 15px;
-            /* Push text down */
             transition: transform 0.3s ease;
         }
 
         .event-card:hover .event-img {
             transform: translateY(-5px);
-            /* Only the image moves up */
         }
 
-        /* 4. Text Styling: Plain text below image */
         .event-details {
             padding: 0 5px;
         }
@@ -335,9 +329,6 @@ use App\Config;
             font-weight: 700;
         }
 
-        /* GRID LAYOUT*/
-
-        /* Standard Items */
         .event-card:nth-child(1) {
             grid-area: 1 / 1 / 2 / 2;
         }
@@ -354,21 +345,16 @@ use App\Config;
             grid-area: 2 / 2 / 3 / 3;
         }
 
-        /* Tall Item (Mister Anansi) */
         .event-card:nth-child(6) {
             grid-area: 1 / 3 / 3 / 4;
             height: 100%;
-            /* Stretch to fill the grid height */
         }
 
         .event-card:nth-child(6) .event-img {
             height: 100%;
-            /* Fill the entire column height */
             min-height: 520px;
-            /* Force it to be tall */
         }
 
-        /* Hide Extra Item */
         .event-card:nth-child(5) {
             display: none;
         }
@@ -380,63 +366,54 @@ use App\Config;
 
         .categories-flex {
             display: flex;
-            gap: 20px;
+            gap: 10px;
             justify-content: space-between;
             flex-wrap: wrap;
         }
 
-        .category-card {
+        .category-svg {
             flex: 1;
-            min-width: 150px;
-            height: 180px;
-            border-radius: 15px;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            align-items: center;
-            padding: 20px;
-            color: white;
-            font-weight: bold;
-            font-size: 1.2rem;
-            background: linear-gradient(135deg, #FF9966, #FF5E62);
+            min-width: 220px;
+            height: 260px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
         }
 
-        /* NEWSLETTER SECTION - REDESIGNED */
+        .category-svg:hover {
+            transform: scale(1.05);
+        }
+
+        /* NEWSLETTER */
         .newsletter {
             background: #fff;
             padding: 80px 0;
             border-top: 1px solid #eee;
         }
 
-        /* Wrapper to split Logo (Left) and Text (Right) */
         .newsletter-wrapper {
             display: flex;
             align-items: flex-start;
             gap: 60px;
             max-width: 1100px;
-            /* Restrict width to keep elements close */
             margin: 0 auto;
         }
 
-        /* LEFT COLUMN: The Big H Logo */
         .newsletter-logo {
             flex: 0 0 250px;
-            /* Fixed width for the logo */
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
         .newsletter-logo img {
-            width: 100%;
+            width: 150%;
             max-width: 250px;
+            margin-top: 100px;
         }
 
-        /* RIGHT COLUMN: The Form */
         .newsletter-content {
             flex: 1;
             text-align: left;
-            /* Align everything to the left */
         }
 
         .newsletter-content h2 {
@@ -456,7 +433,6 @@ use App\Config;
             line-height: 1.6;
         }
 
-        /* Preferences Chips */
         .preferences-label {
             font-weight: 700;
             margin-bottom: 12px;
@@ -473,7 +449,6 @@ use App\Config;
 
         .pref-chip {
             background: #F0F5FA;
-            /* Light Blue-Grey */
             padding: 10px 18px;
             border-radius: 8px;
             font-size: 0.9rem;
@@ -482,7 +457,6 @@ use App\Config;
             display: flex;
             align-items: center;
             gap: 8px;
-            /* Space for icon */
             transition: background 0.2s;
         }
 
@@ -490,7 +464,6 @@ use App\Config;
             background: #e2e8f0;
         }
 
-        /* Checkbox Styling */
         .select-all {
             display: flex;
             align-items: center;
@@ -502,10 +475,9 @@ use App\Config;
             cursor: pointer;
         }
 
-        /* Form Input & Button */
         .subscribe-form {
             display: flex;
-            max-width: 100%;
+            max-width: 500px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
             border-radius: 8px;
         }
@@ -536,36 +508,11 @@ use App\Config;
             margin-top: 15px;
             text-decoration: underline;
         }
-
-        .subscribe-form {
-            display: flex;
-            max-width: 500px;
-            margin: 0 auto;
-            gap: 10px;
-        }
-
-        .subscribe-form input {
-            flex: 1;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-
-        .subscribe-form button {
-            background: #000;
-            color: white;
-            padding: 15px 30px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
     </style>
 </head>
 
 <body>
-        <?php include __DIR__ . '/../partials/header.php'; ?>
- 
+    <?php include __DIR__ . '/../partials/header.php'; ?>
 
     <div class="container">
 
@@ -583,24 +530,39 @@ use App\Config;
                 <div class="hero-bg-shape"></div>
 
                 <div class="image-grid">
-
                     <div class="col-left">
-                        <img src="img/<?php echo $content['hero']['images'][0] ?? ''; ?>" class="grid-img img-vertical"
-                            alt="Dance">
-                        <img src="img/<?php echo $content['hero']['images'][1] ?? ''; ?>" class="grid-img img-wide"
-                            alt="Crowd">
+                        <div class="img-wrapper">
+                            <img src="<?php echo htmlspecialchars($content['hero']['images'][0] ?? ''); ?>"
+                                class="img-vertical" alt="Dance">
+                            <p class="img-caption">Haarlemmerhout, Bevrijdingspop</p>
+                        </div>
+
+                        <div class="img-wrapper">
+                            <img src="<?php echo htmlspecialchars($content['hero']['images'][4] ?? ''); ?>"
+                                class="img-wide" alt="Crowd">
+                            <p class="img-caption">Haarlemmerhout, Bevrijdingspop</p>
+                        </div>
                     </div>
 
-                    <img src="img/<?php echo $content['hero']['images'][3] ?? ''; ?>" class="grid-img img-main"
-                        alt="Church">
+                    <div class="img-wrapper">
+                        <img src="<?php echo htmlspecialchars($content['hero']['images'][3] ?? ''); ?>" class="img-main"
+                            alt="Church">
+                        <p class="img-caption">Grote markt, Haarlem Jazz</p>
+                    </div>
 
                     <div class="col-right">
-                        <img src="img/<?php echo $content['hero']['images'][2] ?? ''; ?>" class="grid-img img-wide"
-                            alt="Fireworks">
-                        <img src="img/<?php echo $content['hero']['images'][4] ?? ''; ?>" class="grid-img img-vertical"
-                            alt="City">
-                    </div>
+                        <div class="img-wrapper">
+                            <img src="<?php echo htmlspecialchars($content['hero']['images'][2] ?? ''); ?>"
+                                class="img-wide" alt="Fireworks">
+                            <p class="img-caption">Grote markt, Haarlem Jazz</p>
+                        </div>
 
+                        <div class="img-wrapper">
+                            <img src="<?php echo htmlspecialchars($content['hero']['images'][1] ?? ''); ?>"
+                                class="img-vertical" alt="City">
+                            <p class="img-caption">Amsterdamse Poort, Haarlem</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </header>
@@ -626,7 +588,7 @@ use App\Config;
             <div class="events-grid">
                 <?php foreach ($content['highlighted_events'] as $event): ?>
                     <div class="event-card">
-                        <img src="img/<?php echo htmlspecialchars($event['image'] ?? 'placeholder.jpg'); ?>"
+                        <img src="<?php echo htmlspecialchars($event['image'] ?? 'assets/img/homepage/placeholder.jpg'); ?>"
                             class="event-img" alt="<?php echo htmlspecialchars($event['title']); ?>">
 
                         <div class="event-details">
@@ -644,14 +606,9 @@ use App\Config;
         <section class="categories-section">
             <div class="section-title">All categories</div>
             <div class="categories-flex">
-                <?php
-                $colors = ['#E63946', '#F4A261', '#E9C46A', '#D62828', '#8D99AE'];
-                $i = 0;
-                ?>
                 <?php foreach ($content['categories'] as $cat): ?>
-                    <div class="category-card" style="background: <?php echo $colors[$i++ % count($colors)]; ?>;">
-                        <span>Icon</span> <span><?php echo htmlspecialchars($cat['name']); ?></span>
-                    </div>
+                    <img src="<?php echo htmlspecialchars($cat['image']); ?>"
+                        alt="<?php echo htmlspecialchars($cat['name']); ?>" class="category-svg">
                 <?php endforeach; ?>
             </div>
         </section>
@@ -660,7 +617,8 @@ use App\Config;
             <div class="newsletter-wrapper">
 
                 <div class="newsletter-logo">
-                    <img src="img/logo_h.png" alt="Haarlem Festival Logo">
+                    <img src="<?php echo htmlspecialchars($content['newsletter']['logo'] ?? '/assets/svg/logo.svg'); ?>"
+                        alt="Haarlem Festival Logo">
                 </div>
 
                 <div class="newsletter-content">
