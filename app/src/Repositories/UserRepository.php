@@ -12,7 +12,7 @@ class UserRepository extends Repository implements IUserRepository
 {
     public function createUser(UserModel $user): int
     {
-        $sql = "INSERT INTO users
+        $sql = "INSERT INTO User
                 (first_name, last_name, user_name, email, password_hash, phone_number, role, profile_picture_path)
                 VALUES
                 (:first_name, :last_name, :user_name, :email, :password_hash, :phone_number, :role, :profile_picture_path)";
@@ -34,7 +34,7 @@ class UserRepository extends Repository implements IUserRepository
 
     public function findByEmail(string $email): ?UserModel
     {
-        $stmt = $this->getConnection()->prepare("SELECT * FROM users WHERE email = :email");
+        $stmt = $this->getConnection()->prepare("SELECT * FROM User WHERE email = :email");
         $stmt->execute([':email' => $email]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -43,7 +43,7 @@ class UserRepository extends Repository implements IUserRepository
 
     public function findByUserName(string $userName): ?UserModel
     {
-        $stmt = $this->getConnection()->prepare("SELECT * FROM users WHERE user_name = :userName");
+        $stmt = $this->getConnection()->prepare("SELECT * FROM User WHERE user_name = :userName");
         $stmt->execute([':userName' => $userName]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -52,7 +52,7 @@ class UserRepository extends Repository implements IUserRepository
 
     public function getUserById(int $id): ?UserModel
     {
-        $stmt = $this->getConnection()->prepare("SELECT * FROM users WHERE id = :id");
+        $stmt = $this->getConnection()->prepare("SELECT * FROM User WHERE id = :id");
         $stmt->execute([':id' => $id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -61,7 +61,7 @@ class UserRepository extends Repository implements IUserRepository
 
     public function getAllUsers(): array
     {
-        $stmt = $this->getConnection()->query("SELECT * FROM users");
+        $stmt = $this->getConnection()->query("SELECT * FROM User");
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         return array_map(fn(array $row) => $this->mapRowToUser($row), $rows);
@@ -69,7 +69,7 @@ class UserRepository extends Repository implements IUserRepository
 
     public function updateUser(int $id, UserModel $user): bool
     {
-        $sql = "UPDATE users
+        $sql = "UPDATE User
                 SET first_name = :first_name,
                     last_name = :last_name,
                     email = :email,
@@ -92,7 +92,7 @@ class UserRepository extends Repository implements IUserRepository
 
     public function deleteUser(int $id): bool
     {
-        $stmt = $this->getConnection()->prepare("DELETE FROM users WHERE id = :id");
+        $stmt = $this->getConnection()->prepare("DELETE FROM User WHERE id = :id");
         return $stmt->execute([':id' => $id]);
     }
 
