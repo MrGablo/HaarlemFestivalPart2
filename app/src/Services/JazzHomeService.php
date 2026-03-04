@@ -4,7 +4,7 @@ namespace App\Services;
 
 use App\Repositories\Interfaces\IJazzHomeRepository;
 use App\Repositories\Interfaces\IJazzEventRepository;
-use App\ViewModel\JazzHomePageViewModel;
+use App\ViewModels\JazzHomePageViewModel;
 
 class JazzHomeService
 {
@@ -29,7 +29,11 @@ class JazzHomeService
         $ts = strtotime($start) ?: 0;
 
         $location = (string)($row['location'] ?? '');
-        $hall = $this->mapHall($location);
+
+        // Free is only Grote Markt (your rule)
+        $hall = (mb_strtolower(trim($location)) === mb_strtolower('Grote Markt'))
+            ? 'Free'
+            : $location; // expects: Main Hall / Second Hall / Third Hall
 
         return [
             'event_id' => (int)$row['event_id'],
@@ -38,23 +42,12 @@ class JazzHomeService
             'img_background' => (string)($row['img_background'] ?? ''),
             'price' => (float)($row['price'] ?? 0),
             'location' => $location,
-            'hall' => $hall, // Main Hall / Second Hall / Third Hall / Free
+            'hall' => $hall,
             'page_id' => isset($row['page_id']) ? (int)$row['page_id'] : null,
 
-            'day_key' => $ts ? date('l', $ts) : 'Unknown',
+            'day_key' => $ts ? date('l', $ts) : 'Unknown',  // Thursday etc
             'display_date' => $ts ? date('D j M', $ts) : '',
             'display_time' => $ts ? date('H:i', $ts) : '',
         ];
-    }
-
-    private function mapHall(string $location): string
-    {
-        // Rule you gave: "Free is only for the location of grotemarkt"
-        if (mb_strtolower(trim($location)) === mb_strtolower('Grote Markt')) {
-            return 'Free';
-        }
-
-        // Otherwise you probably store "Main Hall", "Second Hall", "Third Hall"
-        return $location;
     }
 }

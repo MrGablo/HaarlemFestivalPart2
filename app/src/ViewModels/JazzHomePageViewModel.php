@@ -1,13 +1,15 @@
 <?php
 
-declare(strict_types=1);
+namespace App\ViewModels;
 
-namespace App\ViewModel;
-
-final class JazzHomePageViewModel
+class JazzHomePageViewModel
 {
-    public function __construct(
-        public readonly array $content,  // decoded JSON from Page.Content
-        public readonly array $events    // normalized jazz events
-    ) {}
+    public array $content;
+    public array $events;
+
+    public function __construct(array $content, array $events)
+    {
+        $this->content = $content;
+        $this->events = $events;
+    }
 }
