@@ -2,20 +2,24 @@
 
 namespace App\Services;
 
-use App\Repositories\Interfaces\IJazzHomeRepository;
+use App\Models\JazzEvent;
+use App\Repositories\Interfaces\IPageRepository;
 use App\Repositories\Interfaces\IJazzEventRepository;
 use App\ViewModels\JazzHomePageViewModel;
 
 class JazzHomeService
 {
     public function __construct(
-        private IJazzHomeRepository $pageRepo,
+        private IPageRepository $pageRepo,
         private IJazzEventRepository $eventRepo
     ) {}
 
     public function getJazzHomePageViewModel(): JazzHomePageViewModel
     {
-        $content = $this->pageRepo->getJazzHomePageContent();
+        // uses generic page repo now
+        $content = $this->pageRepo->getPageContentByType('Jazz_Homepage');
+
+        /** @var JazzEvent[] $eventsRaw */
         $eventsRaw = $this->eventRepo->getAllJazzEvents();
 
         $events = array_map([$this, 'mapEvent'], $eventsRaw);
@@ -23,29 +27,28 @@ class JazzHomeService
         return new JazzHomePageViewModel($content, $events);
     }
 
-    private function mapEvent(array $row): array
+    private function mapEvent(JazzEvent $ev): array
     {
-        $start = (string)($row['start_date'] ?? '');
-        $ts = strtotime($start) ?: 0;
+        $ts = strtotime($ev->start_date) ?: 0;
 
-        $location = (string)($row['location'] ?? '');
+        $location = (string)$ev->location;
 
         // Free is only Grote Markt (your rule)
         $hall = (mb_strtolower(trim($location)) === mb_strtolower('Grote Markt'))
             ? 'Free'
-            : $location; // expects: Main Hall / Second Hall / Third Hall
+            : $location;
 
         return [
-            'event_id' => (int)$row['event_id'],
-            'title' => (string)$row['title'],
-            'artist_name' => (string)($row['artist_name'] ?? ''),
-            'img_background' => (string)($row['img_background'] ?? ''),
-            'price' => (float)($row['price'] ?? 0),
+            'event_id' => $ev->event_id,
+            'title' => $ev->title,
+            'artist_name' => $ev->artist_name,
+            'img_background' => (string)($ev->img_background ?? ''),
+            'price' => (float)$ev->price,
             'location' => $location,
             'hall' => $hall,
-            'page_id' => isset($row['page_id']) ? (int)$row['page_id'] : null,
+            'page_id' => $ev->page_id,
 
-            'day_key' => $ts ? date('l', $ts) : 'Unknown',  // Thursday etc
+            'day_key' => $ts ? date('l', $ts) : 'Unknown',
             'display_date' => $ts ? date('D j M', $ts) : '',
             'display_time' => $ts ? date('H:i', $ts) : '',
         ];

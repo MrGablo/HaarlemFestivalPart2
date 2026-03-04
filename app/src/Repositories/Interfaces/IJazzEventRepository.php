@@ -2,7 +2,14 @@
 
 namespace App\Repositories\Interfaces;
 
+use App\Models\JazzEvent;
+
 interface IJazzEventRepository
 {
-    public function getAllJazzEvents(): array; // returns array of rows (assoc arrays)
+    /** @return JazzEvent[] */
+    public function getAllJazzEvents(): array;
+
+    public function updateJazzEvent(JazzEvent $event): void;
+
+    public function findJazzEventById(int $eventId): ?JazzEvent;
 }

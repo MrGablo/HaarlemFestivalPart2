@@ -2,7 +2,7 @@
 
 namespace App\Controllers;
 
-use App\Repositories\JazzHomeRepository;
+use App\Repositories\PageRepository;
 use App\Repositories\JazzEventRepository;
 use App\Services\JazzHomeService;
 
@@ -13,7 +13,7 @@ class JazzController
     public function __construct()
     {
         $this->service = new JazzHomeService(
-            new JazzHomeRepository(),
+            new PageRepository(),
             new JazzEventRepository()
         );
     }
