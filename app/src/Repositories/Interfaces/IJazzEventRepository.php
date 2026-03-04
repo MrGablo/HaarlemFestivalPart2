@@ -12,4 +12,5 @@ interface IJazzEventRepository
     public function updateJazzEvent(JazzEvent $event): void;
 
     public function findJazzEventById(int $eventId): ?JazzEvent;
+    public function getJazzEventsByIds(array $eventIds): array; // JazzEvent[]
 }

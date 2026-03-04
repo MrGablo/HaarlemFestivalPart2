@@ -47,3 +47,230 @@
   .hero__inner, .intro, .day-ticket, .schedule { padding-left:24px; padding-right:24px; }
   .hero__title { font-size:44px; }
 }
+
+
+/* =========================
+   JAZZ ARTIST DETAIL PAGE
+   ========================= */
+
+.artist-hero {
+  min-height: 62vh;
+}
+
+.artist-hero .hero__inner {
+  max-width: 980px;
+  padding-bottom: 10px;
+}
+
+.artist-hero__thumbs {
+  position: absolute;
+  right: 70px;
+  top: 90px;
+  display: grid;
+  gap: 14px;
+  z-index: 2;
+}
+
+.artist-hero__thumb {
+  width: 260px;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 10px 28px rgba(0,0,0,.45);
+  background: rgba(255,255,255,.05);
+}
+
+.artist-hero__thumb img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  display: block;
+}
+
+.artist-hero__thumb-cap {
+  padding: 10px 12px;
+  font-size: 12px;
+  opacity: .85;
+}
+
+/* Tabs row */
+.artist-tabs {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 18px 0 10px;
+}
+
+.artist-tabs .chip {
+  text-decoration: none; /* if you use <a> */
+  display: inline-block;
+}
+
+/* Panels spacing */
+.artist-panel {
+  margin-top: 18px;
+}
+
+/* Event list on artist page (2 columns) */
+.artist-events-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  gap: 22px;
+}
+
+.artist-event {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 18px;
+  align-items: center;
+}
+
+.artist-event__media {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.artist-event__media img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  display: block;
+}
+
+.artist-event__info {
+  display: grid;
+  gap: 6px;
+}
+
+.artist-event__date {
+  opacity: .9;
+  font-weight: 700;
+}
+
+.artist-event__title {
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.artist-event__loc {
+  opacity: .9;
+  font-weight: 700;
+}
+
+.artist-event__cta {
+  justify-self: start;
+  margin-top: 10px;
+  min-width: 160px;
+}
+
+/* Career highlights: 2 columns */
+.artist-career {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+}
+
+.artist-bullet {
+  opacity: .9;
+  margin: 0 0 18px;
+  line-height: 1.45;
+}
+
+/* Album layout */
+.artist-album {
+  display: grid;
+  grid-template-columns: 560px 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+.artist-album__media {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.artist-album__media img {
+  width: 100%;
+  display: block;
+}
+
+.artist-album__kicker {
+  opacity: .8;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.artist-album__artist {
+  margin: 0 0 6px;
+  font-size: 40px;
+  font-weight: 900;
+}
+
+.artist-album__title {
+  margin: 0 0 10px;
+  font-size: 28px;
+  font-weight: 800;
+  opacity: .95;
+}
+
+.artist-album__desc {
+  opacity: .9;
+  line-height: 1.6;
+  max-width: 860px;
+}
+
+/* About + band */
+.artist-bottom {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 40px;
+  margin-top: 40px;
+}
+
+.artist-bottom h3 {
+  margin: 0 0 10px;
+}
+
+.artist-about p {
+  opacity: .9;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.artist-band ul {
+  opacity: .9;
+  line-height: 1.6;
+  margin: 0;
+  padding-left: 18px;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .artist-hero__thumbs {
+    position: static;
+    margin-top: 16px;
+    grid-template-columns: repeat(2, minmax(180px,1fr));
+  }
+
+  .artist-hero__thumb {
+    width: 100%;
+  }
+
+  .artist-events-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .artist-event {
+    grid-template-columns: 1fr;
+  }
+
+  .artist-career {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+
+  .artist-album {
+    grid-template-columns: 1fr;
+  }
+}

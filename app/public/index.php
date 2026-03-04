@@ -23,6 +23,7 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
 
     //Jazz Festival routes
     $r->addRoute('GET', '/jazz', ['App\Controllers\JazzController', 'home']);
+    $r->addRoute('GET', '/jazz/artist', ['App\Controllers\JazzController', 'artist']);
     
     //user authorization
     $r->addRoute('GET',  '/login',    ['App\Controllers\AuthController', 'showLogin']);

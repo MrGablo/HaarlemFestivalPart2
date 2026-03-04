@@ -119,4 +119,39 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
             throw $e;
         }
     }
+
+    public function getJazzEventsByIds(array $eventIds): array
+    {
+        $eventIds = array_values(array_filter(array_map('intval', $eventIds), fn($v) => $v > 0));
+        if (count($eventIds) === 0) return [];
+
+        $pdo = $this->getConnection();
+
+        $placeholders = implode(',', array_fill(0, count($eventIds), '?'));
+
+        $sql = "
+        SELECT
+            e.event_id,
+            e.title,
+            e.event_type,
+            j.start_date,
+            j.end_date,
+            j.location,
+            j.artist_name,
+            j.img_background,
+            j.price,
+            j.page_id
+        FROM Event e
+        JOIN JazzEvent j ON j.event_id = e.event_id
+        WHERE e.event_type = 'jazz'
+          AND e.event_id IN ($placeholders)
+        ORDER BY j.start_date ASC
+    ";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($eventIds);
+
+        $rows = $stmt->fetchAll() ?: [];
+        return array_map(fn(array $r) => new \App\Models\JazzEvent($r), $rows);
+    }
 }
