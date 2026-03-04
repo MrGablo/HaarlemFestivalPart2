@@ -1,5 +1,4 @@
 <?php
-// app/src/ViewModel/JazzHomePageViewModel.php
 
 declare(strict_types=1);
 
