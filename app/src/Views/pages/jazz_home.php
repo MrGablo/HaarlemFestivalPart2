@@ -50,7 +50,7 @@ $days = $filters['days'] ?? ['All Days', 'Thursday', 'Friday', 'Saturday', 'Sund
                 <article class="event-card" data-hall="<?= htmlspecialchars($ev['hall']) ?>"
                     data-day="<?= htmlspecialchars($ev['day_key']) ?>">
                     <a class="event-card__media"
-                        href="<?= $ev['page_id'] ? '/artist.php?page_id=' . (int)$ev['page_id'] : '#' ?>">
+                        href="<?= $ev['page_id'] ? '/jazz/artist?page_id=' . (int)$ev['page_id'] . '&tab=events' : '#' ?>">
                         <img src="/<?= htmlspecialchars($ev['img_background']) ?>"
                             alt="<?= htmlspecialchars($ev['title']) ?>" loading="lazy">
                         <div class="event-card__overlay">

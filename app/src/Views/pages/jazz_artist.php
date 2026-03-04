@@ -5,7 +5,11 @@
 
 $artist = $content['artist'] ?? [];
 $labels = $content['tabs']['labels'] ?? ['events'=>'Events','career'=>'Career Highlights','album'=>'Album'];
-$thumbs = $artist['thumbs'] ?? [];
+
+$bc = $artist['breadcrumb'] ?? [];
+$media = $artist['hero_media'] ?? [];
+$mainMedia = is_array($media) ? ($media['main'] ?? null) : null;
+$secondaryMedia = is_array($media) ? ($media['secondary'] ?? []) : [];
 
 $career = $content['career_highlights'] ?? ['left'=>[],'right'=>[]];
 $albums = $content['albums'] ?? [];
@@ -15,12 +19,10 @@ $pageId = isset($_GET['page_id']) ? (int)$_GET['page_id'] : 0;
 function tabLink(int $pageId, string $tab): string {
     return "/jazz/artist?page_id=" . $pageId . "&tab=" . urlencode($tab);
 }
-
 function safeTab(string $t): string {
     $allowed = ['events','career','album'];
     return in_array($t, $allowed, true) ? $t : 'events';
 }
-
 $activeTab = safeTab((string)$activeTab);
 ?>
 <!doctype html>
@@ -36,29 +38,47 @@ $activeTab = safeTab((string)$activeTab);
     <!-- HERO -->
     <section class="hero artist-hero"
         style="background-image:url('/<?= htmlspecialchars((string)($artist['cover_image'] ?? '')) ?>')">
+
+        <div class="artist-hero__top">
+            <a class="artist-back" href="<?= htmlspecialchars((string)($bc['back_href'] ?? '/jazz')) ?>">
+                ← <?= htmlspecialchars((string)($bc['back_label'] ?? 'Back')) ?>
+            </a>
+            <?php if (!empty($bc['current'])): ?>
+                <span class="artist-crumb">› <?= htmlspecialchars((string)$bc['current']) ?></span>
+            <?php endif; ?>
+        </div>
+
         <div class="hero__inner">
             <div class="hero__kicker"><?= htmlspecialchars((string)($artist['kicker'] ?? '')) ?></div>
             <h1 class="hero__title"><?= htmlspecialchars((string)($artist['hero_title'] ?? ($artist['name'] ?? ''))) ?></h1>
             <div class="hero__subtitle"><?= htmlspecialchars((string)($artist['hero_subtitle'] ?? '')) ?></div>
         </div>
 
-        <?php if (is_array($thumbs) && count($thumbs) > 0): ?>
-            <div class="artist-hero__thumbs">
-                <?php foreach ($thumbs as $t): ?>
-                    <div class="artist-hero__thumb">
-                        <img src="/<?= htmlspecialchars((string)($t['image'] ?? '')) ?>" alt="">
-                        <?php if (!empty($t['caption'])): ?>
-                            <div class="artist-hero__thumb-cap"><?= htmlspecialchars((string)$t['caption']) ?></div>
-                        <?php endif; ?>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
+        <div class="artist-hero__media">
+            <?php if (is_array($mainMedia) && !empty($mainMedia['image'])): ?>
+                <div class="artist-hero__media-main">
+                    <img src="/<?= htmlspecialchars((string)$mainMedia['image']) ?>" alt="">
+                </div>
+            <?php endif; ?>
+
+            <?php if (is_array($secondaryMedia) && count($secondaryMedia) > 0): ?>
+                <div class="artist-hero__media-secondary">
+                    <?php foreach ($secondaryMedia as $s): ?>
+                        <div class="artist-hero__thumb">
+                            <img src="/<?= htmlspecialchars((string)($s['image'] ?? '')) ?>" alt="">
+                            <?php if (!empty($s['caption'])): ?>
+                                <div class="artist-hero__thumb-cap"><?= htmlspecialchars((string)$s['caption']) ?></div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
     </section>
 
-    <section class="schedule" style="padding-top:24px;">
+    <section class="schedule artist-shell" style="padding-top:24px;">
 
-        <!-- TABS (no reload when JS enabled; normal links still work when JS disabled) -->
+        <!-- TABS -->
         <div class="artist-tabs">
             <a class="chip <?= $activeTab === 'events' ? 'is-active' : '' ?>"
                data-artist-tab="events"
@@ -79,35 +99,38 @@ $activeTab = safeTab((string)$activeTab);
             </a>
         </div>
 
-        <!-- PANELS -->
-
-        <!-- EVENTS -->
+        <!-- EVENTS (design layout) -->
         <div class="artist-panel <?= $activeTab !== 'events' ? 'is-hidden' : '' ?>" data-artist-panel="events">
-            <div class="artist-events-grid">
-                <?php foreach ($events as $ev): ?>
-                    <div class="artist-event">
-                        <div class="artist-event__media">
-                            <img src="/<?= htmlspecialchars((string)$ev['img_background']) ?>"
-                                 alt="<?= htmlspecialchars((string)$ev['title']) ?>"
-                                 loading="lazy">
-                        </div>
+            <div class="artist-events">
+                <div class="artist-events__bar"></div>
 
-                        <div class="artist-event__info">
-                            <div class="artist-event__date"><?= htmlspecialchars((string)($ev['start_label'] ?? '')) ?></div>
-                            <div class="artist-event__title"><?= htmlspecialchars((string)($ev['title'] ?? '')) ?></div>
-                            <div class="artist-event__loc"><?= htmlspecialchars((string)($ev['location'] ?? '')) ?></div>
+                <div class="artist-events__list">
+                    <?php foreach ($events as $ev): ?>
+                        <div class="artist-row">
+                            <div class="artist-row__media">
+                                <img src="/<?= htmlspecialchars((string)$ev['img_background']) ?>"
+                                     alt="<?= htmlspecialchars((string)$ev['title']) ?>"
+                                     loading="lazy">
+                            </div>
 
-                            <button class="ticket-btn artist-event__cta" type="button">
-                                <?= htmlspecialchars((string)($content['events']['ticket_button_label'] ?? 'Tickets')) ?>:
-                                <?= htmlspecialchars(number_format((float)($ev['price'] ?? 0), 2)) ?> p.p
-                            </button>
+                            <div class="artist-row__info">
+                                <div class="artist-row__date"><?= htmlspecialchars((string)($ev['start_label'] ?? '')) ?></div>
+                                <div class="artist-row__title"><?= htmlspecialchars((string)($ev['title'] ?? '')) ?></div>
+                                <div class="artist-row__loc"><?= htmlspecialchars((string)($ev['location'] ?? '')) ?></div>
+                            </div>
+
+                            <div class="artist-row__cta">
+                                <button class="artist-ticket" type="button">
+                                    <?= htmlspecialchars((string)($content['events']['ticket_button_label'] ?? 'Tickets')) ?>
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                <?php endforeach; ?>
+                    <?php endforeach; ?>
+                </div>
             </div>
         </div>
 
-        <!-- CAREER HIGHLIGHTS -->
+        <!-- CAREER -->
         <div class="artist-panel <?= $activeTab !== 'career' ? 'is-hidden' : '' ?>" data-artist-panel="career">
             <div class="artist-career">
                 <div>
@@ -142,7 +165,7 @@ $activeTab = safeTab((string)$activeTab);
             <?php endforeach; ?>
         </div>
 
-        <!-- ABOUT + BAND (always visible) -->
+        <!-- ABOUT + BAND -->
         <?php $about = $content['about'] ?? []; $band = $content['band_members'] ?? []; ?>
         <div class="artist-bottom">
             <div class="artist-about">
@@ -162,7 +185,6 @@ $activeTab = safeTab((string)$activeTab);
 
     </section>
 
-    <!-- JS enables tab switching without reload -->
     <script src="/assets/js/jazz/jazz_artist.js"></script>
 </body>
 </html>

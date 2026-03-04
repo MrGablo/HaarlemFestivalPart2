@@ -274,3 +274,168 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================
+   ARTIST HERO (design)
+   ========================= */
+
+/* breadcrumb / back row */
+.artist-hero__top{
+  position: absolute;
+  left: 80px;
+  top: 28px;
+  z-index: 4;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.artist-back{
+  color:#fff;
+  text-decoration:none;
+  font-weight:800;
+  opacity:.9;
+}
+
+.artist-crumb{
+  opacity:.75;
+  font-weight:700;
+}
+
+/* right media block (1 big + 2 small) */
+.artist-hero__media{
+  position: absolute;
+  right: 70px;
+  top: 70px;
+  z-index: 3;
+  display: grid;
+  gap: 14px;
+  width: 360px;
+}
+
+.artist-hero__media-main{
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(255,255,255,.05);
+  box-shadow: 0 10px 28px rgba(0,0,0,.45);
+}
+
+.artist-hero__media-main img{
+  width: 100%;
+  height: 170px;
+  object-fit: cover;
+  display:block;
+}
+
+.artist-hero__media-secondary{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* reuse existing thumb styles, but make them auto width */
+.artist-hero__thumb{
+  width: 100%;
+}
+
+/* remove old thumbs block if it exists */
+.artist-hero__thumbs{ display:none; }
+
+/* =========================
+   ARTIST EVENTS (design rows)
+   ========================= */
+
+.artist-events{
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: 22px;
+  margin-top: 14px;
+}
+
+.artist-events__bar{
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f7c600, rgba(247,198,0,.35));
+  box-shadow: 0 10px 28px rgba(0,0,0,.35);
+}
+
+.artist-row{
+  display: grid;
+  grid-template-columns: 360px 1fr 220px;
+  gap: 28px;
+  align-items: center;
+  margin: 22px 0;
+}
+
+.artist-row__media{
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(255,255,255,.04);
+}
+
+.artist-row__media img{
+  width: 100%;
+  height: 170px;
+  object-fit: cover;
+  display:block;
+}
+
+.artist-row__date{
+  font-weight: 800;
+  opacity: .95;
+  margin-bottom: 6px;
+}
+
+.artist-row__title{
+  font-size: 26px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.artist-row__loc{
+  opacity: .9;
+  font-weight: 800;
+  margin-top: 6px;
+}
+
+.artist-row__cta{
+  display:flex;
+  justify-content:flex-end;
+}
+
+.artist-ticket{
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 22px;
+  cursor: pointer;
+  background: #f7c600;
+  color: #111;
+  font-weight: 900;
+  min-width: 160px;
+}
+
+/* Responsive */
+@media (max-width: 1200px){
+  .artist-hero__top{ left:24px; }
+
+  .artist-hero__media{
+    position: static;
+    width: 100%;
+    margin-top: 14px;
+  }
+
+  .artist-hero__media-main img{
+    height: 160px;
+  }
+
+  .artist-events{
+    grid-template-columns: 12px 1fr;
+  }
+
+  .artist-row{
+    grid-template-columns: 1fr;
+  }
+
+  .artist-row__cta{
+    justify-content:flex-start;
+  }
+}
