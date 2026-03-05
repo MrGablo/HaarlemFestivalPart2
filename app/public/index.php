@@ -24,7 +24,7 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     //Jazz Festival routes
     $r->addRoute('GET', '/jazz', ['App\Controllers\JazzController', 'home']);
     $r->addRoute('GET', '/jazz/artist', ['App\Controllers\JazzController', 'artist']);
-    
+
     //user authorization
     $r->addRoute('GET',  '/login',    ['App\Controllers\AuthController', 'showLogin']);
     $r->addRoute('POST', '/login',    ['App\Controllers\AuthController', 'login']);
@@ -44,6 +44,11 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
 
     //image upload route (backend only)
     $r->addRoute('POST', '/upload/image', ['App\Controllers\UploadController', 'image']);
+
+    // CMS routes (admin only)
+    $r->addRoute('GET', '/cms', ['App\Controllers\CMSController', 'index']);
+    $r->addRoute('GET', '/cms/page/{id:\\d+}', ['App\Controllers\CMSController', 'edit']);
+    $r->addRoute('POST', '/cms/page/{id:\\d+}/update', ['App\Controllers\CMSController', 'update']);
 });
 
 
