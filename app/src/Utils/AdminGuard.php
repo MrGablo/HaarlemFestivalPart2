@@ -38,9 +38,9 @@ final class AdminGuard
 
         // Adjust this to match YOUR enum values / property name.
         // Examples: $user->role, $user->roleId, $user->userRole, etc.
-        $role = strtoupper((string)($user->role ?? ''));
+        $role = strtolower((string)($user->role ?? ''));
 
-        if ($role !== 'ADMIN') {
+        if ($role !== 'admin') {
             http_response_code(403);
             echo 'Forbidden';
             exit;

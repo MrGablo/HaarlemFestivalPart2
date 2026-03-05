@@ -20,7 +20,7 @@ $days = $filters['days'] ?? ['All Days', 'Thursday', 'Friday', 'Saturday', 'Sund
 </head>
 
 <body class="jazz-page">
-
+    <?php include __DIR__ . '/../partials/header.php'; ?>
     <?php require __DIR__ . '/../partials/jazz_home_content.php'; ?>
 
     <section id="schedule" class="schedule">
@@ -95,6 +95,7 @@ $days = $filters['days'] ?? ['All Days', 'Thursday', 'Friday', 'Saturday', 'Sund
     </section>
 
     <script src="/assets/js/jazz/jazz_home.js"></script>
+    <?php include __DIR__ . '/../partials/footer.php'; ?>
 </body>
 
 </html>
