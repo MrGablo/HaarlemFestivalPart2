@@ -11,7 +11,10 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use FastRoute\RouteCollector;
 use function FastRoute\simpleDispatcher;
+use App\Utils\Env;
 use App\Utils\Session;
+
+Env::load();
 
 /**
  * Define the routes for the application.

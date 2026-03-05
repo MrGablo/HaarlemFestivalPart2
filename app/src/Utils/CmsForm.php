@@ -57,10 +57,20 @@ final class CmsForm
         $contentName = self::inputName('content', $path);
         $typeName = self::inputName('types', $path);
         $type = get_debug_type($value);
+        $stringValue = is_scalar($value) ? (string)$value : '';
+        $isHtmlField = self::isHtmlField($key, $stringValue);
+        $effectiveType = ($isHtmlField && $type === 'null') ? 'string' : $type;
 
         echo '<div class="rounded-lg border border-slate-200 p-3">';
         echo '<label class="mb-1 block text-sm font-medium text-slate-700">' . self::h($label) . '</label>';
-        echo '<input type="hidden" name="' . self::h($typeName) . '" value="' . self::h($type) . '">';
+        echo '<input type="hidden" name="' . self::h($typeName) . '" value="' . self::h($effectiveType) . '">';
+
+        if ($isHtmlField) {
+            echo '<textarea name="' . self::h($contentName) . '" rows="8" class="js-wysiwyg w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200">' . self::h($stringValue) . '</textarea>';
+            echo '<p class="mt-1 text-xs text-slate-500">Rich text field (HTML enabled).</p>';
+            echo '</div>';
+            return;
+        }
 
         if ($type === 'integer' || $type === 'double') {
             echo '<input name="' . self::h($contentName) . '" type="number" step="any" value="' . self::h((string)$value) . '" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200">';
@@ -73,7 +83,6 @@ final class CmsForm
         } elseif ($type === 'null') {
             echo '<input name="' . self::h($contentName) . '" type="text" value="" placeholder="null" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200">';
         } else {
-            $stringValue = (string)$value;
             $useTextarea = strlen($stringValue) > 120 || str_contains($stringValue, "\n");
             if ($useTextarea) {
                 echo '<textarea name="' . self::h($contentName) . '" rows="4" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200">' . self::h($stringValue) . '</textarea>';
@@ -83,5 +92,15 @@ final class CmsForm
         }
 
         echo '</div>';
+    }
+
+    private static function isHtmlField(string $key, string $value): bool
+    {
+        $keyLower = strtolower($key);
+        if (str_contains($keyLower, 'html') || str_contains($keyLower, 'wysiwyg')) {
+            return true;
+        }
+
+        return preg_match('/<[^>]+>/', $value) === 1;
     }
 }

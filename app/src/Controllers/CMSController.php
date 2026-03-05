@@ -7,6 +7,7 @@ use App\Repositories\PageRepository;
 use App\Utils\AuthSessionData;
 use App\Utils\Flash;
 use App\Utils\Session;
+use App\Utils\Wysiwyg;
 
 class CMSController
 {
@@ -131,7 +132,16 @@ class CMSController
             'double' => $raw === '' ? 0.0 : (float)$raw,
             'bool', 'boolean' => in_array(strtolower($raw), ['1', 'true', 'yes', 'on'], true),
             'null' => null,
-            default => $raw,
+            default => $this->sanitizeIfHtml($raw),
         };
+    }
+
+    private function sanitizeIfHtml(string $value): string
+    {
+        if (preg_match('/<[^>]+>/', $value) !== 1) {
+            return $value;
+        }
+
+        return Wysiwyg::render($value);
     }
 }
