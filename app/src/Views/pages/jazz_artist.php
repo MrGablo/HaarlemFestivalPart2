@@ -1,32 +1,42 @@
 <?php
+
+declare(strict_types=1);
+
 /** @var array $content */
 /** @var array $events */
 /** @var string $activeTab */
 
+use App\Utils\Wysiwyg;
+
 $artist = $content['artist'] ?? [];
-$labels = $content['tabs']['labels'] ?? ['events'=>'Events','career'=>'Career Highlights','album'=>'Album'];
+$labels = $content['tabs']['labels'] ?? ['events' => 'Events', 'career' => 'Career Highlights', 'album' => 'Album'];
 
 $bc = $artist['breadcrumb'] ?? [];
 $media = $artist['hero_media'] ?? [];
 $mainMedia = is_array($media) ? ($media['main'] ?? null) : null;
 $secondaryMedia = is_array($media) ? ($media['secondary'] ?? []) : [];
 
-$career = $content['career_highlights'] ?? ['left'=>[],'right'=>[]];
+$career = $content['career_highlights'] ?? [];
 $albums = $content['albums'] ?? [];
 
 $pageId = isset($_GET['page_id']) ? (int)$_GET['page_id'] : 0;
 
-function tabLink(int $pageId, string $tab): string {
+function tabLink(int $pageId, string $tab): string
+{
     return "/jazz/artist?page_id=" . $pageId . "&tab=" . urlencode($tab);
 }
-function safeTab(string $t): string {
-    $allowed = ['events','career','album'];
+
+function safeTab(string $t): string
+{
+    $allowed = ['events', 'career', 'album'];
     return in_array($t, $allowed, true) ? $t : 'events';
 }
+
 $activeTab = safeTab((string)$activeTab);
 ?>
 <!doctype html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
     <title><?= htmlspecialchars((string)($artist['name'] ?? 'Artist')) ?></title>
@@ -81,25 +91,25 @@ $activeTab = safeTab((string)$activeTab);
         <!-- TABS -->
         <div class="artist-tabs">
             <a class="chip <?= $activeTab === 'events' ? 'is-active' : '' ?>"
-               data-artist-tab="events"
-               href="<?= htmlspecialchars(tabLink($pageId, 'events')) ?>">
+                data-artist-tab="events"
+                href="<?= htmlspecialchars(tabLink($pageId, 'events')) ?>">
                 <?= htmlspecialchars((string)($labels['events'] ?? 'Events')) ?>
             </a>
 
             <a class="chip <?= $activeTab === 'career' ? 'is-active' : '' ?>"
-               data-artist-tab="career"
-               href="<?= htmlspecialchars(tabLink($pageId, 'career')) ?>">
+                data-artist-tab="career"
+                href="<?= htmlspecialchars(tabLink($pageId, 'career')) ?>">
                 <?= htmlspecialchars((string)($labels['career'] ?? 'Career Highlights')) ?>
             </a>
 
             <a class="chip <?= $activeTab === 'album' ? 'is-active' : '' ?>"
-               data-artist-tab="album"
-               href="<?= htmlspecialchars(tabLink($pageId, 'album')) ?>">
+                data-artist-tab="album"
+                href="<?= htmlspecialchars(tabLink($pageId, 'album')) ?>">
                 <?= htmlspecialchars((string)($labels['album'] ?? 'Album')) ?>
             </a>
         </div>
 
-        <!-- EVENTS (design layout) -->
+        <!-- EVENTS -->
         <div class="artist-panel <?= $activeTab !== 'events' ? 'is-hidden' : '' ?>" data-artist-panel="events">
             <div class="artist-events">
                 <div class="artist-events__bar"></div>
@@ -108,9 +118,9 @@ $activeTab = safeTab((string)$activeTab);
                     <?php foreach ($events as $ev): ?>
                         <div class="artist-row">
                             <div class="artist-row__media">
-                                <img src="/<?= htmlspecialchars((string)$ev['img_background']) ?>"
-                                     alt="<?= htmlspecialchars((string)$ev['title']) ?>"
-                                     loading="lazy">
+                                <img src="/<?= htmlspecialchars((string)($ev['img_background'] ?? '')) ?>"
+                                    alt="<?= htmlspecialchars((string)($ev['title'] ?? '')) ?>"
+                                    loading="lazy">
                             </div>
 
                             <div class="artist-row__info">
@@ -130,47 +140,100 @@ $activeTab = safeTab((string)$activeTab);
             </div>
         </div>
 
-        <!-- CAREER -->
+        <!-- CAREER (WYSIWYG HTML supported) -->
+        <?php
+        $leftHtml = $career['left_html'] ?? null;
+        $rightHtml = $career['right_html'] ?? null;
+        $leftArr = $career['left'] ?? [];
+        $rightArr = $career['right'] ?? [];
+        ?>
+
         <div class="artist-panel <?= $activeTab !== 'career' ? 'is-hidden' : '' ?>" data-artist-panel="career">
             <div class="artist-career">
-                <div>
-                    <?php foreach (($career['left'] ?? []) as $line): ?>
-                        <p class="artist-bullet">• <?= htmlspecialchars((string)$line) ?></p>
-                    <?php endforeach; ?>
+                <div class="wysiwyg">
+                    <?php if (is_string($leftHtml) && $leftHtml !== ''): ?>
+                        <?= Wysiwyg::render($leftHtml) ?>
+                    <?php else: ?>
+                        <?php foreach (($leftArr ?? []) as $line): ?>
+                            <p class="artist-bullet">• <?= htmlspecialchars((string)$line) ?></p>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
-                <div>
-                    <?php foreach (($career['right'] ?? []) as $line): ?>
-                        <p class="artist-bullet">• <?= htmlspecialchars((string)$line) ?></p>
-                    <?php endforeach; ?>
+
+                <div class="wysiwyg">
+                    <?php if (is_string($rightHtml) && $rightHtml !== ''): ?>
+                        <?= Wysiwyg::render($rightHtml) ?>
+                    <?php else: ?>
+                        <?php foreach (($rightArr ?? []) as $line): ?>
+                            <p class="artist-bullet">• <?= htmlspecialchars((string)$line) ?></p>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
 
-        <!-- ALBUM -->
+        <!-- ALBUM (WYSIWYG description supported) -->
         <div class="artist-panel <?= $activeTab !== 'album' ? 'is-hidden' : '' ?>" data-artist-panel="album">
             <?php foreach ($albums as $alb): ?>
                 <div class="artist-album">
                     <div class="artist-album__media">
-                        <img src="/<?= htmlspecialchars((string)($alb['image'] ?? '')) ?>"
-                             alt="<?= htmlspecialchars((string)($alb['title'] ?? 'Album')) ?>">
+                        <?php
+                        $img = $alb['image'] ?? null;
+
+                        // supports BOTH formats:
+                        // old: "image": "path.jpg"
+                        // new: "image": {"src":"path.jpg","alt":"...","caption":"..."}
+                        $imgSrc = '';
+                        $imgAlt = (string)($alb['title'] ?? 'Album');
+                        $imgCap = null;
+
+                        if (is_string($img)) {
+                            $imgSrc = $img;
+                        } elseif (is_array($img)) {
+                            $imgSrc = (string)($img['src'] ?? '');
+                            $imgAlt = (string)($img['alt'] ?? $imgAlt);
+                            $imgCap = $img['caption'] ?? null;
+                        }
+                        ?>
+
+                        <img src="/<?= htmlspecialchars($imgSrc) ?>"
+                            alt="<?= htmlspecialchars($imgAlt) ?>">
+
+                        <?php if (is_string($imgCap) && $imgCap !== ''): ?>
+                            <div class="artist-album__caption"><?= htmlspecialchars($imgCap) ?></div>
+                        <?php endif; ?>
                     </div>
 
                     <div>
                         <div class="artist-album__kicker">Album</div>
                         <div class="artist-album__artist"><?= htmlspecialchars((string)($alb['artist'] ?? '')) ?></div>
                         <div class="artist-album__title"><?= htmlspecialchars((string)($alb['title'] ?? '')) ?></div>
-                        <p class="artist-album__desc"><?= htmlspecialchars((string)($alb['description'] ?? '')) ?></p>
+
+                        <?php if (!empty($alb['description_html']) && is_string($alb['description_html'])): ?>
+                            <div class="artist-album__desc wysiwyg"><?= Wysiwyg::render($alb['description_html']) ?></div>
+                        <?php else: ?>
+                            <p class="artist-album__desc"><?= htmlspecialchars((string)($alb['description'] ?? '')) ?></p>
+                        <?php endif; ?>
                     </div>
                 </div>
             <?php endforeach; ?>
         </div>
 
         <!-- ABOUT + BAND -->
-        <?php $about = $content['about'] ?? []; $band = $content['band_members'] ?? []; ?>
+        <?php
+        $about = $content['about'] ?? [];
+        $band = $content['band_members'] ?? [];
+        ?>
+
         <div class="artist-bottom">
             <div class="artist-about">
                 <h3><?= htmlspecialchars((string)($about['title'] ?? 'About')) ?></h3>
-                <p><?= htmlspecialchars((string)($about['text'] ?? '')) ?></p>
+
+                <?php if (!empty($about['html']) && is_string($about['html'])): ?>
+                    <div class="wysiwyg"><?= Wysiwyg::render($about['html']) ?></div>
+                <?php else: ?>
+                    <p><?= htmlspecialchars((string)($about['text'] ?? '')) ?></p>
+                <?php endif; ?>
             </div>
 
             <div class="artist-band">
@@ -187,4 +250,5 @@ $activeTab = safeTab((string)$activeTab);
 
     <script src="/assets/js/jazz/jazz_artist.js"></script>
 </body>
+
 </html>

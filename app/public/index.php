@@ -41,6 +41,9 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     $r->addRoute('GET', '/account/manage', ['App\Controllers\UserController', 'showManageAccount']);
     $r->addRoute('POST', '/account/manage/update', ['App\Controllers\UserController', 'updateAccountForm']);
     $r->addRoute('POST', '/account/manage/delete', ['App\Controllers\UserController', 'deleteAccountForm']);
+
+    //image upload route (backend only)
+    $r->addRoute('POST', '/upload/image', ['App\Controllers\UploadController', 'image']);
 });
 
 
