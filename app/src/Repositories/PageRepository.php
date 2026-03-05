@@ -106,4 +106,27 @@ class PageRepository extends Repository implements IPageRepository
 
         return $row ?: null;
     }
+
+    public function savePageContentById(int $pageId, array $content): void
+    {
+        $pdo = $this->getConnection();
+
+        $json = json_encode($content, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($json === false) {
+            throw new \RuntimeException('Failed to encode page content to JSON.');
+        }
+
+        $update = $pdo->prepare("
+        UPDATE Page
+        SET Content = :content,
+            Updated_At = NOW()
+        WHERE Page_ID = :id
+        LIMIT 1
+    ");
+
+        $update->execute([
+            ':content' => $json,
+            ':id' => $pageId,
+        ]);
+    }
 }
