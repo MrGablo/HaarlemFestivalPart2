@@ -107,22 +107,22 @@
         <div class="footer-col">
             <h3>Support</h3>
             <ul class="footer-links">
-                <li><a href="#">Contact Us</a></li>
-                <li><a href="#">Tickets Refund</a></li>
-                <li><a href="#">Terms & Conditions</a></li>
-                <li><a href="#">Privacy Policy</a></li>
+                <li><a href="/contact">Contact Us</a></li>
+                <li><a href="/contact#refund">Tickets Refund</a></li>
+                <li><a href="/terms">Terms &amp; Conditions</a></li>
+                <li><a href="/privacy">Privacy Policy</a></li>
             </ul>
         </div>
 
         <div class="footer-col">
             <h3>Quick Menu</h3>
             <ul class="footer-links">
-                <li><a href="#">Home</a></li>
-                <li><a href="#">Dance!</a></li>
-                <li><a href="#">Haarlem Jazz</a></li>
-                <li><a href="#">Yummy!</a></li>
-                <li><a href="#">Stories in Haarlem</a></li>
-                <li><a href="#">A Stroll through History</a></li>
+                <li><a href="/">Home</a></li>
+                <li><a href="/dance">Dance!</a></li>
+                <li><a href="/jazz">Haarlem Jazz</a></li>
+                <li><a href="/yummy">Yummy!</a></li>
+                <li><a href="/stories">Stories in Haarlem</a></li>
+                <li><a href="/history">A Stroll through History</a></li>
             </ul>
         </div>
 

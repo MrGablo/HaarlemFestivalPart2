@@ -25,6 +25,8 @@ class HomeController
         $auth = AuthSessionData::read();
         $isLoggedIn = $auth !== null;
         $profilePicturePath = $auth['profilePicturePath'] ?? Config::DEFAULT_USER_PROFILE_IMAGE_PATH;
+        $currentPage = 'home';
+        $cartCount = 0; // TODO: from cart/session when implemented
 
         // 2. Load the file from the public folder
         require __DIR__ . '/../Views/pages/home.php';

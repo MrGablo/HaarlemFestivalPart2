@@ -92,13 +92,13 @@
         </a>
 
         <nav class="main-nav">
-            <a href="/" class="nav-link nav-active">Home</a>
-            
-            <a href="/dance" class="nav-link">Dance</a>
-            <a href="/jazz" class="nav-link">Jazz</a>
-            <a href="/yummy" class="nav-link">Yummy</a>
-            <a href="/stories" class="nav-link">Stories</a>
-            <a href="/history" class="nav-link">History</a>
+            <?php $currentPage = $currentPage ?? 'home'; ?>
+            <a href="/" class="nav-link <?= $currentPage === 'home' ? 'nav-active' : '' ?>">Home</a>
+            <a href="/dance" class="nav-link <?= $currentPage === 'dance' ? 'nav-active' : '' ?>">Dance</a>
+            <a href="/jazz" class="nav-link <?= $currentPage === 'jazz' ? 'nav-active' : '' ?>">Jazz</a>
+            <a href="/yummy" class="nav-link <?= $currentPage === 'yummy' ? 'nav-active' : '' ?>">Yummy</a>
+            <a href="/stories" class="nav-link <?= $currentPage === 'stories' ? 'nav-active' : '' ?>">Stories</a>
+            <a href="/history" class="nav-link <?= $currentPage === 'history' ? 'nav-active' : '' ?>">History</a>
             <?php if (!empty($isLoggedIn)): ?>
                 <a class="topbar-link" href="/account/manage" title="Manage account" aria-label="Manage account">
                     <img
@@ -110,12 +110,11 @@
             <?php else: ?>
                 <a class="topbar-link" href="/login">Login</a>
             <?php endif; ?>
-            
-            <a href="/cart" class="nav-link cart-link">
+            <a href="/program" class="nav-link cart-link <?= $currentPage === 'program' ? 'nav-active' : '' ?>">
                 Program
                 <div class="cart-icon-wrapper">
                     <img src="/assets/img/headerfooter/cart.svg" alt="Cart" class="cart-icon">
-                    <span class="cart-badge">0</span>
+                    <span class="cart-badge"><?= (int)($cartCount ?? 0) ?></span>
                 </div>
             </a>
         </nav>

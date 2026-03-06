@@ -27,6 +27,8 @@ class JazzController
 
         $content = $vm->content;
         $events  = $vm->events;
+        $currentPage = 'jazz';
+        $cartCount = 0; // TODO: from cart/session when implemented
 
         require __DIR__ . '/../Views/pages/jazz_home.php';
     }
@@ -50,6 +52,8 @@ class JazzController
         $content = $vm->content;
         $events  = $vm->events;
         $activeTab = $vm->activeTab;
+        $currentPage = 'jazz';
+        $cartCount = 0;
 
         require __DIR__ . '/../Views/pages/jazz_artist.php';
     }
