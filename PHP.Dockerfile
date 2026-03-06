@@ -29,11 +29,14 @@ RUN echo "upload_max_filesize=20M\npost_max_size=20M" > /usr/local/etc/php/conf.
 
 
 # Allow running Composer as root within the container
-ENV COMPOSER_ALLOW_SUPERUSER=1
+ENV COMPOSER_ALLOW_SUPERUSER=1 \
+    COMPOSER_HOME=/tmp/composer \
+    COMPOSER_CACHE_DIR=/tmp/composer/cache \
+    COMPOSER=/app/composer.json
 
 # Allow passing a DB connection string at build/runtime. Runtime env from docker-compose will override this.
 ARG DB_CONNECTION
 ENV DB_CONNECTION=${DB_CONNECTION}
 
-# On container start, install dependencies if vendor is missing, then start php-fpm
-CMD ["sh", "-lc", "mkdir -p public/assets/img/profiles; chmod -R 777 public/assets/img || true; [ -f vendor/autoload.php ] || composer install --no-interaction --no-progress; exec php-fpm"]
+# On container start, install dependencies from /app/composer.json if vendor is missing, then start php-fpm
+CMD ["sh", "-lc", "mkdir -p /app/public/assets/img/profiles; chmod -R 777 /app/public/assets/img || true; [ -f /app/vendor/autoload.php ] || composer install --working-dir=/app --no-interaction --no-progress; exec php-fpm"]
