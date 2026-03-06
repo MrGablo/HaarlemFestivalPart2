@@ -5,7 +5,7 @@ namespace App\Controllers;
 use App\Repositories\Interfaces\IPageRepository;
 use App\Repositories\PageRepository;
 use App\Services\CmsContentService;
-use App\Utils\AuthSessionData;
+use App\Utils\AdminGuard;
 use App\Utils\Flash;
 use App\Utils\Session;
 
@@ -23,9 +23,7 @@ class CMSController
 
     public function index(): void
     {
-        if (!$this->requireAdmin()) {
-            return;
-        }
+        AdminGuard::requireAdmin(true);
 
         $pages = $this->pages->getAllPages();
         $errors = Flash::getErrors();
@@ -36,9 +34,7 @@ class CMSController
 
     public function edit(int $id): void
     {
-        if (!$this->requireAdmin()) {
-            return;
-        }
+        AdminGuard::requireAdmin(true);
 
         $page = $this->pages->findPageById($id);
         if ($page === null) {
@@ -56,9 +52,7 @@ class CMSController
 
     public function update(int $id): void
     {
-        if (!$this->requireAdmin()) {
-            return;
-        }
+        AdminGuard::requireAdmin(true);
 
         $page = $this->pages->findPageById($id);
         if ($page === null) {
@@ -87,21 +81,4 @@ class CMSController
         exit;
     }
 
-    private function requireAdmin(): bool
-    {
-        $auth = AuthSessionData::read();
-        if ($auth === null || empty($auth['userId'])) {
-            header('Location: /login', true, 302);
-            exit;
-        }
-
-        $role = strtolower((string)($auth['userRole'] ?? ''));
-        if ($role !== 'admin') {
-            http_response_code(403);
-            echo 'Forbidden';
-            return false;
-        }
-
-        return true;
-    }
 }

@@ -16,24 +16,31 @@ final class AdminGuard
      *
      * If not, it sends 403 and exits.
      */
-    public static function requireAdmin(): void
+    public static function requireAdmin(bool $redirectToLogin = false): void
     {
         Session::ensureStarted();
 
+        $auth = AuthSessionData::read();
+        if ($auth !== null && !empty($auth['userId'])) {
+            $role = strtolower((string)($auth['userRole'] ?? ''));
+            if ($role === 'admin') {
+                return;
+            }
+
+            self::deny($redirectToLogin);
+        }
+
+        // Legacy fallback for older session format that stores user_id only.
         $userId = (int)($_SESSION['user_id'] ?? 0);
         if ($userId <= 0) {
-            http_response_code(403);
-            echo 'Forbidden';
-            exit;
+            self::deny($redirectToLogin);
         }
 
         $repo = new UserRepository();
         $user = $repo->getUserById($userId);
 
         if ($user === null) {
-            http_response_code(403);
-            echo 'Forbidden';
-            exit;
+            self::deny($redirectToLogin);
         }
 
         // Adjust this to match YOUR enum values / property name.
@@ -41,9 +48,19 @@ final class AdminGuard
         $role = strtolower((string)($user->role ?? ''));
 
         if ($role !== 'admin') {
+            self::deny($redirectToLogin);
+        }
+    }
+
+    private static function deny(bool $redirectToLogin): void
+    {
+        if ($redirectToLogin) {
+            header('Location: /login', true, 302);
+            exit;
+        }
+
             http_response_code(403);
             echo 'Forbidden';
             exit;
-        }
     }
 }
