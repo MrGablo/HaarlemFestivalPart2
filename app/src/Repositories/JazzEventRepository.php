@@ -68,50 +68,52 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
         $pdo->beginTransaction();
 
         try {
-            // Update Event table (title)
+            // ✅ 1) Ensure the parent event exists and is jazz (MATCH check, not AFFECTED rows)
+            $check = $pdo->prepare("
+            SELECT 1
+            FROM Event
+            WHERE event_id = :id AND event_type = 'jazz'
+            LIMIT 1
+        ");
+            $check->execute([':id' => $event->event_id]);
+
+            if (!$check->fetchColumn()) {
+                throw new \RuntimeException('Event not found or not a jazz event.');
+            }
+
+            // ✅ 2) Update Event (no rowCount guard)
             $stmt1 = $pdo->prepare("
-                UPDATE Event
-                SET title = :title
-                WHERE event_id = :id AND event_type = 'jazz'
-            ");
+            UPDATE Event
+            SET title = :title
+            WHERE event_id = :id
+        ");
             $stmt1->execute([
                 ':title' => $event->title,
                 ':id' => $event->event_id,
             ]);
 
-            // Optional guard: ensure row exists and is jazz
-            if ($stmt1->rowCount() === 0) {
-                throw new \RuntimeException('Event not found or not a jazz event.');
-            }
-
-            // Update JazzEvent table (details)
+            // ✅ 3) Update JazzEvent (no rowCount guard; 0 rows can mean “no changes”)
             $stmt2 = $pdo->prepare("
-                UPDATE JazzEvent
-                SET start_date = :start_date,
-                    end_date = :end_date,
-                    location = :location,
-                    artist_name = :artist_name,
-                    img_background = :img_background,
-                    price = :price,
-                    page_id = :page_id
-                WHERE event_id = :id
-            ");
+            UPDATE JazzEvent
+            SET start_date = :start_date,
+                end_date = :end_date,
+                location = :location,
+                artist_name = :artist_name,
+                img_background = :img_background,
+                price = :price,
+                page_id = :page_id
+            WHERE event_id = :id
+        ");
             $stmt2->execute([
                 ':start_date' => $event->start_date,
                 ':end_date' => $event->end_date,
                 ':location' => $event->location,
                 ':artist_name' => $event->artist_name,
-                ':img_background' => $event->img_background, // null ok
+                ':img_background' => $event->img_background,
                 ':price' => $event->price,
-                ':page_id' => $event->page_id,               // null ok
+                ':page_id' => $event->page_id,
                 ':id' => $event->event_id,
             ]);
-
-            if ($stmt2->rowCount() === 0) {
-                // If you want to allow "no changes", remove this check.
-                // Keeping it helps catch missing JazzEvent row.
-                // throw new \RuntimeException('JazzEvent row not found for this event_id.');
-            }
 
             $pdo->commit();
         } catch (\Throwable $e) {

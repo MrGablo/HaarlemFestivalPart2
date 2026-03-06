@@ -20,7 +20,7 @@ Env::load();
  * Define the routes for the application.
  */
 $dispatcher = simpleDispatcher(function (RouteCollector $r) {
-    $r->addRoute('GET', '/', ['App\Controllers\HomeController', 'home']);
+    $r->addRoute('GET', '/', ['App\Controllers\AuthController', 'showLogin']);
     $r->addRoute('GET', '/hello/{name}', ['App\Controllers\HelloController', 'greet']);
 
 
@@ -49,9 +49,14 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     $r->addRoute('POST', '/upload/image', ['App\Controllers\UploadController', 'image']);
 
     // CMS routes (admin only)
-    $r->addRoute('GET', '/cms', ['App\Controllers\CMSController', 'index']);
+    $r->addRoute('GET', '/cms', ['App\Controllers\CMSController', 'generalIndex']);
+    $r->addRoute('GET', '/cms/pages', ['App\Controllers\CMSController', 'index']);
     $r->addRoute('GET', '/cms/page/{id:\\d+}', ['App\Controllers\CMSController', 'edit']);
     $r->addRoute('POST', '/cms/page/{id:\\d+}/update', ['App\Controllers\CMSController', 'update']);
+    // Jazz event edit route (admin only)
+    $r->addRoute('GET',  '/cms/events/jazz',          ['App\Controllers\CMSController', 'jazzIndex']);
+    $r->addRoute('GET',  '/cms/events/jazz/{id:\d+}', ['App\Controllers\CMSController', 'jazzEdit']);
+    $r->addRoute('POST', '/cms/events/jazz/{id:\d+}', ['App\Controllers\CMSController', 'jazzUpdate']);
 });
 
 
