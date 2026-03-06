@@ -1,4 +1,6 @@
-<?php use App\Config; ?>
+<?php
+
+use App\Config; ?>
 <!doctype html>
 <html lang="en">
 
@@ -10,6 +12,7 @@
 </head>
 
 <body class="min-h-screen bg-slate-100 antialiased">
+  <?php include __DIR__ . '/../partials/header.php'; ?>
   <main class="mx-auto max-w-3xl p-4 py-8">
     <section class="rounded-2xl bg-white p-6 shadow-xl ring-1 ring-slate-200">
       <div class="flex items-center justify-between">
