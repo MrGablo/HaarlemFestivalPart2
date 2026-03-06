@@ -4,18 +4,20 @@ namespace App\Controllers;
 
 use App\Repositories\Interfaces\IPageRepository;
 use App\Repositories\PageRepository;
+use App\Services\CmsContentService;
 use App\Utils\AuthSessionData;
 use App\Utils\Flash;
 use App\Utils\Session;
-use App\Utils\Wysiwyg;
 
 class CMSController
 {
     private IPageRepository $pages;
+    private CmsContentService $contentService;
 
     public function __construct()
     {
         $this->pages = new PageRepository();
+        $this->contentService = new CmsContentService();
         Session::ensureStarted();
     }
 
@@ -73,7 +75,7 @@ class CMSController
                 throw new \RuntimeException('Invalid content payload.');
             }
 
-            $normalized = $this->normalizeContent($contentInput, is_array($typeMap) ? $typeMap : []);
+            $normalized = $this->contentService->normalizeContent($contentInput, is_array($typeMap) ? $typeMap : []);
             $this->pages->savePageContentById($id, $normalized);
 
             Flash::setSuccess('Page content updated successfully.');
@@ -101,47 +103,5 @@ class CMSController
         }
 
         return true;
-    }
-
-    private function normalizeContent(mixed $value, mixed $typeMeta): mixed
-    {
-        if (is_array($value)) {
-            $normalized = [];
-            foreach ($value as $key => $item) {
-                $childType = is_array($typeMeta) && array_key_exists((string)$key, $typeMeta)
-                    ? $typeMeta[(string)$key]
-                    : null;
-                $normalized[$key] = $this->normalizeContent($item, $childType);
-            }
-            return $normalized;
-        }
-
-        if (!is_string($typeMeta)) {
-            return $value;
-        }
-
-        return $this->castScalar($value, $typeMeta);
-    }
-
-    private function castScalar(mixed $value, string $type): mixed
-    {
-        $raw = is_scalar($value) ? (string)$value : '';
-
-        return match ($type) {
-            'integer' => $raw === '' ? 0 : (int)$raw,
-            'double' => $raw === '' ? 0.0 : (float)$raw,
-            'bool', 'boolean' => in_array(strtolower($raw), ['1', 'true', 'yes', 'on'], true),
-            'null' => null,
-            default => $this->sanitizeIfHtml($raw),
-        };
-    }
-
-    private function sanitizeIfHtml(string $value): string
-    {
-        if (preg_match('/<[^>]+>/', $value) !== 1) {
-            return $value;
-        }
-
-        return Wysiwyg::render($value);
     }
 }
