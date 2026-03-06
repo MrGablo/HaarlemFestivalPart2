@@ -17,8 +17,11 @@
     let expanded = false;
 
     function setActive(btns, clicked) {
-        btns.forEach(b => b.classList.remove('is-active'));
+        btns.forEach(b => {
+            b.classList.remove('is-active', 'underline', 'underline-offset-[6px]', 'text-[#f7c600]');
+        });
         clicked.classList.add('is-active');
+        clicked.classList.add('underline', 'underline-offset-[6px]', 'text-[#f7c600]');
     }
 
     function getBtnByData(btns, key, value) {
@@ -44,23 +47,31 @@
         cards.forEach(c => {
             const ok = matches(c);
             c.classList.toggle('is-hidden', !ok);
+            c.classList.toggle('hidden', !ok);
             if (ok) visible.push(c);
         });
 
         // 2) collapse/expand
         if (!expanded && visible.length > COLLAPSE_LIMIT) {
-            visible.forEach((c, i) => c.classList.toggle('is-hidden', i >= COLLAPSE_LIMIT));
+            visible.forEach((c, i) => {
+                const hide = i >= COLLAPSE_LIMIT;
+                c.classList.toggle('is-hidden', hide);
+                c.classList.toggle('hidden', hide);
+            });
             if (toggleMoreBtn) {
                 toggleMoreBtn.classList.remove('is-hidden');
+                toggleMoreBtn.classList.remove('hidden');
                 toggleMoreBtn.textContent = 'Show more';
             }
         } else {
             if (toggleMoreBtn) {
                 if (visible.length > COLLAPSE_LIMIT) {
                     toggleMoreBtn.classList.remove('is-hidden');
+                    toggleMoreBtn.classList.remove('hidden');
                     toggleMoreBtn.textContent = expanded ? 'Show less' : 'Show more';
                 } else {
                     toggleMoreBtn.classList.add('is-hidden');
+                    toggleMoreBtn.classList.add('hidden');
                 }
             }
         }
