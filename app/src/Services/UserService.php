@@ -68,11 +68,17 @@ class UserService
         $this->users->updateUser($userId, $existingUser);
 
         if ($hasPasswordReset) {
-            $this->emails->sendPasswordResetConfirmation($existingUser->email, $existingUser->firstName);
+            $sent = $this->emails->sendPasswordResetConfirmation($existingUser->email, $existingUser->firstName);
+            if (!$sent) {
+                error_log('Password reset confirmation email not sent for user id ' . $userId . ' (' . $existingUser->email . ')');
+            }
             return;
         }
 
-        $this->emails->sendAccountUpdateConfirmation($existingUser->email, $existingUser->firstName);
+        $sent = $this->emails->sendAccountUpdateConfirmation($existingUser->email, $existingUser->firstName);
+        if (!$sent) {
+            error_log('Account update confirmation email not sent for user id ' . $userId . ' (' . $existingUser->email . ')');
+        }
     }
 
     public function deleteAccount(int $userId, array $data): void

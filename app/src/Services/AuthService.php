@@ -56,7 +56,10 @@ class AuthService
         $user->password_hash = password_hash($password, PASSWORD_DEFAULT);
 
         $userId = $this->users->createUser($user);
-        $this->emails->sendRegistrationConfirmation($user->email, $user->firstName);
+        $sent = $this->emails->sendRegistrationConfirmation($user->email, $user->firstName);
+        if (!$sent) {
+            error_log('Registration email not sent for user id ' . $userId . ' (' . $user->email . ')');
+        }
 
         return $userId;
     }

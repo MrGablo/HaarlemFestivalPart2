@@ -2,15 +2,29 @@
 
 namespace App\Services;
 
+use PHPMailer\PHPMailer\Exception;
+use PHPMailer\PHPMailer\PHPMailer;
+
 class EmailService
 {
     private string $fromAddress;
     private string $fromName;
+    private string $smtpHost;
+    private int $smtpPort;
+    private string $smtpUser;
+    private string $smtpPass;
+    private string $smtpEncryption;
 
     public function __construct()
     {
         $this->fromAddress = trim((string)(getenv('MAIL_FROM_ADDRESS') ?: 'no-reply@haarlemfestival.local'));
         $this->fromName = trim((string)(getenv('MAIL_FROM_NAME') ?: 'Haarlem Festival'));
+
+        $this->smtpHost = trim((string)(getenv('SMTP_HOST') ?: ''));
+        $this->smtpPort = (int)(getenv('SMTP_PORT') ?: 587);
+        $this->smtpUser = trim((string)(getenv('SMTP_USERNAME') ?: ''));
+        $this->smtpPass = (string)(getenv('SMTP_PASSWORD') ?: '');
+        $this->smtpEncryption = strtolower(trim((string)(getenv('SMTP_ENCRYPTION') ?: 'tls')));
     }
 
     public function sendRegistrationConfirmation(string $email, string $firstName): bool
@@ -77,14 +91,17 @@ class EmailService
             return false;
         }
 
-        $headers = [
-            'MIME-Version: 1.0',
-            'Content-Type: text/plain; charset=UTF-8',
-            'From: ' . $this->formatFromHeader(),
-            'Reply-To: ' . $this->fromAddress,
-        ];
-
-        return @mail($to, $subject, $message, implode("\r\n", $headers));
+        try {
+            $mailer = $this->createMailer();
+            $mailer->addAddress($to);
+            $mailer->Subject = $subject;
+            $mailer->Body = $message;
+            $mailer->send();
+            return true;
+        } catch (\Throwable $e) {
+            error_log('Email send failed: ' . $e->getMessage());
+            return false;
+        }
     }
 
     private function sendWithAttachments(string $to, string $subject, string $message, array $attachments): bool
@@ -93,58 +110,56 @@ class EmailService
             return false;
         }
 
-        $boundary = 'bnd_' . bin2hex(random_bytes(12));
+        try {
+            $mailer = $this->createMailer();
+            $mailer->addAddress($to);
+            $mailer->Subject = $subject;
+            $mailer->Body = $message;
 
-        $headers = [
-            'MIME-Version: 1.0',
-            'From: ' . $this->formatFromHeader(),
-            'Reply-To: ' . $this->fromAddress,
-            'Content-Type: multipart/mixed; boundary="' . $boundary . '"',
-        ];
-
-        $bodyParts = [];
-        $bodyParts[] = '--' . $boundary;
-        $bodyParts[] = 'Content-Type: text/plain; charset="UTF-8"';
-        $bodyParts[] = 'Content-Transfer-Encoding: 7bit';
-        $bodyParts[] = '';
-        $bodyParts[] = $message;
-        $bodyParts[] = '';
-
-        foreach ($attachments as $attachment) {
-            $path = (string)($attachment['path'] ?? '');
-            $name = (string)($attachment['name'] ?? basename($path));
-
-            if ($path === '' || !is_file($path) || !is_readable($path)) {
-                continue;
+            foreach ($attachments as $attachment) {
+                $path = (string)($attachment['path'] ?? '');
+                $name = (string)($attachment['name'] ?? basename($path));
+                if ($path === '' || !is_file($path) || !is_readable($path)) {
+                    continue;
+                }
+                $mailer->addAttachment($path, $name);
             }
 
-            $content = file_get_contents($path);
-            if ($content === false) {
-                continue;
-            }
-
-            $encoded = chunk_split(base64_encode($content));
-
-            $bodyParts[] = '--' . $boundary;
-            $bodyParts[] = 'Content-Type: application/pdf; name="' . addslashes($name) . '"';
-            $bodyParts[] = 'Content-Transfer-Encoding: base64';
-            $bodyParts[] = 'Content-Disposition: attachment; filename="' . addslashes($name) . '"';
-            $bodyParts[] = '';
-            $bodyParts[] = $encoded;
-            $bodyParts[] = '';
+            $mailer->send();
+            return true;
+        } catch (\Throwable $e) {
+            error_log('Email send with attachment failed: ' . $e->getMessage());
+            return false;
         }
-
-        $bodyParts[] = '--' . $boundary . '--';
-
-        return @mail($to, $subject, implode("\r\n", $bodyParts), implode("\r\n", $headers));
     }
 
-    private function formatFromHeader(): string
+    /**
+     * @throws Exception
+     */
+    private function createMailer(): PHPMailer
     {
-        if ($this->fromName === '') {
-            return $this->fromAddress;
+        if ($this->smtpHost === '' || $this->smtpUser === '' || $this->smtpPass === '') {
+            throw new \RuntimeException('SMTP is not configured.');
         }
 
-        return sprintf('"%s" <%s>', addslashes($this->fromName), $this->fromAddress);
+        $mailer = new PHPMailer(true);
+        $mailer->isSMTP();
+        $mailer->Host = $this->smtpHost;
+        $mailer->Port = $this->smtpPort;
+        $mailer->SMTPAuth = true;
+        $mailer->Username = $this->smtpUser;
+        $mailer->Password = $this->smtpPass;
+        $mailer->CharSet = 'UTF-8';
+
+        if ($this->smtpEncryption === 'ssl') {
+            $mailer->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+        } else {
+            $mailer->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        }
+
+        $mailer->setFrom($this->fromAddress, $this->fromName);
+        $mailer->isHTML(false);
+
+        return $mailer;
     }
 }
