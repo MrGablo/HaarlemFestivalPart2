@@ -59,8 +59,8 @@ final class AdminGuard
             exit;
         }
 
-            http_response_code(403);
-            echo 'Forbidden';
-            exit;
+        http_response_code(403);
+        echo 'Forbidden';
+        exit;
     }
 }
