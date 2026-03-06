@@ -5,7 +5,7 @@ namespace App\Repositories;
 use App\Framework\Repository;
 use App\Models\JazzEvent;
 use App\Repositories\Interfaces\IJazzEventRepository;
-
+//TODO make this a general EventRepository with a type field, and make JazzEventRepository extend it with jazz-specific methods? For now, this is fine as we only have jazz events.
 class JazzEventRepository extends Repository implements IJazzEventRepository
 {
     /** @return JazzEvent[] */
