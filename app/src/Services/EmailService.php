@@ -134,6 +134,7 @@ class EmailService
     }
 
     /**
+     * @throws \RuntimeException
      * @throws Exception
      */
     private function createMailer(): PHPMailer
