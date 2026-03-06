@@ -9,10 +9,12 @@ use App\Repositories\UserRepository;
 class AuthService
 {
     private UserRepository $users;
+    private EmailService $emails;
 
     public function __construct()
     {
         $this->users = new UserRepository();
+        $this->emails = new EmailService();
     }
 
     public function register(array $data): int
@@ -53,7 +55,13 @@ class AuthService
         $user->role = UserRole::USER;
         $user->password_hash = password_hash($password, PASSWORD_DEFAULT);
 
-        return $this->users->createUser($user);
+        $userId = $this->users->createUser($user);
+        $sent = $this->emails->sendRegistrationConfirmation($user->email, $user->firstName);
+        if (!$sent) {
+            error_log('Registration email not sent for user id ' . $userId . ' (' . $user->email . ')');
+        }
+
+        return $userId;
     }
 
     public function login(array $data): UserModel
