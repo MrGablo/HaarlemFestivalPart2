@@ -296,11 +296,11 @@ $headerCartTotal = $headerCartOrder ? $headerCartOrder->getTotalPrice() : 0.0;
             <a href="/yummy" class="nav-link">Yummy</a>
             <a href="/stories" class="nav-link">Stories</a>
             <a href="/history" class="nav-link">History</a>
-            <button type="button" class="nav-link cart-link" id="cartToggleBtn" aria-haspopup="dialog" aria-controls="cartOverlay" aria-expanded="false">
+            <button type="button" class="nav-link cart-link inline-flex items-center gap-2 border-0 bg-transparent" id="cartToggleBtn" aria-haspopup="dialog" aria-controls="cartOverlay" aria-expanded="false">
                 Program
-                <div class="cart-icon-wrapper">
-                    <img src="/assets/img/headerfooter/cart.svg" alt="Cart" class="cart-icon">
-                    <span class="cart-badge" id="cartBadge"><?php echo (int)$headerCartCount; ?></span>
+                <div class="cart-icon-wrapper relative flex items-center">
+                    <img src="/assets/img/headerfooter/cart.svg" alt="Cart" class="cart-icon h-6 w-6">
+                    <span class="cart-badge absolute -right-2 -top-2 flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 border-white bg-[#E63946] text-[0.7rem] font-bold text-white" id="cartBadge"><?php echo (int)$headerCartCount; ?></span>
                 </div>
             </button>
             <?php if ($headerIsLoggedIn): ?>
@@ -321,36 +321,36 @@ $headerCartTotal = $headerCartOrder ? $headerCartOrder->getTotalPrice() : 0.0;
     </div>
 </header>
 
-<div class="cart-overlay-backdrop" id="cartOverlayBackdrop"></div>
-<aside class="cart-overlay" id="cartOverlay" role="dialog" aria-modal="true" aria-labelledby="cartOverlayTitle">
-    <div class="cart-overlay__head">
-        <h2 class="cart-overlay__title" id="cartOverlayTitle">Your Cart</h2>
-        <button type="button" class="cart-overlay__close" id="cartCloseBtn" aria-label="Close cart">x</button>
+<div class="cart-overlay-backdrop fixed inset-0 z-[999] hidden bg-black/35" id="cartOverlayBackdrop"></div>
+<aside class="cart-overlay fixed right-0 top-0 z-[1000] flex h-dvh w-full max-w-[420px] translate-x-full flex-col bg-white text-[#1a1a1a] shadow-[-12px_0_28px_rgba(0,0,0,.2)] transition-transform duration-200" id="cartOverlay" role="dialog" aria-modal="true" aria-labelledby="cartOverlayTitle">
+    <div class="cart-overlay__head flex items-center justify-between border-b border-[#ececec] px-5 py-[18px]">
+        <h2 class="cart-overlay__title m-0 text-[1.1rem] font-extrabold text-[#111]" id="cartOverlayTitle">Your Cart</h2>
+        <button type="button" class="cart-overlay__close cursor-pointer border-0 bg-transparent text-[1.2rem] text-[#222]" id="cartCloseBtn" aria-label="Close cart">x</button>
     </div>
 
-    <div class="cart-overlay__body" id="cartOverlayBody" data-logged-in="<?php echo $headerIsLoggedIn ? '1' : '0'; ?>">
+    <div class="cart-overlay__body flex-1 overflow-auto px-[18px] py-[14px]" id="cartOverlayBody" data-logged-in="<?php echo $headerIsLoggedIn ? '1' : '0'; ?>">
         <?php if (!$headerIsLoggedIn): ?>
-            <p class="cart-empty">Log in to add tickets to your cart.</p>
+            <p class="cart-empty mt-2 text-[0.95rem] text-[#2f2f2f]">Log in to add tickets to your cart.</p>
         <?php elseif ($headerCartOrder === null || count($headerCartOrder->items) === 0): ?>
-            <p class="cart-empty">Your cart is empty.</p>
+            <p class="cart-empty mt-2 text-[0.95rem] text-[#2f2f2f]">Your cart is empty.</p>
         <?php else: ?>
             <?php foreach ($headerCartOrder->items as $item): ?>
                 <?php $event = $item->event; ?>
-                <article class="cart-item">
-                    <h3 class="cart-item__title"><?php echo htmlspecialchars((string)($event?->title ?? 'Event')); ?></h3>
-                    <p class="cart-item__meta">
+                <article class="cart-item mb-[10px] rounded-xl border border-[#ececec] bg-white px-3 py-[10px] text-[#171717]">
+                    <h3 class="cart-item__title m-0 text-[0.98rem] font-extrabold text-[#0f0f0f]"><?php echo htmlspecialchars((string)($event?->title ?? 'Event')); ?></h3>
+                    <p class="cart-item__meta my-[6px] mb-[10px] text-[0.9rem] text-[#2d2d2d]">
                         <?php echo htmlspecialchars((string)$item->getLocation()); ?>
                     </p>
 
-                    <div class="cart-item__row">
-                        <span>
+                    <div class="cart-item__row flex items-center justify-between gap-[10px]">
+                        <span class="font-bold text-[#171717]">
                             Qty: <?php echo (int)$item->quantity; ?>
                             x EUR <?php echo number_format($item->getUnitPrice(), 2); ?>
                         </span>
 
                         <form method="POST" action="/order/item/remove">
                             <input type="hidden" name="order_item_id" value="<?php echo (int)$item->order_item_id; ?>">
-                            <button type="submit" class="cart-remove-btn">Remove</button>
+                            <button type="submit" class="cart-remove-btn cursor-pointer rounded-lg border border-[#9f9f9f] bg-[#f3f3f3] px-[10px] py-[6px] font-bold text-[#111] hover:bg-[#e8e8e8]">Remove</button>
                         </form>
                     </div>
                 </article>
@@ -358,8 +358,8 @@ $headerCartTotal = $headerCartOrder ? $headerCartOrder->getTotalPrice() : 0.0;
         <?php endif; ?>
     </div>
 
-    <div class="cart-overlay__foot">
-        <p class="cart-total">
+    <div class="cart-overlay__foot border-t border-[#ececec] px-[18px] py-[14px]">
+        <p class="cart-total m-0 flex justify-between text-base font-extrabold text-[#0f0f0f]">
             <span>Total</span>
             <span id="cartTotalValue">EUR <?php echo number_format($headerCartTotal, 2); ?></span>
         </p>
@@ -406,7 +406,7 @@ $headerCartTotal = $headerCartOrder ? $headerCartOrder->getTotalPrice() : 0.0;
         }
 
         if (items.length === 0) {
-            cartBody.innerHTML = '<p class="cart-empty">Your cart is empty.</p>';
+            cartBody.innerHTML = '<p class="cart-empty mt-2 text-[0.95rem] text-[#2f2f2f]">Your cart is empty.</p>';
             return;
         }
 
@@ -418,14 +418,14 @@ $headerCartTotal = $headerCartOrder ? $headerCartOrder->getTotalPrice() : 0.0;
             var orderItemId = Number(item.orderItemId || 0);
 
             return [
-                '<article class="cart-item">',
-                    '<h3 class="cart-item__title">' + title + '</h3>',
-                    '<p class="cart-item__meta">' + location + '</p>',
-                    '<div class="cart-item__row">',
-                        '<span>Qty: ' + quantity + ' x EUR ' + unitPriceLabel + '</span>',
+                '<article class="cart-item mb-[10px] rounded-xl border border-[#ececec] bg-white px-3 py-[10px] text-[#171717]">',
+                    '<h3 class="cart-item__title m-0 text-[0.98rem] font-extrabold text-[#0f0f0f]">' + title + '</h3>',
+                    '<p class="cart-item__meta my-[6px] mb-[10px] text-[0.9rem] text-[#2d2d2d]">' + location + '</p>',
+                    '<div class="cart-item__row flex items-center justify-between gap-[10px]">',
+                        '<span class="font-bold text-[#171717]">Qty: ' + quantity + ' x EUR ' + unitPriceLabel + '</span>',
                         '<form method="POST" action="/order/item/remove">',
                             '<input type="hidden" name="order_item_id" value="' + orderItemId + '">',
-                            '<button type="submit" class="cart-remove-btn">Remove</button>',
+                            '<button type="submit" class="cart-remove-btn cursor-pointer rounded-lg border border-[#9f9f9f] bg-[#f3f3f3] px-[10px] py-[6px] font-bold text-[#111] hover:bg-[#e8e8e8]">Remove</button>',
                         '</form>',
                     '</div>',
                 '</article>'

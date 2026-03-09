@@ -107,8 +107,26 @@
     let expanded = false;
 
     function setActive(btns, clicked) {
-        btns.forEach(b => b.classList.remove('is-active'));
-        clicked.classList.add('is-active');
+        btns.forEach((b) => {
+            const activeClass = b.dataset.activeClass || '';
+            const inactiveClass = b.dataset.inactiveClass || '';
+
+            if (activeClass) {
+                b.classList.remove(...activeClass.split(' '));
+            }
+            if (inactiveClass) {
+                b.classList.add(...inactiveClass.split(' '));
+            }
+        });
+
+        const clickedActiveClass = clicked.dataset.activeClass || '';
+        const clickedInactiveClass = clicked.dataset.inactiveClass || '';
+        if (clickedInactiveClass) {
+            clicked.classList.remove(...clickedInactiveClass.split(' '));
+        }
+        if (clickedActiveClass) {
+            clicked.classList.add(...clickedActiveClass.split(' '));
+        }
     }
 
     function getBtnByData(btns, key, value) {
@@ -133,24 +151,24 @@
         // 1) filter
         cards.forEach(c => {
             const ok = matches(c);
-            c.classList.toggle('is-hidden', !ok);
+            c.classList.toggle('hidden', !ok);
             if (ok) visible.push(c);
         });
 
         // 2) collapse/expand
         if (!expanded && visible.length > COLLAPSE_LIMIT) {
-            visible.forEach((c, i) => c.classList.toggle('is-hidden', i >= COLLAPSE_LIMIT));
+            visible.forEach((c, i) => c.classList.toggle('hidden', i >= COLLAPSE_LIMIT));
             if (toggleMoreBtn) {
-                toggleMoreBtn.classList.remove('is-hidden');
+                toggleMoreBtn.classList.remove('hidden');
                 toggleMoreBtn.textContent = 'Show more';
             }
         } else {
             if (toggleMoreBtn) {
                 if (visible.length > COLLAPSE_LIMIT) {
-                    toggleMoreBtn.classList.remove('is-hidden');
+                    toggleMoreBtn.classList.remove('hidden');
                     toggleMoreBtn.textContent = expanded ? 'Show less' : 'Show more';
                 } else {
-                    toggleMoreBtn.classList.add('is-hidden');
+                    toggleMoreBtn.classList.add('hidden');
                 }
             }
         }
