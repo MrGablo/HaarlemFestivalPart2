@@ -19,6 +19,21 @@ $secondaryMedia = is_array($media) ? ($media['secondary'] ?? []) : [];
 $career = $content['career_highlights'] ?? [];
 $albums = $content['albums'] ?? [];
 
+$kickerText = trim((string)($artist['kicker'] ?? ''));
+$heroTitleText = trim((string)($artist['hero_title'] ?? ($artist['name'] ?? '')));
+$heroSubtitleText = trim((string)($artist['hero_subtitle'] ?? ''));
+
+if (strcasecmp($kickerText, $heroTitleText) === 0) {
+    $kickerText = '';
+}
+
+if (
+    strcasecmp($heroSubtitleText, $heroTitleText) === 0 ||
+    ($kickerText !== '' && strcasecmp($heroSubtitleText, $kickerText) === 0)
+) {
+    $heroSubtitleText = '';
+}
+
 $pageId = isset($_GET['page_id']) ? (int)$_GET['page_id'] : 0;
 
 function tabLink(int $pageId, string $tab): string
@@ -127,6 +142,7 @@ $activeTab = safeTab((string)$activeTab);
                             <div class="overflow-hidden rounded-2xl bg-white/5">
                                 <img class="block h-[170px] w-full object-cover" src="/<?= htmlspecialchars((string)($ev['img_background'] ?? '')) ?>"
                                     alt="<?= htmlspecialchars((string)($ev['title'] ?? '')) ?>"
+                                    class="block h-[170px] w-full object-cover"
                                     loading="lazy">
                             </div>
 

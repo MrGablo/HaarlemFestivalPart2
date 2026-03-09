@@ -68,6 +68,7 @@ $days = $filters['days'] ?? ['All Days', 'Thursday', 'Friday', 'Saturday', 'Sund
                                     : '#' ?>">
                         <img class="block h-[140px] w-full object-cover" src="/<?= htmlspecialchars((string)($ev['img_background'] ?? '')) ?>"
                             alt="<?= htmlspecialchars((string)($ev['title'] ?? '')) ?>"
+                            class="block h-[140px] w-full object-cover"
                             loading="lazy">
 
                         <div class="absolute bottom-3 left-[14px] right-[14px] [text-shadow:0_2px_12px_rgba(0,0,0,.8)]">
