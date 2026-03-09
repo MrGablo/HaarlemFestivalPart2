@@ -5,8 +5,19 @@
   if (tabs.length === 0 || panels.length === 0) return;
 
   function setActive(tabKey, pushUrl = true) {
-    tabs.forEach(t => t.classList.toggle('is-active', t.dataset.artistTab === tabKey));
-    panels.forEach(p => p.classList.toggle('is-hidden', p.dataset.artistPanel !== tabKey));
+    tabs.forEach(t => {
+      const active = t.dataset.artistTab === tabKey;
+      t.classList.toggle('is-active', active);
+      t.classList.toggle('text-[#f7c600]', active);
+      t.classList.toggle('underline', active);
+      t.classList.toggle('underline-offset-[6px]', active);
+    });
+
+    panels.forEach(p => {
+      const hidden = p.dataset.artistPanel !== tabKey;
+      p.classList.toggle('is-hidden', hidden);
+      p.classList.toggle('hidden', hidden);
+    });
 
     if (pushUrl) {
       const url = new URL(window.location.href);
