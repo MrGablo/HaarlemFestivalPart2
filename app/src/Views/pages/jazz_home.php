@@ -16,6 +16,7 @@ $days = $filters['days'] ?? ['All Days', 'Thursday', 'Friday', 'Saturday', 'Sund
 <head>
     <meta charset="utf-8">
     <title><?= htmlspecialchars((string)($content['hero']['title'] ?? 'Jazz')) ?></title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/assets/css/jazz/stylesheet.css">
 </head>
 
@@ -96,6 +97,16 @@ $days = $filters['days'] ?? ['All Days', 'Thursday', 'Friday', 'Saturday', 'Sund
             <?php endif; ?>
         </div>
     </section>
+
+    <button
+        id="cartToast"
+        type="button"
+        class="hidden fixed bottom-6 right-6 z-[1200] rounded-xl bg-zinc-900 px-4 py-3 text-left text-sm text-white shadow-xl ring-1 ring-white/15 transition hover:bg-zinc-800"
+        aria-live="polite"
+    >
+        <span class="block font-semibold">Ticket added to cart</span>
+        <span class="block text-xs text-zinc-300">Click to open shopping cart</span>
+    </button>
 
     <script src="/assets/js/jazz/jazz_home.js"></script>
     <?php include __DIR__ . '/../partials/footer.php'; ?>

@@ -177,6 +177,7 @@ $headerCartTotal = $headerCartOrder ? $headerCartOrder->getTotalPrice() : 0.0;
     flex-direction: column;
     transform: translateX(100%);
     transition: transform 0.22s ease;
+    color: #1a1a1a;
 }
 
 .cart-overlay.is-open {
@@ -195,6 +196,7 @@ $headerCartTotal = $headerCartOrder ? $headerCartOrder->getTotalPrice() : 0.0;
     margin: 0;
     font-size: 1.1rem;
     font-weight: 800;
+    color: #111;
 }
 
 .cart-overlay__close {
@@ -202,6 +204,7 @@ $headerCartTotal = $headerCartOrder ? $headerCartOrder->getTotalPrice() : 0.0;
     background: transparent;
     font-size: 1.2rem;
     cursor: pointer;
+    color: #222;
 }
 
 .cart-overlay__body {
@@ -212,7 +215,7 @@ $headerCartTotal = $headerCartOrder ? $headerCartOrder->getTotalPrice() : 0.0;
 
 .cart-empty {
     margin: 8px 0 0;
-    color: #666;
+    color: #2f2f2f;
     font-size: 0.95rem;
 }
 
@@ -221,17 +224,20 @@ $headerCartTotal = $headerCartOrder ? $headerCartOrder->getTotalPrice() : 0.0;
     border-radius: 12px;
     padding: 10px 12px;
     margin-bottom: 10px;
+    background: #fff;
+    color: #171717;
 }
 
 .cart-item__title {
     margin: 0;
     font-weight: 800;
     font-size: 0.98rem;
+    color: #0f0f0f;
 }
 
 .cart-item__meta {
     margin: 6px 0 10px;
-    color: #666;
+    color: #2d2d2d;
     font-size: 0.9rem;
 }
 
@@ -242,13 +248,23 @@ $headerCartTotal = $headerCartOrder ? $headerCartOrder->getTotalPrice() : 0.0;
     gap: 10px;
 }
 
+.cart-item__row span {
+    color: #171717;
+    font-weight: 700;
+}
+
 .cart-remove-btn {
-    border: 1px solid #ddd;
-    background: #fafafa;
+    border: 1px solid #9f9f9f;
+    background: #f3f3f3;
+    color: #111;
     border-radius: 8px;
     padding: 6px 10px;
     cursor: pointer;
     font-weight: 700;
+}
+
+.cart-remove-btn:hover {
+    background: #e8e8e8;
 }
 
 .cart-overlay__foot {
@@ -262,6 +278,7 @@ $headerCartTotal = $headerCartOrder ? $headerCartOrder->getTotalPrice() : 0.0;
     justify-content: space-between;
     font-size: 1rem;
     font-weight: 800;
+    color: #0f0f0f;
 }
 </style>
 
@@ -283,7 +300,7 @@ $headerCartTotal = $headerCartOrder ? $headerCartOrder->getTotalPrice() : 0.0;
                 Program
                 <div class="cart-icon-wrapper">
                     <img src="/assets/img/headerfooter/cart.svg" alt="Cart" class="cart-icon">
-                    <span class="cart-badge"><?php echo (int)$headerCartCount; ?></span>
+                    <span class="cart-badge" id="cartBadge"><?php echo (int)$headerCartCount; ?></span>
                 </div>
             </button>
             <?php if ($headerIsLoggedIn): ?>
@@ -311,7 +328,7 @@ $headerCartTotal = $headerCartOrder ? $headerCartOrder->getTotalPrice() : 0.0;
         <button type="button" class="cart-overlay__close" id="cartCloseBtn" aria-label="Close cart">x</button>
     </div>
 
-    <div class="cart-overlay__body">
+    <div class="cart-overlay__body" id="cartOverlayBody" data-logged-in="<?php echo $headerIsLoggedIn ? '1' : '0'; ?>">
         <?php if (!$headerIsLoggedIn): ?>
             <p class="cart-empty">Log in to add tickets to your cart.</p>
         <?php elseif ($headerCartOrder === null || count($headerCartOrder->items) === 0): ?>
@@ -344,7 +361,7 @@ $headerCartTotal = $headerCartOrder ? $headerCartOrder->getTotalPrice() : 0.0;
     <div class="cart-overlay__foot">
         <p class="cart-total">
             <span>Total</span>
-            <span>EUR <?php echo number_format($headerCartTotal, 2); ?></span>
+            <span id="cartTotalValue">EUR <?php echo number_format($headerCartTotal, 2); ?></span>
         </p>
     </div>
 </aside>
@@ -355,10 +372,72 @@ $headerCartTotal = $headerCartOrder ? $headerCartOrder->getTotalPrice() : 0.0;
     var overlay = document.getElementById('cartOverlay');
     var backdrop = document.getElementById('cartOverlayBackdrop');
     var closeBtn = document.getElementById('cartCloseBtn');
+    var cartBadge = document.getElementById('cartBadge');
+    var cartBody = document.getElementById('cartOverlayBody');
+    var cartTotalValue = document.getElementById('cartTotalValue');
 
     if (!toggleBtn || !overlay || !backdrop || !closeBtn) {
         return;
     }
+
+    function escapeHtml(value) {
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function updateCartUI(cart) {
+        if (!cart || !cartBody || !cartTotalValue || !cartBadge) {
+            return;
+        }
+
+        var count = Number(cart.itemCount || 0);
+        var totalLabel = typeof cart.totalLabel === 'string' ? cart.totalLabel : Number(cart.total || 0).toFixed(2);
+        var items = Array.isArray(cart.items) ? cart.items : [];
+
+        cartBadge.textContent = String(count);
+        cartTotalValue.textContent = 'EUR ' + totalLabel;
+
+        if (cartBody.dataset.loggedIn !== '1') {
+            return;
+        }
+
+        if (items.length === 0) {
+            cartBody.innerHTML = '<p class="cart-empty">Your cart is empty.</p>';
+            return;
+        }
+
+        cartBody.innerHTML = items.map(function (item) {
+            var title = escapeHtml(item.title || 'Event');
+            var location = escapeHtml(item.location || '');
+            var quantity = Number(item.quantity || 0);
+            var unitPriceLabel = escapeHtml(item.unitPriceLabel || Number(item.unitPrice || 0).toFixed(2));
+            var orderItemId = Number(item.orderItemId || 0);
+
+            return [
+                '<article class="cart-item">',
+                    '<h3 class="cart-item__title">' + title + '</h3>',
+                    '<p class="cart-item__meta">' + location + '</p>',
+                    '<div class="cart-item__row">',
+                        '<span>Qty: ' + quantity + ' x EUR ' + unitPriceLabel + '</span>',
+                        '<form method="POST" action="/order/item/remove">',
+                            '<input type="hidden" name="order_item_id" value="' + orderItemId + '">',
+                            '<button type="submit" class="cart-remove-btn">Remove</button>',
+                        '</form>',
+                    '</div>',
+                '</article>'
+            ].join('');
+        }).join('');
+    }
+
+    window.HaarlemCart = {
+        update: updateCartUI,
+        open: function () { setOpen(true); },
+        close: function () { setOpen(false); }
+    };
 
     function setOpen(isOpen) {
         overlay.classList.toggle('is-open', isOpen);
@@ -384,5 +463,71 @@ $headerCartTotal = $headerCartOrder ? $headerCartOrder->getTotalPrice() : 0.0;
             setOpen(false);
         }
     });
+
+    // Remove cart items without reloading the page.
+    document.addEventListener('submit', function (event) {
+        var form = event.target;
+        if (!(form instanceof HTMLFormElement)) {
+            return;
+        }
+
+        if (form.getAttribute('action') !== '/order/item/remove') {
+            return;
+        }
+
+        event.preventDefault();
+
+        var submitBtn = form.querySelector('button[type="submit"]');
+        if (!(submitBtn instanceof HTMLButtonElement)) {
+            return;
+        }
+
+        var originalLabel = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Removing...';
+
+        fetch('/order/item/remove', {
+            method: 'POST',
+            body: new FormData(form),
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
+        })
+            .then(function (response) {
+                return response.json().catch(function () { return null; }).then(function (payload) {
+                    return { response: response, payload: payload };
+                });
+            })
+            .then(function (result) {
+                var response = result.response;
+                var payload = result.payload;
+
+                if (!response.ok || !payload || payload.ok !== true) {
+                    var redirect = payload && typeof payload.redirect === 'string' ? payload.redirect : '';
+                    if (redirect) {
+                        window.location.href = redirect;
+                        return;
+                    }
+
+                    var message = payload && typeof payload.message === 'string'
+                        ? payload.message
+                        : 'Could not remove item from cart.';
+                    window.alert(message);
+                    return;
+                }
+
+                updateCartUI(payload.cart || null);
+                setOpen(true);
+            })
+            .catch(function () {
+                window.alert('Network error while removing item. Please try again.');
+            })
+            .finally(function () {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalLabel || 'Remove';
+            });
+    }, true);
 })();
 </script>

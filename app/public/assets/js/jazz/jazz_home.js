@@ -1,4 +1,94 @@
 (() => {
+    const toast = document.getElementById('cartToast');
+    let toastTimer = null;
+
+    function showCartToast() {
+        if (!toast) return;
+
+        toast.classList.remove('hidden');
+        if (toastTimer) {
+            window.clearTimeout(toastTimer);
+        }
+
+        toastTimer = window.setTimeout(() => {
+            toast.classList.add('hidden');
+        }, 3800);
+    }
+
+    if (toast) {
+        toast.addEventListener('click', () => {
+            if (window.HaarlemCart && typeof window.HaarlemCart.open === 'function') {
+                window.HaarlemCart.open();
+            }
+            toast.classList.add('hidden');
+        });
+    }
+
+    async function addTicketWithoutReload(form) {
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (!(submitBtn instanceof HTMLButtonElement)) {
+            return;
+        }
+
+        const originalLabel = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Adding...';
+
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            });
+
+            const payload = await response.json().catch(() => null);
+
+            if (!response.ok || !payload || payload.ok !== true) {
+                const redirect = payload && typeof payload.redirect === 'string' ? payload.redirect : '';
+                if (redirect) {
+                    window.location.href = redirect;
+                    return;
+                }
+
+                const message = payload && typeof payload.message === 'string'
+                    ? payload.message
+                    : 'Could not add ticket to cart.';
+                window.alert(message);
+                return;
+            }
+
+            if (window.HaarlemCart && typeof window.HaarlemCart.update === 'function') {
+                window.HaarlemCart.update(payload.cart || null);
+            }
+
+            showCartToast();
+        } catch (_error) {
+            window.alert('Network error while adding ticket. Please try again.');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalLabel || 'Ticket';
+        }
+    }
+
+    // Capture submit at document level to guarantee no full page navigation.
+    document.addEventListener('submit', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLFormElement)) {
+            return;
+        }
+
+        if (!target.classList.contains('ticket-form')) {
+            return;
+        }
+
+        event.preventDefault();
+        void addTicketWithoutReload(target);
+    }, true);
+
     const grid = document.getElementById('eventGrid');
     if (!grid) return;
 
