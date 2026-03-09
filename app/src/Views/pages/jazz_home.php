@@ -75,9 +75,12 @@ $days = $filters['days'] ?? ['All Days', 'Thursday', 'Friday', 'Saturday', 'Sund
                         </div>
                     </a>
 
-                    <button class="ticket-btn" type="button">
-                        Ticket: <?= htmlspecialchars((string)($ev['price'] ?? '')) ?> p.p
-                    </button>
+                    <form method="POST" action="/order/item/add" class="ticket-form">
+                        <input type="hidden" name="event_id" value="<?= (int)($ev['event_id'] ?? 0) ?>">
+                        <button class="ticket-btn" type="submit">
+                            Ticket: <?= htmlspecialchars((string)($ev['price'] ?? '')) ?> p.p
+                        </button>
+                    </form>
                 </article>
             <?php endforeach; ?>
         </div>

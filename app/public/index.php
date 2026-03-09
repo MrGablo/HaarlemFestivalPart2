@@ -48,6 +48,10 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     //image upload route (backend only)
     $r->addRoute('POST', '/upload/image', ['App\Controllers\UploadController', 'image']);
 
+    // order/cart routes (logged-in users)
+    $r->addRoute('POST', '/order/item/add', ['App\Controllers\OrderController', 'addItem']);
+    $r->addRoute('POST', '/order/item/remove', ['App\Controllers\OrderController', 'removeItem']);
+
     // CMS routes (admin only)
     $r->addRoute('GET', '/cms', ['App\Controllers\CMSController', 'generalIndex']);
     $r->addRoute('GET', '/cms/pages', ['App\Controllers\CMSController', 'index']);
