@@ -11,15 +11,22 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use FastRoute\RouteCollector;
 use function FastRoute\simpleDispatcher;
+use App\Utils\Env;
 use App\Utils\Session;
+
+Env::load();
 
 /**
  * Define the routes for the application.
  */
 $dispatcher = simpleDispatcher(function (RouteCollector $r) {
-    $r->addRoute('GET', '/', ['App\Controllers\HomeController', 'home']);
+    $r->addRoute('GET', '/', ['App\Controllers\AuthController', 'showLogin']);
     $r->addRoute('GET', '/hello/{name}', ['App\Controllers\HelloController', 'greet']);
 
+
+    //Jazz Festival routes
+    $r->addRoute('GET', '/jazz', ['App\Controllers\JazzController', 'home']);
+    $r->addRoute('GET', '/jazz/artist', ['App\Controllers\JazzController', 'artist']);
 
     //user authorization
     $r->addRoute('GET',  '/login',    ['App\Controllers\AuthController', 'showLogin']);
@@ -37,6 +44,19 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     $r->addRoute('GET', '/account/manage', ['App\Controllers\UserController', 'showManageAccount']);
     $r->addRoute('POST', '/account/manage/update', ['App\Controllers\UserController', 'updateAccountForm']);
     $r->addRoute('POST', '/account/manage/delete', ['App\Controllers\UserController', 'deleteAccountForm']);
+
+    //image upload route (backend only)
+    $r->addRoute('POST', '/upload/image', ['App\Controllers\UploadController', 'image']);
+
+    // CMS routes (admin only)
+    $r->addRoute('GET', '/cms', ['App\Controllers\CMSController', 'generalIndex']);
+    $r->addRoute('GET', '/cms/pages', ['App\Controllers\CMSController', 'index']);
+    $r->addRoute('GET', '/cms/page/{id:\\d+}', ['App\Controllers\CMSController', 'edit']);
+    $r->addRoute('POST', '/cms/page/{id:\\d+}/update', ['App\Controllers\CMSController', 'update']);
+    // Jazz event edit route (admin only)
+    $r->addRoute('GET',  '/cms/events/jazz',          ['App\Controllers\CMSController', 'jazzIndex']);
+    $r->addRoute('GET',  '/cms/events/jazz/{id:\d+}', ['App\Controllers\CMSController', 'jazzEdit']);
+    $r->addRoute('POST', '/cms/events/jazz/{id:\d+}', ['App\Controllers\CMSController', 'jazzUpdate']);
 });
 
 

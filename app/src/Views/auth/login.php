@@ -9,6 +9,7 @@
 </head>
 
 <body class="min-h-screen bg-slate-100 antialiased">
+  <?php include __DIR__ . '/../partials/header.php'; ?>
   <main class="min-h-screen flex items-center justify-center p-4">
     <section class="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-200">
       <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Sign in</h1>
@@ -44,6 +45,7 @@
       </div>
     </section>
   </main>
+  <?php include __DIR__ . '/../partials/footer.php'; ?>
 </body>
 
 </html>

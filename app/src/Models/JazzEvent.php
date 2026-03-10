@@ -1,0 +1,40 @@
+<?php
+
+namespace App\Models;
+
+class JazzEvent
+{
+    public int $event_id;
+    public string $title;
+    public string $event_type;
+
+    public string $start_date;
+    public string $end_date;
+
+    public string $location;
+    public string $artist_name;
+
+    public ?string $img_background;
+    public float $price;
+
+    public ?int $page_id;
+
+    /** Build from the associative array returned by PDO::FETCH_ASSOC */
+    public function __construct(array $row)
+    {
+        $this->event_id = (int)($row['event_id'] ?? 0);
+        $this->title = (string)($row['title'] ?? '');
+        $this->event_type = (string)($row['event_type'] ?? 'jazz');
+
+        $this->start_date = (string)($row['start_date'] ?? '');
+        $this->end_date = (string)($row['end_date'] ?? '');
+
+        $this->location = (string)($row['location'] ?? '');
+        $this->artist_name = (string)($row['artist_name'] ?? '');
+
+        $this->img_background = isset($row['img_background']) ? (string)$row['img_background'] : null;
+        $this->price = (float)($row['price'] ?? 0);
+
+        $this->page_id = isset($row['page_id']) ? (int)$row['page_id'] : null;
+    }
+}
