@@ -51,6 +51,7 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     // order/cart routes (logged-in users)
     $r->addRoute('POST', '/order/item/add', ['App\Controllers\OrderController', 'addItem']);
     $r->addRoute('POST', '/order/item/remove', ['App\Controllers\OrderController', 'removeItem']);
+    $r->addRoute('POST', '/order/item/quantity', ['App\Controllers\OrderController', 'updateItemQuantity']);
 
     // CMS routes (admin only)
     $r->addRoute('GET', '/cms', ['App\Controllers\CMSController', 'generalIndex']);

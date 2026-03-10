@@ -88,6 +88,31 @@ class OrderService
         return $this->buildOrderFromRow($freshRow);
     }
 
+    public function updateItemQuantityInPendingOrder(int $userId, int $orderItemId, int $quantity): ?Order
+    {
+        if ($userId <= 0 || $orderItemId <= 0 || $quantity <= 0) {
+            throw new \InvalidArgumentException('Invalid input for updating order item quantity.');
+        }
+
+        $orderRow = $this->orderRepository->findPendingOrderByUserId($userId);
+        if ($orderRow === null) {
+            return null;
+        }
+
+        $orderId = (int)$orderRow['order_id'];
+        $updated = $this->orderRepository->updateOrderItemQuantity($orderId, $orderItemId, $quantity);
+        if (!$updated) {
+            throw new \RuntimeException('Order item not found in your cart.');
+        }
+
+        $freshRow = $this->orderRepository->findPendingOrderByUserId($userId);
+        if ($freshRow === null) {
+            return null;
+        }
+
+        return $this->buildOrderFromRow($freshRow);
+    }
+
     private function buildOrderFromRow(array $orderRow): Order
     {
         $orderId = (int)($orderRow['order_id'] ?? 0);

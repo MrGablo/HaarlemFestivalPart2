@@ -116,6 +116,56 @@ class OrderController
         $this->redirectBack('/jazz');
     }
 
+    public function updateItemQuantity(): void
+    {
+        Session::ensureStarted();
+
+        $userId = $this->currentUserId();
+        if ($userId === null) {
+            $message = 'Please log in to edit your cart.';
+            Flash::setErrors(['general' => $message]);
+
+            if ($this->isAjaxRequest()) {
+                $this->jsonResponse([
+                    'ok' => false,
+                    'message' => $message,
+                    'redirect' => '/login',
+                ], 401);
+            }
+
+            header('Location: /login', true, 302);
+            exit;
+        }
+
+        $orderItemId = isset($_POST['order_item_id']) ? (int)$_POST['order_item_id'] : 0;
+        $quantity = isset($_POST['quantity']) ? (int)$_POST['quantity'] : 0;
+
+        try {
+            $order = $this->orderService->updateItemQuantityInPendingOrder($userId, $orderItemId, $quantity);
+            Flash::setSuccess('Cart quantity updated.');
+
+            if ($this->isAjaxRequest()) {
+                $this->jsonResponse([
+                    'ok' => true,
+                    'message' => 'Cart quantity updated.',
+                    'cart' => $this->buildCartPayload($order),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            $message = $e->getMessage();
+            Flash::setErrors(['general' => $message]);
+
+            if ($this->isAjaxRequest()) {
+                $this->jsonResponse([
+                    'ok' => false,
+                    'message' => $message,
+                ], 422);
+            }
+        }
+
+        $this->redirectBack('/jazz');
+    }
+
     private function currentUserId(): ?int
     {
         $payload = AuthSessionData::read();
