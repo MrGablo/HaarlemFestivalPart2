@@ -46,7 +46,7 @@ final class UploadService
             throw new \Exception('Unable to create upload directory.');
         }
 
-        // ✅ Always generate a unique random name
+        //  Always generate a unique random name
         $fileName = $this->randomName() . '.' . $extension;
         $targetPath = $targetDir . '/' . $fileName;
 

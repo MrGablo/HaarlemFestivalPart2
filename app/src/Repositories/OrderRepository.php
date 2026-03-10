@@ -134,6 +134,37 @@ class OrderRepository extends Repository implements IOrderRepository
         return $stmt->rowCount() > 0;
     }
 
+    public function updateOrderItemQuantity(int $orderId, int $orderItemId, int $quantity): bool
+    {
+        $stmt = $this->getConnection()->prepare(
+            'UPDATE `order_items`
+             SET quantity = :quantity
+             WHERE order_id = :order_id AND order_item_id = :order_item_id'
+        );
+
+        $stmt->execute([
+            ':quantity' => $quantity,
+            ':order_id' => $orderId,
+            ':order_item_id' => $orderItemId,
+        ]);
+
+        if ($stmt->rowCount() > 0) {
+            return true;
+        }
+
+        $existsStmt = $this->getConnection()->prepare(
+            'SELECT 1 FROM `order_items`
+             WHERE order_id = :order_id AND order_item_id = :order_item_id
+             LIMIT 1'
+        );
+        $existsStmt->execute([
+            ':order_id' => $orderId,
+            ':order_item_id' => $orderItemId,
+        ]);
+
+        return (bool)$existsStmt->fetchColumn();
+    }
+
     public function countItems(int $orderId): int
     {
         $stmt = $this->getConnection()->prepare(

@@ -248,6 +248,44 @@ $headerCartTotal = $headerCartOrder ? $headerCartOrder->getTotalPrice() : 0.0;
     gap: 10px;
 }
 
+.cart-item__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cart-item__qty-block {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cart-qty-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.cart-qty-btn {
+    width: 30px;
+    height: 30px;
+    border: 1px solid #2f80ed;
+    background: #2f80ed;
+    color: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.cart-qty-btn:hover {
+    background: #1d6ed8;
+}
+
+.cart-qty-btn:disabled {
+    opacity: 0.65;
+    cursor: wait;
+}
+
 .cart-item__row span {
     color: #171717;
     font-weight: 700;
@@ -343,15 +381,24 @@ $headerCartTotal = $headerCartOrder ? $headerCartOrder->getTotalPrice() : 0.0;
                     </p>
 
                     <div class="cart-item__row flex items-center justify-between gap-[10px]">
-                        <span class="font-bold text-[#171717]">
-                            Qty: <?php echo (int)$item->quantity; ?>
-                            x EUR <?php echo number_format($item->getUnitPrice(), 2); ?>
-                        </span>
+                        <div class="cart-item__qty-block">
+                            <span class="font-bold text-[#171717]">
+                                Qty: <?php echo (int)$item->quantity; ?>
+                                x EUR <?php echo number_format($item->getUnitPrice(), 2); ?>
+                            </span>
 
-                        <form method="POST" action="/order/item/remove">
-                            <input type="hidden" name="order_item_id" value="<?php echo (int)$item->order_item_id; ?>">
-                            <button type="submit" class="cart-remove-btn cursor-pointer rounded-lg border border-[#9f9f9f] bg-[#f3f3f3] px-[10px] py-[6px] font-bold text-[#111] hover:bg-[#e8e8e8]">Remove</button>
-                        </form>
+                            <div class="cart-qty-controls" data-order-item-id="<?php echo (int)$item->order_item_id; ?>" data-quantity="<?php echo (int)$item->quantity; ?>">
+                                <button type="button" class="cart-qty-btn" data-direction="decrease" aria-label="Decrease quantity for <?php echo htmlspecialchars((string)($event?->title ?? 'Event')); ?>">-</button>
+                                <button type="button" class="cart-qty-btn" data-direction="increase" aria-label="Increase quantity for <?php echo htmlspecialchars((string)($event?->title ?? 'Event')); ?>">+</button>
+                            </div>
+                        </div>
+
+                        <div class="cart-item__actions">
+                            <form method="POST" action="/order/item/remove">
+                                <input type="hidden" name="order_item_id" value="<?php echo (int)$item->order_item_id; ?>">
+                                <button type="submit" class="cart-remove-btn cursor-pointer rounded-lg border border-[#9f9f9f] bg-[#f3f3f3] px-[10px] py-[6px] font-bold text-[#111] hover:bg-[#e8e8e8]">Remove</button>
+                            </form>
+                        </div>
                     </div>
                 </article>
             <?php endforeach; ?>
@@ -422,11 +469,19 @@ $headerCartTotal = $headerCartOrder ? $headerCartOrder->getTotalPrice() : 0.0;
                     '<h3 class="cart-item__title m-0 text-[0.98rem] font-extrabold text-[#0f0f0f]">' + title + '</h3>',
                     '<p class="cart-item__meta my-[6px] mb-[10px] text-[0.9rem] text-[#2d2d2d]">' + location + '</p>',
                     '<div class="cart-item__row flex items-center justify-between gap-[10px]">',
-                        '<span class="font-bold text-[#171717]">Qty: ' + quantity + ' x EUR ' + unitPriceLabel + '</span>',
-                        '<form method="POST" action="/order/item/remove">',
-                            '<input type="hidden" name="order_item_id" value="' + orderItemId + '">',
-                            '<button type="submit" class="cart-remove-btn cursor-pointer rounded-lg border border-[#9f9f9f] bg-[#f3f3f3] px-[10px] py-[6px] font-bold text-[#111] hover:bg-[#e8e8e8]">Remove</button>',
-                        '</form>',
+                        '<div class="cart-item__qty-block">',
+                            '<span class="font-bold text-[#171717]">Qty: ' + quantity + ' x EUR ' + unitPriceLabel + '</span>',
+                            '<div class="cart-qty-controls" data-order-item-id="' + orderItemId + '" data-quantity="' + quantity + '">',
+                                '<button type="button" class="cart-qty-btn" data-direction="decrease" aria-label="Decrease quantity for ' + title + '">-</button>',
+                                '<button type="button" class="cart-qty-btn" data-direction="increase" aria-label="Increase quantity for ' + title + '">+</button>',
+                            '</div>',
+                        '</div>',
+                        '<div class="cart-item__actions">',
+                            '<form method="POST" action="/order/item/remove">',
+                                '<input type="hidden" name="order_item_id" value="' + orderItemId + '">',
+                                '<button type="submit" class="cart-remove-btn cursor-pointer rounded-lg border border-[#9f9f9f] bg-[#f3f3f3] px-[10px] py-[6px] font-bold text-[#111] hover:bg-[#e8e8e8]">Remove</button>',
+                            '</form>',
+                        '</div>',
                     '</div>',
                 '</article>'
             ].join('');
@@ -464,14 +519,15 @@ $headerCartTotal = $headerCartOrder ? $headerCartOrder->getTotalPrice() : 0.0;
         }
     });
 
-    // Remove cart items without reloading the page.
+    // Handle remove actions without reloading the page.
     document.addEventListener('submit', function (event) {
         var form = event.target;
         if (!(form instanceof HTMLFormElement)) {
             return;
         }
 
-        if (form.getAttribute('action') !== '/order/item/remove') {
+        var action = form.getAttribute('action') || '';
+        if (action !== '/order/item/remove') {
             return;
         }
 
@@ -486,7 +542,7 @@ $headerCartTotal = $headerCartOrder ? $headerCartOrder->getTotalPrice() : 0.0;
         submitBtn.disabled = true;
         submitBtn.textContent = 'Removing...';
 
-        fetch('/order/item/remove', {
+        fetch(action, {
             method: 'POST',
             body: new FormData(form),
             headers: {
@@ -513,7 +569,7 @@ $headerCartTotal = $headerCartOrder ? $headerCartOrder->getTotalPrice() : 0.0;
 
                     var message = payload && typeof payload.message === 'string'
                         ? payload.message
-                        : 'Could not remove item from cart.';
+                        : 'Could not remove cart item.';
                     window.alert(message);
                     return;
                 }
@@ -522,11 +578,98 @@ $headerCartTotal = $headerCartOrder ? $headerCartOrder->getTotalPrice() : 0.0;
                 setOpen(true);
             })
             .catch(function () {
-                window.alert('Network error while removing item. Please try again.');
+                window.alert('Network error while removing from cart. Please try again.');
             })
             .finally(function () {
                 submitBtn.disabled = false;
                 submitBtn.textContent = originalLabel || 'Remove';
+            });
+    }, true);
+
+    // Use quantity arrows for instant increment/decrement updates.
+    document.addEventListener('click', function (event) {
+        var target = event.target;
+        if (!(target instanceof Element)) {
+            return;
+        }
+
+        var button = target.closest('.cart-qty-btn');
+        if (!(button instanceof HTMLButtonElement)) {
+            return;
+        }
+
+        event.preventDefault();
+
+        var controls = button.closest('.cart-qty-controls');
+        if (!(controls instanceof HTMLElement)) {
+            return;
+        }
+
+        var orderItemId = Number(controls.dataset.orderItemId || 0);
+        var currentQuantity = Number(controls.dataset.quantity || 0);
+        var direction = button.getAttribute('data-direction') || '';
+        var delta = direction === 'increase' ? 1 : (direction === 'decrease' ? -1 : 0);
+
+        if (orderItemId <= 0 || currentQuantity <= 0 || delta === 0) {
+            return;
+        }
+
+        var nextQuantity = Math.min(99, Math.max(1, currentQuantity + delta));
+        if (nextQuantity === currentQuantity) {
+            return;
+        }
+
+        var qtyButtons = controls.querySelectorAll('.cart-qty-btn');
+        qtyButtons.forEach(function (btn) {
+            btn.disabled = true;
+        });
+
+        var body = new FormData();
+        body.append('order_item_id', String(orderItemId));
+        body.append('quantity', String(nextQuantity));
+
+        fetch('/order/item/quantity', {
+            method: 'POST',
+            body: body,
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
+        })
+            .then(function (response) {
+                return response.json().catch(function () { return null; }).then(function (payload) {
+                    return { response: response, payload: payload };
+                });
+            })
+            .then(function (result) {
+                var response = result.response;
+                var payload = result.payload;
+
+                if (!response.ok || !payload || payload.ok !== true) {
+                    var redirect = payload && typeof payload.redirect === 'string' ? payload.redirect : '';
+                    if (redirect) {
+                        window.location.href = redirect;
+                        return;
+                    }
+
+                    var message = payload && typeof payload.message === 'string'
+                        ? payload.message
+                        : 'Could not update cart quantity.';
+                    window.alert(message);
+                    return;
+                }
+
+                updateCartUI(payload.cart || null);
+                setOpen(true);
+            })
+            .catch(function () {
+                window.alert('Network error while updating quantity. Please try again.');
+            })
+            .finally(function () {
+                qtyButtons.forEach(function (btn) {
+                    btn.disabled = false;
+                });
             });
     }, true);
 })();
