@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Models\JazzEvent;
 use App\Repositories\JazzEventRepository;
+use App\Repositories\PageRepository;
 use App\Services\UploadService;
 use App\Utils\AdminGuard;
 use App\Utils\Flash;
@@ -41,6 +42,7 @@ final class CMSJazzController
         AdminGuard::requireAdmin(true);
 
         $old = Flash::getOld();
+        $pages = (new PageRepository())->getAllPages();
         $errors = Flash::getErrors();
         $flashSuccess = Flash::getSuccess();
         $csrfToken = $this->csrfToken();

@@ -131,13 +131,23 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-slate-700">Page ID (optional)</label>
-                            <input
+                            <label class="block text-sm font-medium text-slate-700">Linked page (optional)</label>
+                            <select
                                 name="page_id"
-                                type="number"
-                                min="1"
-                                value="<?= $v('page_id') ?>"
                                 class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
+                                <option value="">No linked page</option>
+                                <?php foreach (($pages ?? []) as $page): ?>
+                                    <?php
+                                    $pageId = (string)($page['Page_ID'] ?? '');
+                                    $isSelected = ((string)($old['page_id'] ?? '') === $pageId) ? 'selected' : '';
+                                    $label = (string)($page['Page_Title'] ?? 'Untitled');
+                                    $type = (string)($page['Page_Type'] ?? '');
+                                    ?>
+                                    <option value="<?= htmlspecialchars($pageId) ?>" <?= $isSelected ?>>
+                                        <?= htmlspecialchars($label) ?><?= $type !== '' ? ' (' . htmlspecialchars($type) . ')' : '' ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
                     </div>
                 </div>
