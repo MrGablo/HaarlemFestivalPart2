@@ -16,11 +16,18 @@
             <div class="flex items-center justify-between gap-4">
                 <div>
                     <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Jazz Events</h1>
-                    <p class="mt-1 text-sm text-slate-600">Pick a jazz event to edit (child + parent fields).</p>
+                    <p class="mt-1 text-sm text-slate-600">Create, edit, and delete jazz events securely.</p>
                 </div>
 
-                <a href="/cms"
-                   class="text-sm font-medium text-slate-600 hover:text-slate-900">← Back to CMS</a>
+                <div class="flex items-center gap-3">
+                    <a href="/cms/events/jazz/create"
+                       class="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
+                        + Create Jazz Event
+                    </a>
+
+                    <a href="/cms"
+                       class="text-sm font-medium text-slate-600 hover:text-slate-900">← Back to CMS</a>
+                </div>
             </div>
 
             <?php require __DIR__ . '/../partials/flash_success.php'; ?>
@@ -61,11 +68,15 @@
                                                 Edit jazz event
                                             </a>
 
-                                            <!-- Parent-only editor link (you’ll implement later) -->
-                                            <a href="/cms/events/<?= (int)$e->event_id ?>/edit"
-                                               class="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700">
-                                                Edit general
-                                            </a>
+                                            <form method="POST"
+                                                  action="/cms/events/jazz/<?= (int)$e->event_id ?>/delete"
+                                                  onsubmit="return confirm('Delete this jazz event? This cannot be undone.');">
+                                                <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string)($csrfToken ?? '')) ?>">
+                                                <button type="submit"
+                                                        class="rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700">
+                                                    Delete
+                                                </button>
+                                            </form>
                                         </div>
                                     </td>
                                 </tr>
