@@ -2,12 +2,8 @@
 
 namespace App\Models;
 
-class JazzEvent
+class JazzEvent extends Event
 {
-    public int $event_id;
-    public string $title;
-    public string $event_type;
-
     public string $start_date;
     public string $end_date;
 
@@ -22,9 +18,10 @@ class JazzEvent
     /** Build from the associative array returned by PDO::FETCH_ASSOC */
     public function __construct(array $row)
     {
-        $this->event_id = (int)($row['event_id'] ?? 0);
-        $this->title = (string)($row['title'] ?? '');
-        $this->event_type = (string)($row['event_type'] ?? 'jazz');
+        parent::__construct($row);
+        if ($this->event_type === '') {
+            $this->event_type = 'jazz';
+        }
 
         $this->start_date = (string)($row['start_date'] ?? '');
         $this->end_date = (string)($row['end_date'] ?? '');
