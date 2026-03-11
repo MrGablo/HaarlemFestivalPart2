@@ -20,9 +20,11 @@ Env::load();
  * Define the routes for the application.
  */
 $dispatcher = simpleDispatcher(function (RouteCollector $r) {
-    $r->addRoute('GET', '/', ['App\Controllers\AuthController', 'showLogin']);
+    $r->addRoute('GET', '/', handler: ['App\Controllers\AuthController', 'showLogin']);
     $r->addRoute('GET', '/hello/{name}', ['App\Controllers\HelloController', 'greet']);
 
+    //Stories routes
+    $r->addRoute('GET', '/stories', ['App\Controllers\StoriesController', 'index']);
 
     //Jazz Festival routes
     $r->addRoute('GET', '/jazz', ['App\Controllers\JazzController', 'home']);
