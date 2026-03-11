@@ -2,20 +2,23 @@
 
 namespace App\Services;
 
-use App\Repositories\HomeRepository;
-use App\Repositories\Interfaces\IHomeRepository;
+use App\Repositories\Interfaces\IPageRepository;
+use App\ViewModels\HomePageViewModel;
 
 class HomeService
 {
-    private IHomeRepository $homeRepository;
+    public function __construct(
+        private IPageRepository $pageRepo
+    ) {}
 
-    public function __construct(IHomeRepository $homeRepository = null)
+    public function getHomePageViewModel(): HomePageViewModel
     {
-        $this->homeRepository = $homeRepository ?? new HomeRepository();
-    }
+        // get page type 
+        $content = $this->pageRepo->getPageContentByType('HomePage');
 
-    public function getHomePageContent(): array
-    {
-        return $this->homeRepository->getHomePageContent();
+        // get the tabs
+        $categories = $content['schedule']['filters']['tabs'] ?? [];
+
+        return new HomePageViewModel($content, $categories);
     }
 }

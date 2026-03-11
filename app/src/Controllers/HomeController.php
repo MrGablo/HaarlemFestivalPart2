@@ -3,9 +3,10 @@
 namespace App\Controllers;
 
 use App\Config;
-use App\Repositories\Interfaces\IHomeRepository;
+use App\Repositories\PageRepository;
 use App\Services\HomeService;
 use App\Utils\AuthSessionData;
+use App\Utils\Session;
 
 class HomeController
 {
@@ -13,26 +14,33 @@ class HomeController
 
     public function __construct()
     {
-        $this->homeService = new HomeService();
+        $this->homeService = new HomeService(new PageRepository());
     }
 
-    public function home()
+    public function home(): void
     {
+        Session::ensureStarted();
 
         try {
-            // Get data from the service
-            $content = $this->homeService->getHomePageContent();
+            // get viewmodel 
+            $vm = $this->homeService->getHomePageViewModel();
+
+            // extract data for the view
+            $content = $vm->content;
+            $categories = $vm->categories;
+
+            // auth  
             $auth = AuthSessionData::read();
             $isLoggedIn = $auth !== null;
             $profilePicturePath = $auth['profilePicturePath'] ?? Config::DEFAULT_USER_PROFILE_IMAGE_PATH;
 
-            // Load the file
+            // Load the view
             require __DIR__ . '/../Views/pages/home.php';
+
         } catch (\Throwable $e) {
-            // Render the same view with an errors array so the partial can display it
             $errors = ['general' => $e->getMessage()];
-            // Ensure variables used by the view exist
             $content = [];
+            $categories = [];
             $isLoggedIn = false;
             $profilePicturePath = Config::DEFAULT_USER_PROFILE_IMAGE_PATH;
 
