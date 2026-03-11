@@ -66,6 +66,7 @@ final class CMSJazzController
             $this->handleImageUpload($event, false);
 
             $newId = $this->jazzEvents->createJazzEvent($event);
+            $this->syncArtistPageEventIds(null, $event->page_id, $newId);
             Flash::setSuccess('Jazz event created successfully.');
             header('Location: /cms/events/jazz/' . $newId, true, 302);
             exit;
@@ -95,6 +96,7 @@ final class CMSJazzController
         AdminGuard::requireAdmin(true);
 
         $event = $this->getEventOrRedirect($id);
+        $previousPageId = $event->page_id;
 
         try {
             $this->assertCsrf();
@@ -103,6 +105,7 @@ final class CMSJazzController
             $this->handleImageUpload($event, true);
 
             $this->jazzEvents->updateJazzEvent($event);
+            $this->syncArtistPageEventIds($previousPageId, $event->page_id, $event->event_id);
             Flash::setSuccess('Jazz event updated successfully.');
         } catch (\Throwable $e) {
             Flash::setErrors(['general' => $e->getMessage()]);
@@ -128,6 +131,7 @@ final class CMSJazzController
                 exit;
             }
 
+            $this->syncArtistPageEventIds($event->page_id, null, $event->event_id);
             $this->deleteJazzImageIfExists($event->img_background);
             Flash::setSuccess('Jazz event deleted successfully.');
         } catch (\Throwable $e) {
@@ -287,6 +291,77 @@ final class CMSJazzController
         $absolute = __DIR__ . '/../../public/' . $relative;
         if (is_file($absolute)) {
             @unlink($absolute);
+        }
+    }
+
+    private function syncArtistPageEventIds(?int $oldPageId, ?int $newPageId, int $eventId): void
+    {
+        $oldPageId = $oldPageId !== null && $oldPageId > 0 ? $oldPageId : null;
+        $newPageId = $newPageId !== null && $newPageId > 0 ? $newPageId : null;
+
+        if ($oldPageId === null && $newPageId === null) {
+            return;
+        }
+
+        $pages = new PageRepository();
+
+        if ($oldPageId !== null && $oldPageId !== $newPageId) {
+            $this->removeEventIdFromPage($pages, $oldPageId, $eventId);
+        }
+
+        if ($newPageId !== null) {
+            $this->addEventIdToPage($pages, $newPageId, $eventId);
+        }
+    }
+
+    private function addEventIdToPage(PageRepository $pages, int $pageId, int $eventId): void
+    {
+        try {
+            $content = $pages->getPageContentById($pageId);
+
+            $eventIds = $content['events']['event_ids'] ?? [];
+            if (!is_array($eventIds)) {
+                $eventIds = [];
+            }
+
+            foreach ($eventIds as $existing) {
+                if ((int)$existing === $eventId) {
+                    return;
+                }
+            }
+
+            $eventIds[] = (string)$eventId;
+            $content['events']['event_ids'] = $eventIds;
+
+            $pages->savePageContentById($pageId, $content);
+        } catch (\Throwable $e) {
+            error_log('Failed to add event ID to artist page JSON: ' . $e->getMessage());
+        }
+    }
+
+    private function removeEventIdFromPage(PageRepository $pages, int $pageId, int $eventId): void
+    {
+        try {
+            $content = $pages->getPageContentById($pageId);
+
+            $eventIds = $content['events']['event_ids'] ?? [];
+            if (!is_array($eventIds)) {
+                return;
+            }
+
+            $filtered = array_values(array_filter(
+                $eventIds,
+                static fn($value) => (int)$value !== $eventId
+            ));
+
+            if (count($filtered) === count($eventIds)) {
+                return;
+            }
+
+            $content['events']['event_ids'] = $filtered;
+            $pages->savePageContentById($pageId, $content);
+        } catch (\Throwable $e) {
+            error_log('Failed to remove event ID from artist page JSON: ' . $e->getMessage());
         }
     }
 }
