@@ -13,6 +13,11 @@ final class CmsForm
 
     public static function renderContent(array $node, array $path = []): void
     {
+        if (self::isSectionsList($node)) {
+            self::renderSectionsList($node, $path);
+            return;
+        }
+
         foreach ($node as $key => $value) {
             $currentPath = [...$path, (string)$key];
 
@@ -34,6 +39,58 @@ final class CmsForm
 
             self::renderScalar($currentPath, $value);
         }
+    }
+
+    private static function isSectionsList(array $node): bool
+    {
+        if (!array_is_list($node) || $node === []) {
+            return false;
+        }
+
+        foreach ($node as $item) {
+            if (!is_array($item)) {
+                return false;
+            }
+
+            if (!array_key_exists('sectionType', $item) || !array_key_exists('data', $item)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static function renderSectionsList(array $sections, array $path): void
+    {
+        echo '<div class="grid grid-cols-1 gap-4">';
+
+        foreach ($sections as $index => $section) {
+            $sectionType = (string)($section['sectionType'] ?? '');
+            $sectionData = is_array($section['data'] ?? null) ? $section['data'] : [];
+            $sectionPath = [...$path, (string)$index];
+
+            echo '<section class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/70">';
+            echo '<div class="border-b border-slate-200 bg-white px-4 py-3">';
+            echo '<p class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Section</p>';
+            echo '<h2 class="mt-1 text-lg font-semibold text-slate-900">' . self::h(self::label($sectionType !== '' ? $sectionType : 'Section')) . '</h2>';
+            echo '</div>';
+            echo '<div class="p-4">';
+
+            self::renderHiddenScalar([...$sectionPath, 'sectionType'], $sectionType, 'string');
+
+            if ($sectionData === []) {
+                echo '<p class="text-sm text-slate-500">This section has no editable fields.</p>';
+            } else {
+                echo '<div class="grid grid-cols-1 gap-3">';
+                self::renderContent($sectionData, [...$sectionPath, 'data']);
+                echo '</div>';
+            }
+
+            echo '</div>';
+            echo '</section>';
+        }
+
+        echo '</div>';
     }
 
     private static function inputName(string $root, array $path): string
@@ -92,6 +149,15 @@ final class CmsForm
         }
 
         echo '</div>';
+    }
+
+    private static function renderHiddenScalar(array $path, mixed $value, string $type): void
+    {
+        $contentName = self::inputName('content', $path);
+        $typeName = self::inputName('types', $path);
+
+        echo '<input type="hidden" name="' . self::h($contentName) . '" value="' . self::h((string)$value) . '">';
+        echo '<input type="hidden" name="' . self::h($typeName) . '" value="' . self::h($type) . '">';
     }
 
     private static function isHtmlField(string $key, string $value): bool
