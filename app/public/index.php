@@ -58,6 +58,12 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     $r->addRoute('GET', '/cms/pages', ['App\Controllers\CMSController', 'index']);
     $r->addRoute('GET', '/cms/page/{id:\\d+}', ['App\Controllers\CMSController', 'edit']);
     $r->addRoute('POST', '/cms/page/{id:\\d+}/update', ['App\Controllers\CMSController', 'update']);
+    $r->addRoute('GET',  '/cms/artists', ['App\Controllers\CMSArtistController', 'index']);
+    $r->addRoute('GET',  '/cms/artists/create', ['App\Controllers\CMSArtistController', 'createForm']);
+    $r->addRoute('POST', '/cms/artists/create', ['App\Controllers\CMSArtistController', 'create']);
+    $r->addRoute('GET',  '/cms/artists/{id:\\d+}', ['App\Controllers\CMSArtistController', 'edit']);
+    $r->addRoute('POST', '/cms/artists/{id:\\d+}', ['App\Controllers\CMSArtistController', 'update']);
+    $r->addRoute('POST', '/cms/artists/{id:\\d+}/delete', ['App\Controllers\CMSArtistController', 'delete']);
     // Jazz CMS routes (admin only)
     $r->addRoute('GET',  '/cms/events/jazz', ['App\Controllers\CMSJazzController', 'index']);
     $r->addRoute('GET',  '/cms/events/jazz/create', ['App\Controllers\CMSJazzController', 'createForm']);
