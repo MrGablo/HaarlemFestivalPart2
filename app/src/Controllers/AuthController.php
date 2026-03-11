@@ -36,6 +36,68 @@ class AuthController
         require __DIR__ . '/../Views/auth/register.php';
     }
 
+    public function showForgotPassword(): void
+    {
+        $errors = Flash::getErrors();
+        $flashSuccess = Flash::getSuccess();
+        $old = Flash::getOld();
+
+        require __DIR__ . '/../Views/auth/forgot_password.php';
+    }
+
+    public function requestPasswordReset(): void
+    {
+        Flash::setOld([
+            'email' => $_POST['email'] ?? '',
+        ]);
+
+        try {
+            $this->authService->requestPasswordReset((string)($_POST['email'] ?? ''));
+            Flash::setOld([]);
+        } catch (\Throwable $e) {
+            // Keep this generic on purpose, to avoid account enumeration.
+        }
+
+        Flash::setSuccess('If an account exists for that email, you will receive a password reset link shortly.');
+        header('Location: /forgot-password', true, 302);
+        exit;
+    }
+
+    public function showResetPassword(): void
+    {
+        $errors = Flash::getErrors();
+        $flashSuccess = Flash::getSuccess();
+        $old = Flash::getOld();
+
+        $token = trim((string)($old['token'] ?? ($_GET['token'] ?? '')));
+
+        require __DIR__ . '/../Views/auth/reset_password.php';
+    }
+
+    public function resetPassword(): void
+    {
+        $token = trim((string)($_POST['token'] ?? ''));
+
+        Flash::setOld([
+            'token' => $token,
+        ]);
+
+        try {
+            $this->authService->resetPasswordWithToken($_POST);
+            Flash::setOld([]);
+            Flash::setSuccess('Password reset successful. You can now sign in.');
+            header('Location: /login', true, 302);
+            exit;
+        } catch (\Throwable $e) {
+            Flash::setErrors([
+                'general' => $e->getMessage(),
+            ]);
+
+            header('Location: /reset-password?token=' . urlencode($token), true, 302);
+            exit;
+        }
+    }
+
     public function register(): void
     {
         // Do not store old input in session; if validation fails we'll render

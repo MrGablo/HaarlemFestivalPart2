@@ -51,6 +51,21 @@ class EmailService
         return $this->sendPlainText($email, $subject, $body);
     }
 
+    public function sendPasswordResetLink(string $email, string $firstName, string $resetUrl): bool
+    {
+        $subject = 'Reset your Haarlem Festival password';
+        $body = "Hi {$firstName},\n\n"
+            . "We received a request to reset your password.\n"
+            . "Use the link below to choose a new password:\n\n"
+            . "{$resetUrl}\n\n"
+            . "This link expires in 1 hour.\n"
+            . "If you did not request this, you can ignore this email.\n\n"
+            . "Kind regards,\n"
+            . "Haarlem Festival";
+
+        return $this->sendPlainText($email, $subject, $body);
+    }
+
     public function sendAccountUpdateConfirmation(string $email, string $firstName): bool
     {
         $subject = 'Account updated';
