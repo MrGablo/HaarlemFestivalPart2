@@ -8,6 +8,19 @@ $authPayload = AuthSessionData::read();
 $headerIsLoggedIn = isset($isLoggedIn) ? (bool)$isLoggedIn : ($authPayload !== null);
 $headerProfilePicturePath = (string)($profilePicturePath ?? ($authPayload['profilePicturePath'] ?? '/assets/img/default-user.png'));
 $headerIsAdmin = strtolower((string)($authPayload['userRole'] ?? '')) === 'admin';
+
+$currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+
+
+function getNavClass($path, $currentPath) {
+    $baseClasses = "no-underline font-bold text-base py-2.5 px-[18px] transition-all duration-200 rounded-[25px]";
+    
+    if ($currentPath === $path) {
+        return "$baseClasses bg-[#2F80ED] text-white shadow-[0_4px_10px_rgba(47,128,237,0.3)]";
+    }
+    
+    return "$baseClasses text-black hover:bg-[#f5f5f5]";
+}
 ?>
 
 <header class="bg-white border-b border-[#f0f0f0] py-[15px] font-sans">
@@ -18,17 +31,14 @@ $headerIsAdmin = strtolower((string)($authPayload['userRole'] ?? '')) === 'admin
         </a>
 
         <nav class="flex items-center gap-[15px]">
-            <a href="/" class="no-underline text-white font-bold text-base py-2.5 px-[18px] transition-all duration-200 rounded-[25px] bg-[#2F80ED] shadow-[0_4px_10px_rgba(47,128,237,0.3)] hover:bg-[#1c6ddb]">
-                Home
-            </a>
-
-            <a href="/dance" class="no-underline text-black font-bold text-base py-2.5 px-[18px] transition-all duration-200 rounded-[25px] hover:bg-[#f5f5f5]">Dance</a>
-            <a href="/jazz" class="no-underline text-black font-bold text-base py-2.5 px-[18px] transition-all duration-200 rounded-[25px] hover:bg-[#f5f5f5]">Jazz</a>
-            <a href="/yummy" class="no-underline text-black font-bold text-base py-2.5 px-[18px] transition-all duration-200 rounded-[25px] hover:bg-[#f5f5f5]">Yummy</a>
-            <a href="/stories" class="no-underline text-black font-bold text-base py-2.5 px-[18px] transition-all duration-200 rounded-[25px] hover:bg-[#f5f5f5]">Stories</a>
-            <a href="/history" class="no-underline text-black font-bold text-base py-2.5 px-[18px] transition-all duration-200 rounded-[25px] hover:bg-[#f5f5f5]">History</a>
+            <a href="/" class="<?= getNavClass('/', $currentPath) ?>">Home</a>
+            <a href="/dance" class="<?= getNavClass('/dance', $currentPath) ?>">Dance</a>
+            <a href="/jazz" class="<?= getNavClass('/jazz', $currentPath) ?>">Jazz</a>
+            <a href="/yummy" class="<?= getNavClass('/yummy', $currentPath) ?>">Yummy</a>
+            <a href="/stories" class="<?= getNavClass('/stories', $currentPath) ?>">Stories</a>
+            <a href="/history" class="<?= getNavClass('/history', $currentPath) ?>">History</a>
             
-            <a href="/cart" class="flex items-center gap-2 no-underline text-black font-bold text-base py-2.5 px-[18px] transition-all duration-200 rounded-[25px] hover:bg-[#f5f5f5]">
+            <a href="/cart" class="<?= getNavClass('/cart', $currentPath) ?> flex items-center gap-2">
                 Program
                 <div class="relative flex items-center">
                     <img src="/assets/img/headerfooter/cart.svg" alt="Cart" class="w-6 h-6">
@@ -52,7 +62,7 @@ $headerIsAdmin = strtolower((string)($authPayload['userRole'] ?? '')) === 'admin
             <?php endif; ?>
 
             <?php if ($headerIsAdmin): ?>
-                <a class="no-underline text-black font-bold text-base py-2.5 px-[18px] transition-all duration-200 rounded-[25px] hover:bg-[#f5f5f5]" href="/cms">CMS</a>
+                <a class="<?= getNavClass('/cms', $currentPath) ?>" href="/cms">CMS</a>
             <?php endif; ?>
         </nav>
     </div>
