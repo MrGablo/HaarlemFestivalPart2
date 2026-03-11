@@ -47,10 +47,7 @@ declare(strict_types=1);
             style="background-image: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), url('<?= htmlspecialchars($vm->heroImage, ENT_QUOTES, 'UTF-8') ?>');">
             <h1
                 class="ml-4 inline-block max-w-full px-4 py-3 font-display text-[80px] font-bold uppercase leading-[80px] tracking-[-0.05em] text-white max-md:ml-0 max-md:text-4xl max-md:leading-9">
-                <?php foreach ($vm->heroTitleLines as $index => $heroTitleLine): ?>
-                    <span
-                        class="<?= $index === 0 ? 'text-white' : 'mt-1 block text-white' ?>"><?= htmlspecialchars($heroTitleLine) ?></span>
-                <?php endforeach; ?>
+                <?= $vm->heroTitleHtml ?>
             </h1>
             <p
                 class="mt-1.5 max-w-[860px] text-2xl font-semibold leading-8 text-white max-md:max-w-full max-md:text-xl">
@@ -159,7 +156,7 @@ declare(strict_types=1);
                             </div>
                             <div
                                 class="self-center mt-5 [&_a]:flex [&_a]:max-w-full [&_a]:items-center [&_a]:justify-center [&_a]:gap-0 [&_a]:rounded-2xl [&_a]:bg-amber-400 [&_a]:p-2.5 [&_a]:font-semibold [&_a]:text-white [&_a]:no-underline [&_a]:w-[131px] [&_.btn-primary]:flex [&_.btn-primary]:max-w-full [&_.btn-primary]:items-center [&_.btn-primary]:justify-center [&_.btn-primary]:gap-0 [&_.btn-primary]:rounded-2xl [&_.btn-primary]:bg-amber-400 [&_.btn-primary]:p-2.5 [&_.btn-primary]:font-semibold [&_.btn-primary]:text-white [&_.btn-primary]:no-underline [&_.btn-primary]:w-[131px]">
-                                <?= $vm->map['buttonHtml'] ?? '<a href="' . htmlspecialchars($vm->mapUrl, ENT_QUOTES, 'UTF-8') . '" class="btn-primary">go to map &rarr;</a>' ?>
+                                <a href="/map" class="btn-primary">go to map &rarr;</a>
                             </div>
                         </div>
                     </div>

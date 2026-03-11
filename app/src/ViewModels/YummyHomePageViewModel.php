@@ -6,7 +6,7 @@ class YummyHomePageViewModel
 {
     public string $pageTitle;
     public array $hero;
-    public array $heroTitleLines;
+    public string $heroTitleHtml;
     public array $intro;
     public array $gallery;
     public array $map;
@@ -15,7 +15,6 @@ class YummyHomePageViewModel
     public array $galleryCaptions;
     public array $visibleRestaurantItems;
     public string $heroImage;
-    public string $mapUrl;
     public string $mapImage;
     public string $mapImageCaption;
 
@@ -25,6 +24,9 @@ class YummyHomePageViewModel
 
         $this->pageTitle = (string)($content['pageTitle'] ?? 'Haarlem Yummy Event');
         $this->hero = $sectionMap['hero'] ?? [];
+        $heroTitleHtml = trim((string)($this->hero['titleHtml'] ?? ''));
+        $heroTitleHtml = preg_replace('~^<h1[^>]*>|</h1>$~i', '', $heroTitleHtml) ?? $heroTitleHtml;
+        $this->heroTitleHtml = strip_tags($heroTitleHtml, '<br><span><strong><em><b><i>');
         $this->intro = $sectionMap['intro'] ?? [];
         $this->gallery = $sectionMap['gallery'] ?? [];
         $this->map = $sectionMap['map'] ?? [];
@@ -40,9 +42,6 @@ class YummyHomePageViewModel
         $this->galleryCaptions = $this->buildGalleryCaptions($restaurantItems);
         $this->visibleRestaurantItems = array_slice($restaurantItems, 0, 7);
 
-        $this->heroTitleLines = $this->buildHeroTitleLines();
-
-        $this->mapUrl = $this->extractMapUrl();
         $this->mapImageCaption = trim((string)($this->map['imageCaption'] ?? ''));
         $this->heroImage = $this->normalizeAssetPath((string)($this->hero['bgImage'] ?? ''));
         $this->mapImage = $this->normalizeAssetPath((string)($this->map['image'] ?? ''));
@@ -116,37 +115,6 @@ class YummyHomePageViewModel
         }
 
         return $galleryCaptions;
-    }
-
-    private function buildHeroTitleLines(): array
-    {
-        $heroTitleSource = (string)($this->hero['titleHtml'] ?? 'Haarlem Yummy Event');
-        $heroTitleSource = preg_replace('/<br\s*\/?>/i', "\n", $heroTitleSource) ?? $heroTitleSource;
-        $heroTitleSource = preg_replace('~</(?:p|div|h1|h2|h3|h4)>~i', "\n", $heroTitleSource) ?? $heroTitleSource;
-        $heroTitlePlain = html_entity_decode(strip_tags($heroTitleSource), ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        $heroTitlePlain = str_replace("\xc2\xa0", ' ', $heroTitlePlain);
-        $heroTitleLines = preg_split('/\R+/', $heroTitlePlain) ?: [];
-        $heroTitleLines = array_values(array_filter(array_map(
-            static fn(string $line): string => trim((string)preg_replace('/\s+/', ' ', $line)),
-            $heroTitleLines
-        ), static fn(string $line): bool => $line !== ''));
-
-        if ($heroTitleLines === []) {
-            return ['Haarlem', 'YUMMY EVENT'];
-        }
-
-        return $heroTitleLines;
-    }
-
-    private function extractMapUrl(): string
-    {
-        $mapUrl = '/map';
-
-        if (preg_match('/href=[\"\']([^\"\']+)[\"\']/', (string)($this->map['buttonHtml'] ?? ''), $matches) === 1) {
-            $mapUrl = $matches[1];
-        }
-
-        return $mapUrl;
     }
 
     private function formatRestaurantName(string $slug): string
