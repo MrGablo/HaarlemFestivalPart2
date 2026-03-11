@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Framework\Repository;
 use App\Repositories\Interfaces\IOrderRepository;
+use PDO;
 
 class OrderRepository extends Repository implements IOrderRepository
 {
@@ -22,7 +23,7 @@ class OrderRepository extends Repository implements IOrderRepository
             ':status' => 'pending',
         ]);
 
-        $row = $stmt->fetch();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return is_array($row) ? $row : null;
     }
 
@@ -58,7 +59,7 @@ class OrderRepository extends Repository implements IOrderRepository
                 ':event_id' => $eventId,
             ]);
 
-            $row = $existing->fetch();
+            $row = $existing->fetch(PDO::FETCH_ASSOC);
 
             if (is_array($row)) {
                 $update = $pdo->prepare(
@@ -96,25 +97,26 @@ class OrderRepository extends Repository implements IOrderRepository
                 oi.event_id,
                 oi.quantity,
                 oi.created_at AS order_item_created_at,
-                e.event_id AS event_id,
                 e.title AS title,
                 e.event_type AS event_type,
                 j.start_date,
                 j.end_date,
                 j.location,
-                j.artist_name,
+                j.artist_id,
+                COALESCE(a.name, \'\') AS artist_name,
                 j.img_background,
                 j.price,
-                j.page_id
+                a.page_id AS page_id
              FROM `order_items` oi
              INNER JOIN Event e ON e.event_id = oi.event_id
              LEFT JOIN JazzEvent j ON j.event_id = e.event_id
+             LEFT JOIN Artist a ON a.artist_id = j.artist_id
              WHERE oi.order_id = :order_id
              ORDER BY oi.created_at DESC, oi.order_item_id DESC'
         );
 
         $stmt->execute([':order_id' => $orderId]);
-        $rows = $stmt->fetchAll();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         return is_array($rows) ? $rows : [];
     }
@@ -191,18 +193,20 @@ class OrderRepository extends Repository implements IOrderRepository
                 j.start_date,
                 j.end_date,
                 j.location,
-                j.artist_name,
+                j.artist_id,
+                COALESCE(a.name, \'\') AS artist_name,
                 j.img_background,
                 j.price,
-                j.page_id
+                a.page_id AS page_id
              FROM Event e
              LEFT JOIN JazzEvent j ON j.event_id = e.event_id
+             LEFT JOIN Artist a ON a.artist_id = j.artist_id
              WHERE e.event_id = :event_id
              LIMIT 1'
         );
 
         $stmt->execute([':event_id' => $eventId]);
-        $row = $stmt->fetch();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return is_array($row) ? $row : null;
     }

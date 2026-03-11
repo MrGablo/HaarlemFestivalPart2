@@ -97,14 +97,20 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-slate-700">Artist name</label>
-                            <input
-                                name="artist_name"
-                                type="text"
-                                maxlength="120"
+                            <label class="block text-sm font-medium text-slate-700">Artist</label>
+                            <select
+                                name="artist_id"
                                 required
-                                value="<?= $v('artist_name') ?>"
                                 class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
+                                <option value="">Select artist</option>
+                                <?php foreach (($artists ?? []) as $artist): ?>
+                                    <?php $selected = ((string)($old['artist_id'] ?? '') === (string)$artist->artist_id) ? 'selected' : ''; ?>
+                                    <option value="<?= (int)$artist->artist_id ?>" <?= $selected ?>>
+                                        <?= htmlspecialchars($artist->name) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <p class="mt-1 text-xs text-slate-500">Need a new detail page first? <a href="/cms/jazz/artists/create" class="font-semibold text-emerald-700 hover:text-emerald-800">Create a jazz artist</a>.</p>
                         </div>
 
                         <div class="sm:col-span-2">
@@ -131,23 +137,10 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-slate-700">Linked page (optional)</label>
-                            <select
-                                name="page_id"
-                                class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
-                                <option value="">No linked page</option>
-                                <?php foreach (($pages ?? []) as $page): ?>
-                                    <?php
-                                    $pageId = (string)($page['Page_ID'] ?? '');
-                                    $isSelected = ((string)($old['page_id'] ?? '') === $pageId) ? 'selected' : '';
-                                    $label = (string)($page['Page_Title'] ?? 'Untitled');
-                                    $type = (string)($page['Page_Type'] ?? '');
-                                    ?>
-                                    <option value="<?= htmlspecialchars($pageId) ?>" <?= $isSelected ?>>
-                                        <?= htmlspecialchars($label) ?><?= $type !== '' ? ' (' . htmlspecialchars($type) . ')' : '' ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
+                            <label class="block text-sm font-medium text-slate-700">Artist detail page</label>
+                            <div class="mt-1 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                                The linked detail page is managed through the selected artist record.
+                            </div>
                         </div>
                     </div>
                 </div>

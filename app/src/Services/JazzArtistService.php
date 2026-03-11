@@ -2,21 +2,29 @@
 
 namespace App\Services;
 
+use App\Models\Artist;
+use App\Models\JazzEvent;
+use App\Repositories\ArtistRepository;
 use App\Repositories\Interfaces\IPageRepository;
 use App\Repositories\Interfaces\IJazzEventRepository;
 use App\ViewModels\JazzArtistPageViewModel;
-use App\Models\JazzEvent;
 
 class JazzArtistService
 {
     public function __construct(
         private IPageRepository $pageRepo,
-        private IJazzEventRepository $eventRepo
+        private IJazzEventRepository $eventRepo,
+        private ArtistRepository $artistRepo
     ) {}
 
-    public function getArtistPageViewModel(int $pageId, ?string $tab): JazzArtistPageViewModel
+    public function getArtistPageViewModel(int $artistId, ?string $tab): JazzArtistPageViewModel
     {
-        $content = $this->pageRepo->getPageContentById($pageId);
+        $artist = $this->artistRepo->findArtistById($artistId);
+        if (!$artist instanceof Artist) {
+            throw new \RuntimeException('Artist not found.');
+        }
+
+        $content = $artist->page_id !== null ? $this->pageRepo->getPageContentById($artist->page_id) : [];
 
         $allowed = ['events', 'career', 'album'];
 
@@ -36,9 +44,12 @@ class JazzArtistService
             /** @var JazzEvent[] $models */
             $models = $this->eventRepo->getJazzEventsByIds($eventIds);
             $events = array_map([$this, 'mapEventForArtistPage'], $models);
+        } else {
+            $models = $this->eventRepo->getJazzEventsByArtistId($artistId);
+            $events = array_map([$this, 'mapEventForArtistPage'], $models);
         }
 
-        return new JazzArtistPageViewModel($content, $events, $activeTab);
+        return new JazzArtistPageViewModel($artistId, $content, $events, $activeTab);
     }
 
     private function mapEventForArtistPage(JazzEvent $ev): array
@@ -51,7 +62,7 @@ class JazzArtistService
             'title' => $ev->title,
             'location' => $ev->location,
             'img_background' => (string)($ev->img_background ?? ''),
-            'price' => (float)$ev->price
+            'price' => (float)$ev->price,
         ];
     }
 }

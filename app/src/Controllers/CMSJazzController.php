@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Models\JazzEvent;
+use App\Repositories\ArtistRepository;
 use App\Repositories\JazzEventRepository;
-use App\Repositories\PageRepository;
 use App\Services\UploadService;
 use App\Utils\AdminGuard;
 use App\Utils\Flash;
@@ -14,11 +14,13 @@ use App\Utils\Session;
 
 final class CMSJazzController
 {
+    private ArtistRepository $artists;
     private JazzEventRepository $jazzEvents;
     private UploadService $uploads;
 
     public function __construct()
     {
+        $this->artists = new ArtistRepository();
         $this->jazzEvents = new JazzEventRepository();
         $this->uploads = new UploadService();
 
@@ -42,7 +44,7 @@ final class CMSJazzController
         AdminGuard::requireAdmin(true);
 
         $old = Flash::getOld();
-        $pages = (new PageRepository())->getAllPages();
+        $artists = $this->artists->getAllArtists();
         $errors = Flash::getErrors();
         $flashSuccess = Flash::getSuccess();
         $csrfToken = $this->csrfToken();
@@ -60,13 +62,13 @@ final class CMSJazzController
             $event = new JazzEvent([
                 'event_id' => 0,
                 'event_type' => 'jazz',
+                'artist_id' => null,
                 'img_background' => null,
             ]);
             $this->fillEventFromPost($event);
             $this->handleImageUpload($event, false);
 
             $newId = $this->jazzEvents->createJazzEvent($event);
-            $this->syncArtistPageEventIds(null, $event->page_id, $newId);
             Flash::setSuccess('Jazz event created successfully.');
             header('Location: /cms/events/jazz/' . $newId, true, 302);
             exit;
@@ -83,7 +85,7 @@ final class CMSJazzController
         AdminGuard::requireAdmin(true);
 
         $event = $this->getEventOrRedirect($id);
-
+        $artists = $this->artists->getAllArtists();
         $errors = Flash::getErrors();
         $flashSuccess = Flash::getSuccess();
         $csrfToken = $this->csrfToken();
@@ -96,7 +98,6 @@ final class CMSJazzController
         AdminGuard::requireAdmin(true);
 
         $event = $this->getEventOrRedirect($id);
-        $previousPageId = $event->page_id;
 
         try {
             $this->assertCsrf();
@@ -105,7 +106,6 @@ final class CMSJazzController
             $this->handleImageUpload($event, true);
 
             $this->jazzEvents->updateJazzEvent($event);
-            $this->syncArtistPageEventIds($previousPageId, $event->page_id, $event->event_id);
             Flash::setSuccess('Jazz event updated successfully.');
         } catch (\Throwable $e) {
             Flash::setErrors(['general' => $e->getMessage()]);
@@ -131,7 +131,6 @@ final class CMSJazzController
                 exit;
             }
 
-            $this->syncArtistPageEventIds($event->page_id, null, $event->event_id);
             $this->deleteJazzImageIfExists($event->img_background);
             Flash::setSuccess('Jazz event deleted successfully.');
         } catch (\Throwable $e) {
@@ -160,9 +159,16 @@ final class CMSJazzController
         $event->start_date = $this->normalizeDateTime((string)($_POST['start_date'] ?? ''));
         $event->end_date = $this->normalizeDateTime((string)($_POST['end_date'] ?? ''));
         $event->location = $this->requestText('location', 'Location');
-        $event->artist_name = $this->requestText('artist_name', 'Artist name');
+        $event->artist_id = $this->parsePositiveInt((string)($_POST['artist_id'] ?? ''), 'Artist');
         $event->price = $this->parsePrice((string)($_POST['price'] ?? ''));
-        $event->page_id = $this->parseOptionalPositiveInt((string)($_POST['page_id'] ?? ''), 'Page ID');
+
+        $artist = $this->artists->findArtistById((int)$event->artist_id);
+        if ($artist === null) {
+            throw new \RuntimeException('Selected artist does not exist.');
+        }
+
+        $event->artist_name = $artist->name;
+        $event->page_id = $artist->page_id;
     }
 
     private function handleImageUpload(JazzEvent $event, bool $replaceOld): void
@@ -215,11 +221,11 @@ final class CMSJazzController
         return $price;
     }
 
-    private function parseOptionalPositiveInt(string $raw, string $label): ?int
+    private function parsePositiveInt(string $raw, string $label): int
     {
         $raw = trim($raw);
         if ($raw === '') {
-            return null;
+            throw new \RuntimeException($label . ' is required.');
         }
 
         $value = (int)$raw;
@@ -291,77 +297,6 @@ final class CMSJazzController
         $absolute = __DIR__ . '/../../public/' . $relative;
         if (is_file($absolute)) {
             @unlink($absolute);
-        }
-    }
-
-    private function syncArtistPageEventIds(?int $oldPageId, ?int $newPageId, int $eventId): void
-    {
-        $oldPageId = $oldPageId !== null && $oldPageId > 0 ? $oldPageId : null;
-        $newPageId = $newPageId !== null && $newPageId > 0 ? $newPageId : null;
-
-        if ($oldPageId === null && $newPageId === null) {
-            return;
-        }
-
-        $pages = new PageRepository();
-
-        if ($oldPageId !== null && $oldPageId !== $newPageId) {
-            $this->removeEventIdFromPage($pages, $oldPageId, $eventId);
-        }
-
-        if ($newPageId !== null) {
-            $this->addEventIdToPage($pages, $newPageId, $eventId);
-        }
-    }
-
-    private function addEventIdToPage(PageRepository $pages, int $pageId, int $eventId): void
-    {
-        try {
-            $content = $pages->getPageContentById($pageId);
-
-            $eventIds = $content['events']['event_ids'] ?? [];
-            if (!is_array($eventIds)) {
-                $eventIds = [];
-            }
-
-            foreach ($eventIds as $existing) {
-                if ((int)$existing === $eventId) {
-                    return;
-                }
-            }
-
-            $eventIds[] = (string)$eventId;
-            $content['events']['event_ids'] = $eventIds;
-
-            $pages->savePageContentById($pageId, $content);
-        } catch (\Throwable $e) {
-            error_log('Failed to add event ID to artist page JSON: ' . $e->getMessage());
-        }
-    }
-
-    private function removeEventIdFromPage(PageRepository $pages, int $pageId, int $eventId): void
-    {
-        try {
-            $content = $pages->getPageContentById($pageId);
-
-            $eventIds = $content['events']['event_ids'] ?? [];
-            if (!is_array($eventIds)) {
-                return;
-            }
-
-            $filtered = array_values(array_filter(
-                $eventIds,
-                static fn($value) => (int)$value !== $eventId
-            ));
-
-            if (count($filtered) === count($eventIds)) {
-                return;
-            }
-
-            $content['events']['event_ids'] = $filtered;
-            $pages->savePageContentById($pageId, $content);
-        } catch (\Throwable $e) {
-            error_log('Failed to remove event ID from artist page JSON: ' . $e->getMessage());
         }
     }
 }

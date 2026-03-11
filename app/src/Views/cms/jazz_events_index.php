@@ -20,6 +20,11 @@
                 </div>
 
                 <div class="flex items-center gap-3">
+                    <a href="/cms/jazz/artists"
+                       class="rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200">
+                        Manage Artists
+                    </a>
+
                     <a href="/cms/events/jazz/create"
                        class="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
                         + Create Jazz Event

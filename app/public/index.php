@@ -65,6 +65,12 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     $r->addRoute('GET',  '/cms/events/jazz/{id:\\d+}', ['App\Controllers\CMSJazzController', 'edit']);
     $r->addRoute('POST', '/cms/events/jazz/{id:\\d+}', ['App\Controllers\CMSJazzController', 'update']);
     $r->addRoute('POST', '/cms/events/jazz/{id:\\d+}/delete', ['App\Controllers\CMSJazzController', 'delete']);
+    $r->addRoute('GET',  '/cms/jazz/artists', ['App\Controllers\CMSJazzArtistController', 'index']);
+    $r->addRoute('GET',  '/cms/jazz/artists/create', ['App\Controllers\CMSJazzArtistController', 'createForm']);
+    $r->addRoute('POST', '/cms/jazz/artists/create', ['App\Controllers\CMSJazzArtistController', 'create']);
+    $r->addRoute('GET',  '/cms/jazz/artists/{id:\\d+}', ['App\Controllers\CMSJazzArtistController', 'edit']);
+    $r->addRoute('POST', '/cms/jazz/artists/{id:\\d+}', ['App\Controllers\CMSJazzArtistController', 'update']);
+    $r->addRoute('POST', '/cms/jazz/artists/{id:\\d+}/delete', ['App\Controllers\CMSJazzArtistController', 'delete']);
 });
 
 

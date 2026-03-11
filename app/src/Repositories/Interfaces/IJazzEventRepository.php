@@ -18,4 +18,6 @@ interface IJazzEventRepository
     public function findJazzEventById(int $eventId): ?JazzEvent;
 
     public function getJazzEventsByIds(array $eventIds): array; // JazzEvent[]
+
+    public function getJazzEventsByArtistId(int $artistId): array;
 }

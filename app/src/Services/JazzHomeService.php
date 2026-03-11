@@ -41,12 +41,12 @@ class JazzHomeService
         return [
             'event_id' => $ev->event_id,
             'title' => $ev->title,
+            'artist_id' => $ev->artist_id,
             'artist_name' => $ev->artist_name,
             'img_background' => (string)($ev->img_background ?? ''),
             'price' => (float)$ev->price,
             'location' => $location,
             'hall' => $hall,
-            'page_id' => $ev->page_id,
 
             'day_key' => $ts ? date('l', $ts) : 'Unknown',
             'display_date' => $ts ? date('D j M', $ts) : '',

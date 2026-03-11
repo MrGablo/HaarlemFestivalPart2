@@ -121,7 +121,7 @@ class PageRepository extends Repository implements IPageRepository
         return $row ?: null;
     }
 
-    public function savePageContentById(int $pageId, array $content): void
+    public function createPage(string $pageTitle, string $pageType, array $content): int
     {
         $pdo = $this->getConnection();
 
@@ -130,17 +130,54 @@ class PageRepository extends Repository implements IPageRepository
             throw new \RuntimeException('Failed to encode page content to JSON.');
         }
 
+        $insert = $pdo->prepare('
+            INSERT INTO Page (Page_Title, Page_Type, Content, Created_At, Updated_At)
+            VALUES (:title, :type, :content, NOW(), NOW())
+        ');
+        $insert->execute([
+            ':title' => $pageTitle,
+            ':type' => $pageType,
+            ':content' => $json,
+        ]);
+
+        return (int)$pdo->lastInsertId();
+    }
+
+    public function savePageContentById(int $pageId, array $content, ?string $pageTitle = null): void
+    {
+        $pdo = $this->getConnection();
+
+        $json = json_encode($content, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($json === false) {
+            throw new \RuntimeException('Failed to encode page content to JSON.');
+        }
+
+        $titleSql = $pageTitle !== null ? ', Page_Title = :title' : '';
         $update = $pdo->prepare("
         UPDATE Page
         SET Content = :content,
-            Updated_At = NOW()
+            Updated_At = NOW(){$titleSql}
         WHERE Page_ID = :id
         LIMIT 1
     ");
 
-        $update->execute([
+        $params = [
             ':content' => $json,
             ':id' => $pageId,
-        ]);
+        ];
+
+        if ($pageTitle !== null) {
+            $params[':title'] = $pageTitle;
+        }
+
+        $update->execute($params);
+    }
+
+    public function deletePageById(int $pageId): void
+    {
+        $pdo = $this->getConnection();
+
+        $stmt = $pdo->prepare('DELETE FROM Page WHERE Page_ID = :id LIMIT 1');
+        $stmt->execute([':id' => $pageId]);
     }
 }

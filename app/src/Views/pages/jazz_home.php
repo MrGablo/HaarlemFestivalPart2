@@ -63,8 +63,8 @@ $days = $filters['days'] ?? ['All Days', 'Thursday', 'Friday', 'Saturday', 'Sund
                     data-day="<?= htmlspecialchars((string)($ev['day_key'] ?? '')) ?>">
 
                     <a class="relative block overflow-hidden rounded-2xl text-white no-underline"
-                        href="<?= !empty($ev['page_id'])
-                                    ? '/jazz/artist?page_id=' . (int)$ev['page_id'] . '&tab=events'
+                        href="<?= !empty($ev['artist_id'])
+                                    ? '/jazz/artist?artist_id=' . (int)$ev['artist_id'] . '&tab=events'
                                     : '#' ?>">
                         <img class="block h-[140px] w-full object-cover" src="/<?= htmlspecialchars((string)($ev['img_background'] ?? '')) ?>"
                             alt="<?= htmlspecialchars((string)($ev['title'] ?? '')) ?>"

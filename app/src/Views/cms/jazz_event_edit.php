@@ -102,12 +102,19 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-slate-700">Artist name</label>
-                            <input
-                                name="artist_name"
-                                type="text"
-                                value="<?= htmlspecialchars((string)($event->artist_name ?? '')) ?>"
+                            <label class="block text-sm font-medium text-slate-700">Artist</label>
+                            <select
+                                name="artist_id"
+                                required
                                 class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200">
+                                <option value="">Select artist</option>
+                                <?php foreach (($artists ?? []) as $artist): ?>
+                                    <option value="<?= (int)$artist->artist_id ?>" <?= (int)$artist->artist_id === (int)($event->artist_id ?? 0) ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($artist->name) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <p class="mt-1 text-xs text-slate-500">Manage artist content in <a href="/cms/jazz/artists" class="font-semibold text-blue-700 hover:text-blue-800">Jazz Artists CMS</a>.</p>
                         </div>
 
                         <div class="sm:col-span-2">
@@ -146,14 +153,12 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-slate-700">Page ID (optional)</label>
-                            <input
-                                name="page_id"
-                                type="number"
-                                min="1"
-                                value="<?= htmlspecialchars((string)($event->page_id ?? '')) ?>"
-                                class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200">
-                            <p class="mt-1 text-xs text-slate-500">Leave empty if not linked.</p>
+                            <label class="block text-sm font-medium text-slate-700">Artist detail page</label>
+                            <div class="mt-1 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                                <?= !empty($event->page_id)
+                                    ? 'Current linked Jazz_Detail_Page ID: ' . (int)$event->page_id
+                                    : 'The selected artist currently has no linked Jazz_Detail_Page.' ?>
+                            </div>
                         </div>
                     </div>
                 </div>

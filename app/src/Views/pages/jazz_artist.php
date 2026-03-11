@@ -34,11 +34,9 @@ if (
     $heroSubtitleText = '';
 }
 
-$pageId = isset($_GET['page_id']) ? (int)$_GET['page_id'] : 0;
-
-function tabLink(int $pageId, string $tab): string
+function tabLink(int $artistId, string $tab): string
 {
-    return "/jazz/artist?page_id=" . $pageId . "&tab=" . urlencode($tab);
+    return "/jazz/artist?artist_id=" . $artistId . "&tab=" . urlencode($tab);
 }
 
 function safeTab(string $t): string
@@ -110,7 +108,7 @@ $activeTab = safeTab((string)$activeTab);
                 data-active-class="opacity-100 underline underline-offset-[6px]"
                 data-inactive-class="opacity-75"
                 data-artist-tab="events"
-                href="<?= htmlspecialchars(tabLink($pageId, 'events')) ?>">
+                href="<?= htmlspecialchars(tabLink((int)$artistId, 'events')) ?>">
                 <?= htmlspecialchars((string)($labels['events'] ?? 'Events')) ?>
             </a>
 
@@ -118,7 +116,7 @@ $activeTab = safeTab((string)$activeTab);
                 data-active-class="opacity-100 underline underline-offset-[6px]"
                 data-inactive-class="opacity-75"
                 data-artist-tab="career"
-                href="<?= htmlspecialchars(tabLink($pageId, 'career')) ?>">
+                href="<?= htmlspecialchars(tabLink((int)$artistId, 'career')) ?>">
                 <?= htmlspecialchars((string)($labels['career'] ?? 'Career Highlights')) ?>
             </a>
 
@@ -126,7 +124,7 @@ $activeTab = safeTab((string)$activeTab);
                 data-active-class="opacity-100 underline underline-offset-[6px]"
                 data-inactive-class="opacity-75"
                 data-artist-tab="album"
-                href="<?= htmlspecialchars(tabLink($pageId, 'album')) ?>">
+                href="<?= htmlspecialchars(tabLink((int)$artistId, 'album')) ?>">
                 <?= htmlspecialchars((string)($labels['album'] ?? 'Album')) ?>
             </a>
         </div>
