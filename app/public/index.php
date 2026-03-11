@@ -20,7 +20,7 @@ Env::load();
  * Define the routes for the application.
  */
 $dispatcher = simpleDispatcher(function (RouteCollector $r) {
-    $r->addRoute('GET', '/', ['App\Controllers\AuthController', 'showLogin']);
+    $r->addRoute('GET', '/', ['App\Controllers\HomeController', 'home']);
     $r->addRoute('GET', '/hello/{name}', ['App\Controllers\HelloController', 'greet']);
 
 
@@ -32,6 +32,10 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     $r->addRoute('GET',  '/login',    ['App\Controllers\AuthController', 'showLogin']);
     $r->addRoute('POST', '/login',    ['App\Controllers\AuthController', 'login']);
     $r->addRoute('GET',  '/logout',   ['App\Controllers\AuthController', 'logout']);
+    $r->addRoute('GET',  '/forgot-password', ['App\Controllers\AuthController', 'showForgotPassword']);
+    $r->addRoute('POST', '/forgot-password', ['App\Controllers\AuthController', 'requestPasswordReset']);
+    $r->addRoute('GET',  '/reset-password', ['App\Controllers\AuthController', 'showResetPassword']);
+    $r->addRoute('POST', '/reset-password', ['App\Controllers\AuthController', 'resetPassword']);
     //user registration
     $r->addRoute('GET',  '/register', ['App\Controllers\AuthController', 'showRegister']);
     $r->addRoute('POST', '/register', ['App\Controllers\AuthController', 'register']);
@@ -48,15 +52,29 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     //image upload route (backend only)
     $r->addRoute('POST', '/upload/image', ['App\Controllers\UploadController', 'image']);
 
+    // order/cart routes (logged-in users)
+    $r->addRoute('POST', '/order/item/add', ['App\Controllers\OrderController', 'addItem']);
+    $r->addRoute('POST', '/order/item/remove', ['App\Controllers\OrderController', 'removeItem']);
+    $r->addRoute('POST', '/order/item/quantity', ['App\Controllers\OrderController', 'updateItemQuantity']);
+
     // CMS routes (admin only)
     $r->addRoute('GET', '/cms', ['App\Controllers\CMSController', 'generalIndex']);
     $r->addRoute('GET', '/cms/pages', ['App\Controllers\CMSController', 'index']);
     $r->addRoute('GET', '/cms/page/{id:\\d+}', ['App\Controllers\CMSController', 'edit']);
     $r->addRoute('POST', '/cms/page/{id:\\d+}/update', ['App\Controllers\CMSController', 'update']);
-    // Jazz event edit route (admin only)
-    $r->addRoute('GET',  '/cms/events/jazz',          ['App\Controllers\CMSController', 'jazzIndex']);
-    $r->addRoute('GET',  '/cms/events/jazz/{id:\d+}', ['App\Controllers\CMSController', 'jazzEdit']);
-    $r->addRoute('POST', '/cms/events/jazz/{id:\d+}', ['App\Controllers\CMSController', 'jazzUpdate']);
+    $r->addRoute('GET',  '/cms/artists', ['App\Controllers\CMSArtistController', 'index']);
+    $r->addRoute('GET',  '/cms/artists/create', ['App\Controllers\CMSArtistController', 'createForm']);
+    $r->addRoute('POST', '/cms/artists/create', ['App\Controllers\CMSArtistController', 'create']);
+    $r->addRoute('GET',  '/cms/artists/{id:\\d+}', ['App\Controllers\CMSArtistController', 'edit']);
+    $r->addRoute('POST', '/cms/artists/{id:\\d+}', ['App\Controllers\CMSArtistController', 'update']);
+    $r->addRoute('POST', '/cms/artists/{id:\\d+}/delete', ['App\Controllers\CMSArtistController', 'delete']);
+    // Jazz CMS routes (admin only)
+    $r->addRoute('GET',  '/cms/events/jazz', ['App\Controllers\CMSJazzController', 'index']);
+    $r->addRoute('GET',  '/cms/events/jazz/create', ['App\Controllers\CMSJazzController', 'createForm']);
+    $r->addRoute('POST', '/cms/events/jazz/create', ['App\Controllers\CMSJazzController', 'create']);
+    $r->addRoute('GET',  '/cms/events/jazz/{id:\\d+}', ['App\Controllers\CMSJazzController', 'edit']);
+    $r->addRoute('POST', '/cms/events/jazz/{id:\\d+}', ['App\Controllers\CMSJazzController', 'update']);
+    $r->addRoute('POST', '/cms/events/jazz/{id:\\d+}/delete', ['App\Controllers\CMSJazzController', 'delete']);
 });
 
 

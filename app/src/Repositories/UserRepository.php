@@ -96,6 +96,23 @@ class UserRepository extends Repository implements IUserRepository
         return $stmt->execute([':id' => $id]);
     }
 
+    public function updatePasswordHash(int $id, string $passwordHash): int
+    {
+        $sql = "UPDATE User
+                SET password_hash = :password_hash,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = :id";
+
+        $stmt = $this->getConnection()->prepare($sql);
+
+        $stmt->execute([
+            ':password_hash' => $passwordHash,
+            ':id' => $id,
+        ]);
+
+        return $stmt->rowCount();
+    }
+
     private function mapRowToUser(array $row): UserModel
     {
         $user = new UserModel();
