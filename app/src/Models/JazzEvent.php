@@ -8,6 +8,7 @@ class JazzEvent extends Event
     public string $end_date;
 
     public string $location;
+    public ?int $artist_id;
     public string $artist_name;
 
     public ?string $img_background;
@@ -27,6 +28,7 @@ class JazzEvent extends Event
         $this->end_date = (string)($row['end_date'] ?? '');
 
         $this->location = (string)($row['location'] ?? '');
+        $this->artist_id = isset($row['artist_id']) ? (int)$row['artist_id'] : null;
         $this->artist_name = (string)($row['artist_name'] ?? '');
 
         $this->img_background = isset($row['img_background']) ? (string)$row['img_background'] : null;

@@ -30,13 +30,9 @@ class JazzArtistService
             $activeTab = $defaultTab;
         }
 
-        $events = [];
-        $eventIds = $content['events']['event_ids'] ?? [];
-        if (is_array($eventIds) && count($eventIds) > 0) {
-            /** @var JazzEvent[] $models */
-            $models = $this->eventRepo->getJazzEventsByIds($eventIds);
-            $events = array_map([$this, 'mapEventForArtistPage'], $models);
-        }
+        /** @var JazzEvent[] $models */
+        $models = $this->eventRepo->getJazzEventsByPageId($pageId);
+        $events = array_map([$this, 'mapEventForArtistPage'], $models);
 
         return new JazzArtistPageViewModel($content, $events, $activeTab);
     }

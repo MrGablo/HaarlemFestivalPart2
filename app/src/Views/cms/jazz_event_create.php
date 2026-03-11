@@ -97,14 +97,19 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-slate-700">Artist name</label>
-                            <input
-                                name="artist_name"
-                                type="text"
-                                maxlength="120"
+                            <label class="block text-sm font-medium text-slate-700">Artist</label>
+                            <select
+                                name="artist_id"
                                 required
-                                value="<?= $v('artist_name') ?>"
                                 class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
+                                <option value="">Select artist</option>
+                                <?php foreach (($artists ?? []) as $artist): ?>
+                                    <?php $isSelected = ((string)($old['artist_id'] ?? '') === (string)$artist->artist_id) ? 'selected' : ''; ?>
+                                    <option value="<?= (int)$artist->artist_id ?>" <?= $isSelected ?>>
+                                        <?= htmlspecialchars((string)$artist->name) ?> (ID <?= (int)$artist->artist_id ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
 
                         <div class="sm:col-span-2">
