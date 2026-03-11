@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Event;
+use App\Models\GenericEvent;
 use App\Models\JazzEvent;
 
 class EventModelBuilderService
@@ -13,12 +14,17 @@ class EventModelBuilderService
 
         return match ($eventType) {
             'jazz' => $this->buildJazzEvent($row),
-            default => throw new \InvalidArgumentException('Unsupported event type: ' . $eventType),
+            default => $this->buildGenericEvent($row),
         };
     }
 
     private function buildJazzEvent(array $row): JazzEvent
     {
         return new JazzEvent($row);
+    }
+
+    private function buildGenericEvent(array $row): GenericEvent
+    {
+        return new GenericEvent($row);
     }
 }
