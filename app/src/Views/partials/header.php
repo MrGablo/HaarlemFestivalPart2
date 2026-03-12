@@ -11,9 +11,10 @@ $authPayload = AuthSessionData::read();
 
 $headerIsLoggedIn = isset($isLoggedIn) ? (bool) $isLoggedIn : ($authPayload !== null);
 $headerProfilePicturePath = (string) ($profilePicturePath ?? ($authPayload['profilePicturePath'] ?? '/assets/img/default-user.png'));
-$headerIsAdmin = strtolower((string)($authPayload['userRole'] ?? '')) === 'admin';
+$headerIsAdmin = strtolower((string) ($authPayload['userRole'] ?? '')) === 'admin';
 
-$headerCartOrder = null;
+// order count logic 
+$headerCartCount = 0;
 if ($headerIsLoggedIn && isset($authPayload['userId'])) {
     try {
         $orderService = new OrderService(new OrderRepository(), new EventModelBuilderService());
