@@ -102,12 +102,22 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-slate-700">Artist name</label>
-                            <input
-                                name="artist_name"
-                                type="text"
-                                value="<?= htmlspecialchars((string)($event->artist_name ?? '')) ?>"
+                            <label class="block text-sm font-medium text-slate-700">Artist</label>
+                            <select
+                                name="artist_id"
+                                required
                                 class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200">
+                                <option value="">Select artist</option>
+                                <?php foreach (($artists ?? []) as $artist): ?>
+                                    <?php $isSelected = ((int)($event->artist_id ?? 0) === (int)$artist->artist_id) ? 'selected' : ''; ?>
+                                    <option value="<?= (int)$artist->artist_id ?>" <?= $isSelected ?>>
+                                        <?= htmlspecialchars((string)$artist->name) ?> (ID <?= (int)$artist->artist_id ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <?php if (!empty($event->artist_name)): ?>
+                                <p class="mt-1 text-xs text-slate-500">Current artist: <?= htmlspecialchars((string)$event->artist_name) ?></p>
+                            <?php endif; ?>
                         </div>
 
                         <div class="sm:col-span-2">

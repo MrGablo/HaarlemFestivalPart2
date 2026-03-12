@@ -51,6 +51,15 @@
                     'href' => '/cms/events/jazz',
                     'label' => 'Open',
                 ],
+                [
+                    'id' => 4,
+                    'title' => 'Artists',
+                    'type' => 'artists',
+                    'updated' => '-',
+                    'created' => '-',
+                    'href' => '/cms/artists',
+                    'label' => 'Open',
+                ],
             ];
             ?>
 

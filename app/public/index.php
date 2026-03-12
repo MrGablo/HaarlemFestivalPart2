@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && strpos($uri, '/dance/assets/') === 0
  * Define the routes for the application.
  */
 $dispatcher = simpleDispatcher(function (RouteCollector $r) {
-    $r->addRoute('GET', '/', ['App\Controllers\AuthController', 'showLogin']);
+    $r->addRoute('GET', '/', ['App\Controllers\HomeController', 'home']);
     $r->addRoute('GET', '/hello/{name}', ['App\Controllers\HelloController', 'greet']);
 
 
@@ -61,6 +61,10 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     $r->addRoute('GET',  '/login',    ['App\Controllers\AuthController', 'showLogin']);
     $r->addRoute('POST', '/login',    ['App\Controllers\AuthController', 'login']);
     $r->addRoute('GET',  '/logout',   ['App\Controllers\AuthController', 'logout']);
+    $r->addRoute('GET',  '/forgot-password', ['App\Controllers\AuthController', 'showForgotPassword']);
+    $r->addRoute('POST', '/forgot-password', ['App\Controllers\AuthController', 'requestPasswordReset']);
+    $r->addRoute('GET',  '/reset-password', ['App\Controllers\AuthController', 'showResetPassword']);
+    $r->addRoute('POST', '/reset-password', ['App\Controllers\AuthController', 'resetPassword']);
     //user registration
     $r->addRoute('GET',  '/register', ['App\Controllers\AuthController', 'showRegister']);
     $r->addRoute('POST', '/register', ['App\Controllers\AuthController', 'register']);
@@ -87,6 +91,12 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     $r->addRoute('GET', '/cms/pages', ['App\Controllers\CMSController', 'index']);
     $r->addRoute('GET', '/cms/page/{id:\\d+}', ['App\Controllers\CMSController', 'edit']);
     $r->addRoute('POST', '/cms/page/{id:\\d+}/update', ['App\Controllers\CMSController', 'update']);
+    $r->addRoute('GET',  '/cms/artists', ['App\Controllers\CMSArtistController', 'index']);
+    $r->addRoute('GET',  '/cms/artists/create', ['App\Controllers\CMSArtistController', 'createForm']);
+    $r->addRoute('POST', '/cms/artists/create', ['App\Controllers\CMSArtistController', 'create']);
+    $r->addRoute('GET',  '/cms/artists/{id:\\d+}', ['App\Controllers\CMSArtistController', 'edit']);
+    $r->addRoute('POST', '/cms/artists/{id:\\d+}', ['App\Controllers\CMSArtistController', 'update']);
+    $r->addRoute('POST', '/cms/artists/{id:\\d+}/delete', ['App\Controllers\CMSArtistController', 'delete']);
     // Jazz CMS routes (admin only)
     $r->addRoute('GET',  '/cms/events/jazz', ['App\Controllers\CMSJazzController', 'index']);
     $r->addRoute('GET',  '/cms/events/jazz/create', ['App\Controllers\CMSJazzController', 'createForm']);
