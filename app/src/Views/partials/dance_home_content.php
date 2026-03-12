@@ -22,7 +22,7 @@ $stripText = (string)($hero['strip_text'] ?? 'HAARLEM FESTIVAL DANCE');
 $knownDanceAssets = [
   'dance-hero-bg.png', 'dance-intro-side.png', 'dance-timetable-texture.png',
   'dj-martin.png', 'dj-armin.png', 'dj-tiesto.png', 'dj-hardwell.png',
-  'dance-extra-1.png', 'dance-extra-2.png',
+  'dj-nicky-romero.png', 'dj-afrojack.png',
 ];
 $normaliseAsset = function (string $path, string $fallback) use ($knownDanceAssets): string {
   $path = trim($path);
@@ -130,16 +130,16 @@ Celebrate dance culture in the heart of the city</div>
         ['name' => 'ARMIN VAN BUUREN', 'image' => 'assets/img/dance-assets/dj-armin.png'],
         ['name' => 'TIËSTO', 'image' => 'assets/img/dance-assets/dj-tiesto.png'],
         ['name' => 'HARDWELL', 'image' => 'assets/img/dance-assets/dj-hardwell.png'],
-        ['name' => 'AFROJACK', 'image' => 'assets/img/dance-assets/dance-extra-1.png'],
-        ['name' => 'NICKY ROMERO', 'image' => 'assets/img/dance-assets/dance-extra-2.png'],
+        ['name' => 'AFROJACK', 'image' => 'assets/img/dance-assets/dj-afrojack.png'],
+        ['name' => 'NICKY ROMERO', 'image' => 'assets/img/dance-assets/dj-nicky-romero.png'],
       ];
       $defaultLineupImages = [
         'assets/img/dance-assets/dj-martin.png',
         'assets/img/dance-assets/dj-armin.png',
         'assets/img/dance-assets/dj-tiesto.png',
         'assets/img/dance-assets/dj-hardwell.png',
-        'assets/img/dance-assets/dance-extra-1.png',
-        'assets/img/dance-assets/dance-extra-2.png',
+        'assets/img/dance-assets/dj-afrojack.png',
+        'assets/img/dance-assets/dj-nicky-romero.png',
       ];
       $artists = !empty($artists) ? $artists : $defaultDjs;
       $artistIndex = 0;

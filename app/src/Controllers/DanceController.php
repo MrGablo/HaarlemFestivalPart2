@@ -26,7 +26,6 @@ class DanceController
 
         $content = $vm->content;
 
-        // Assets are served at /dance/assets/ (see index.php). Always use this base so img/CSS paths work.
         $basePath = '/dance';
 
         require __DIR__ . '/../Views/pages/dance_home.php';
