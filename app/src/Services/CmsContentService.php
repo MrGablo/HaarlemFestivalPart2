@@ -9,14 +9,7 @@ class CmsContentService
     public function normalizeContent(mixed $value, mixed $typeMeta): mixed
     {
         if (is_array($value)) {
-            $normalized = [];
-            foreach ($value as $key => $item) {
-                $childType = is_array($typeMeta) && array_key_exists((string)$key, $typeMeta)
-                    ? $typeMeta[(string)$key]
-                    : null;
-                $normalized[$key] = $this->normalizeContent($item, $childType);
-            }
-            return $normalized;
+            return $this->normalizeArrayContent($value, $typeMeta);
         }
 
         if (!is_string($typeMeta)) {
@@ -24,6 +17,29 @@ class CmsContentService
         }
 
         return $this->castScalar($value, $typeMeta);
+    }
+
+    private function normalizeArrayContent(array $value, mixed $typeMeta): array
+    {
+        $normalized = [];
+
+        foreach ($value as $key => $item) {
+            $normalized[$key] = $this->normalizeContent(
+                $item,
+                $this->resolveChildTypeMeta($typeMeta, $key)
+            );
+        }
+
+        return $normalized;
+    }
+
+    private function resolveChildTypeMeta(mixed $typeMeta, string|int $key): mixed
+    {
+        if (!is_array($typeMeta)) {
+            return null;
+        }
+
+        return $typeMeta[(string)$key] ?? null;
     }
 
     private function castScalar(mixed $value, string $type): mixed

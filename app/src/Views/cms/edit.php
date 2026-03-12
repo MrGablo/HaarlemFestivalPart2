@@ -28,8 +28,9 @@ $tinyMceApiKey = trim((string)($_ENV['TINYMCE_API_KEY'] ?? $_SERVER['TINYMCE_API
                 <div>
                     <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Edit page content</h1>
                     <p class="mt-1 text-sm text-slate-600">
-                        #<?= (int)($page['Page_ID'] ?? 0) ?> · <?= CmsForm::h((string)($page['Page_Title'] ?? '')) ?> ·
-                        <?= CmsForm::h((string)($page['Page_Type'] ?? '')) ?>
+                        <?= (int)($page['Page_ID'] ?? 0) ?> ·
+                        <?= CmsForm::escapeHtml((string)($page['Page_Title'] ?? '')) ?> ·
+                        <?= CmsForm::escapeHtml((string)($page['Page_Type'] ?? '')) ?>
                     </p>
                 </div>
                 <a href="/cms" class="text-sm font-medium text-slate-600 hover:text-slate-900">← Back to CMS</a>

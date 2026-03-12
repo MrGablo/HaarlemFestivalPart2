@@ -42,7 +42,6 @@ class CMSController
         require __DIR__ . '/../Views/cms/generalIndex.php';
     }
 
-    // --- existing page edit/update ----
 
     public function edit(int $id): void
     {
