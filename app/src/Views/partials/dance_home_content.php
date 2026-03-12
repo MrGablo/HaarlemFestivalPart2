@@ -43,7 +43,7 @@ $assetRoot = $danceAssetRoot ?? (($_SERVER['REQUEST_SCHEME'] ?? 'http') . '://' 
   class="relative min-h-[90vh] overflow-hidden bg-cover bg-center"
   style="background-image: url('<?= htmlspecialchars($assetRoot) ?>/<?= htmlspecialchars($heroBgSrc) ?>');"
 >
-  <div class="absolute inset-0 bg-gradient-to-b from-black/40 to-black/75 pointer-events-none" aria-hidden="true"></div>
+  <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent pointer-events-none" aria-hidden="true"></div>
   <div class="relative z-10 mx-auto max-w-[1200px] px-6 pb-20 pt-40">
     <?php
     $heroTitle = (string)($hero['title'] ?? 'HAARLEM DANCE EVENT');
@@ -207,23 +207,23 @@ foreach ($rows as $r) {
 
 $defaultDays = [
   ['label' => 'Friday July 25th', 'pass_label' => 'DAY PASS FOR FRIDAY', 'pass_price' => '€125.00', 'events' => [
-    ['artist' => 'NICKY ROMERO / AFROJACK', 'tag' => 'B2B', 'tag_special' => false, 'start' => '20:00', 'end' => '02:00', 'venue' => 'Lichtfabriek', 'price' => '€75.00', 'time_tick' => '08PM'],
-    ['artist' => 'TIËSTO', 'tag' => 'CLUB', 'tag_special' => false, 'start' => '22:00', 'end' => '23:30', 'venue' => 'Slachthuis', 'price' => '€60.00', 'time_tick' => '10PM'],
-    ['artist' => 'ARMIN VAN BUUREN', 'tag' => 'CLUB', 'tag_special' => false, 'start' => '22:00', 'end' => '02:00', 'venue' => 'XO the Club', 'price' => '€60.00', 'time_tick' => '10PM'],
-    ['artist' => 'MARTIN GARRIX', 'tag' => 'CLUB', 'tag_special' => false, 'start' => '22:00', 'end' => '02:00', 'venue' => 'Puncher comedy club', 'price' => '€60.00', 'time_tick' => '10PM'],
-    ['artist' => 'HARDWELL', 'tag' => 'CLUB', 'tag_special' => false, 'start' => '23:00', 'end' => '00:30', 'venue' => 'Jopenkerk', 'price' => '€60.00', 'time_tick' => '11PM'],
+    ['artist' => 'NICKY ROMERO / AFROJACK', 'tag' => 'B2B', 'tag_special' => false, 'start' => '20:00', 'end' => '02:00', 'venue' => 'Lichtfabriek', 'price' => '€75.00', 'time_tick' => '08PM', 'event_id' => 46],
+    ['artist' => 'TIËSTO', 'tag' => 'CLUB', 'tag_special' => false, 'start' => '22:00', 'end' => '23:30', 'venue' => 'Slachthuis', 'price' => '€60.00', 'time_tick' => '10PM', 'event_id' => 47],
+    ['artist' => 'ARMIN VAN BUUREN', 'tag' => 'CLUB', 'tag_special' => false, 'start' => '22:00', 'end' => '02:00', 'venue' => 'XO the Club', 'price' => '€60.00', 'time_tick' => '10PM', 'event_id' => 48],
+    ['artist' => 'MARTIN GARRIX', 'tag' => 'CLUB', 'tag_special' => false, 'start' => '22:00', 'end' => '02:00', 'venue' => 'Puncher comedy club', 'price' => '€60.00', 'time_tick' => '10PM', 'event_id' => 49],
+    ['artist' => 'HARDWELL', 'tag' => 'CLUB', 'tag_special' => false, 'start' => '23:00', 'end' => '00:30', 'venue' => 'Jopenkerk', 'price' => '€60.00', 'time_tick' => '11PM', 'event_id' => 50],
   ]],
   ['label' => 'Saturday July 26th', 'pass_label' => 'DAY PASS FOR SATURDAY', 'pass_price' => '€125.00', 'events' => [
-    ['artist' => 'HARDWELL / MARTIN GARRIX / ARMIN VAN BUUREN', 'tag' => 'B2B', 'tag_special' => false, 'start' => '14:00', 'end' => '23:00', 'venue' => 'Caprera Openluchttheater', 'price' => '€110.00', 'time_tick' => '02PM'],
-    ['artist' => 'TIËSTO', 'tag' => 'TIËSTOWORLD', 'tag_special' => true, 'start' => '21:00', 'end' => '01:00', 'venue' => 'Lichtfabriek', 'price' => '€75.00', 'time_tick' => '09PM'],
-    ['artist' => 'AFROJACK', 'tag' => 'CLUB', 'tag_special' => false, 'start' => '22:00', 'end' => '23:30', 'venue' => 'Opener', 'price' => '€60.00', 'time_tick' => '10PM'],
-    ['artist' => 'NICKY ROMERO', 'tag' => 'CLUB', 'tag_special' => false, 'start' => '23:00', 'end' => '00:30', 'venue' => 'Slachthuis', 'price' => '€60.00', 'time_tick' => '11PM'],
+    ['artist' => 'HARDWELL / MARTIN GARRIX / ARMIN VAN BUUREN', 'tag' => 'B2B', 'tag_special' => false, 'start' => '14:00', 'end' => '23:00', 'venue' => 'Caprera Openluchttheater', 'price' => '€110.00', 'time_tick' => '02PM', 'event_id' => 51],
+    ['artist' => 'TIËSTO', 'tag' => 'TIËSTOWORLD', 'tag_special' => true, 'start' => '21:00', 'end' => '01:00', 'venue' => 'Lichtfabriek', 'price' => '€75.00', 'time_tick' => '09PM', 'event_id' => 52],
+    ['artist' => 'AFROJACK', 'tag' => 'CLUB', 'tag_special' => false, 'start' => '22:00', 'end' => '23:30', 'venue' => 'Opener', 'price' => '€60.00', 'time_tick' => '10PM', 'event_id' => 53],
+    ['artist' => 'NICKY ROMERO', 'tag' => 'CLUB', 'tag_special' => false, 'start' => '23:00', 'end' => '00:30', 'venue' => 'Slachthuis', 'price' => '€60.00', 'time_tick' => '11PM', 'event_id' => 54],
   ]],
   ['label' => 'Sunday July 27th', 'pass_label' => 'DAY PASS FOR SUNDAY', 'pass_price' => '€125.00', 'events' => [
-    ['artist' => 'AFROJACK / TIËSTO / NICKY ROMERO', 'tag' => 'B2B', 'tag_special' => false, 'start' => '14:00', 'end' => '23:00', 'venue' => 'Caprera Openluchttheater', 'price' => '€110.00', 'time_tick' => '02PM'],
-    ['artist' => 'MARTIN GARRIX', 'tag' => 'CLUB', 'tag_special' => false, 'start' => '18:00', 'end' => '19:30', 'venue' => 'Slachthuis', 'price' => '€60.00', 'time_tick' => '06PM'],
-    ['artist' => 'ARMIN VAN BUUREN', 'tag' => 'CLUB', 'tag_special' => false, 'start' => '19:00', 'end' => '20:30', 'venue' => 'Jopenkerk', 'price' => '€60.00', 'time_tick' => '07PM'],
-    ['artist' => 'HARDWELL', 'tag' => 'CLUB', 'tag_special' => false, 'start' => '21:00', 'end' => '22:30', 'venue' => 'XO the Club', 'price' => '€90.00', 'time_tick' => '09PM'],
+    ['artist' => 'AFROJACK / TIËSTO / NICKY ROMERO', 'tag' => 'B2B', 'tag_special' => false, 'start' => '14:00', 'end' => '23:00', 'venue' => 'Caprera Openluchttheater', 'price' => '€110.00', 'time_tick' => '02PM', 'event_id' => 55],
+    ['artist' => 'MARTIN GARRIX', 'tag' => 'CLUB', 'tag_special' => false, 'start' => '18:00', 'end' => '19:30', 'venue' => 'Slachthuis', 'price' => '€60.00', 'time_tick' => '06PM', 'event_id' => 56],
+    ['artist' => 'ARMIN VAN BUUREN', 'tag' => 'CLUB', 'tag_special' => false, 'start' => '19:00', 'end' => '20:30', 'venue' => 'Jopenkerk', 'price' => '€60.00', 'time_tick' => '07PM', 'event_id' => 57],
+    ['artist' => 'HARDWELL', 'tag' => 'CLUB', 'tag_special' => false, 'start' => '21:00', 'end' => '22:30', 'venue' => 'XO the Club', 'price' => '€90.00', 'time_tick' => '09PM', 'event_id' => 58],
   ]],
 ];
 $useDefault = empty($passes) && empty($rows);
@@ -274,7 +274,17 @@ $useDefault = empty($passes) && empty($rows);
             <span class="w-[140px] shrink-0 text-left text-xl font-bold leading-snug text-white"><?= htmlspecialchars($ev['start'] . ' - ' . $ev['end']) ?></span>
             <span class="w-[140px] shrink-0 truncate text-base font-bold leading-normal text-white/95 underline"><?= htmlspecialchars($ev['venue']) ?></span>
             <span class="w-[90px] shrink-0 text-right text-xl font-bold leading-snug text-white"><?= htmlspecialchars($ev['price']) ?></span>
-            <button type="button" class="dance-add-placeholder flex h-[41px] w-[95px] shrink-0 cursor-pointer items-center justify-center gap-2 rounded border border-[#E60000] bg-[rgba(230,0,0,0.45)] text-base font-bold text-white transition hover:bg-[rgba(230,0,0,0.65)] hover:-translate-y-px" aria-label="Add to cart (not yet available)"><span class="h-4 w-4" aria-hidden="true"></span> ADD</button>
+            <?php $eventId = isset($ev['event_id']) ? (int)$ev['event_id'] : 0; ?>
+            <?php if ($eventId > 0): ?>
+              <form method="POST" action="/order/item/add" class="ticket-form shrink-0">
+                <input type="hidden" name="event_id" value="<?= $eventId ?>">
+                <button type="submit" class="flex h-[41px] w-[95px] items-center justify-center gap-2 rounded border border-[#E60000] bg-[rgba(230,0,0,0.45)] text-base font-bold text-white transition hover:bg-[rgba(230,0,0,0.65)] hover:-translate-y-px disabled:cursor-default disabled:opacity-75">
+                  <span class="h-4 w-4" aria-hidden="true"></span> ADD
+                </button>
+              </form>
+            <?php else: ?>
+              <button type="button" class="dance-add-placeholder flex h-[41px] w-[95px] shrink-0 cursor-pointer items-center justify-center gap-2 rounded border border-[#E60000] bg-[rgba(230,0,0,0.45)] text-base font-bold text-white transition hover:bg-[rgba(230,0,0,0.65)] hover:-translate-y-px" aria-label="Add to cart (not yet available)"><span class="h-4 w-4" aria-hidden="true"></span> ADD</button>
+            <?php endif; ?>
           </div>
         </div>
           <?php endforeach; ?>
@@ -311,7 +321,7 @@ $useDefault = empty($passes) && empty($rows);
               'end' => $ev['end'] ?? '',
               'venue' => $ev['venue'] ?? '',
               'price_label' => $ev['price'] ?? '',
-              'event_id' => 0,
+              'event_id' => isset($ev['event_id']) ? (int)$ev['event_id'] : 0,
               'time_tick' => $ev['time_tick'] ?? '',
             ];
           }

@@ -99,7 +99,10 @@
     // ADD buttons without event_id (default timetable): clickable, show “not yet available” toast
     document.querySelectorAll('.dance-add-placeholder').forEach(function (btn) {
         btn.addEventListener('click', function () {
-            showCartToast({ title: 'Ticket not yet available', sub: 'This item will be available for purchase soon.' });
+            showCartToast({
+                title: 'Ticket not yet available',
+                sub: 'This item will be available for purchase soon.',
+            });
         });
     });
 })();
