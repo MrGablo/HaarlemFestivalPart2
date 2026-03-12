@@ -87,9 +87,21 @@
         color: #2F80ED;
         text-decoration: underline;
     }
+
+    /* Dance page: dark footer variant (no dance.css) */
+    .dance-footer {
+        background: linear-gradient(180deg, #191717 0%, #000 100%);
+        padding: 50px 24px 30px;
+        margin-top: 0;
+    }
+    .dance-footer .footer-col h3 { color: #fff; }
+    .dance-footer .footer-links a { color: rgba(255,255,255,0.75); font-family: 'Quattrocento', serif; font-size: 16px; letter-spacing: 0.48px; }
+    .dance-footer .footer-links a:hover { color: #fff; }
+    .dance-footer .copyright { color: rgba(255,255,255,0.5); margin-top: 24px; }
+    .dance-footer .footer-logo { filter: brightness(0) invert(1); }
 </style>
 
-<footer class="main-footer">
+<footer class="main-footer <?= !empty($danceFooter) ? 'dance-footer' : '' ?>">
     <div class="footer-container">
         
         <div class="footer-col footer-brand">
