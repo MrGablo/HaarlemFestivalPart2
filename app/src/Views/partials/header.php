@@ -19,32 +19,35 @@ if ($headerIsLoggedIn && isset($authPayload['userId'])) {
     try {
         $orderService = new OrderService(new OrderRepository(), new EventModelBuilderService());
         $headerCartOrder = $orderService->getPendingOrderForUser((int) $authPayload['userId']);
-        if ($headerCartOrder instanceof Order) {
-            $headerCartCount = $headerCartOrder->getItemCount();
-        }
     } catch (\Throwable $e) {
-        $headerCartCount = 0; // fallback 
+        $headerCartOrder = null;
     }
 }
 
-// nav logic
-$currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+if (!($headerCartOrder instanceof Order)) {
+    $headerCartOrder = null;
+}
+
+$headerCartCount = $headerCartOrder ? $headerCartOrder->getItemCount() : 0;
+$headerCartTotal = $headerCartOrder ? $headerCartOrder->getTotalPrice() : 0.0;
+$currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 
 function getNavClass($path, $currentPath)
 {
-    $baseClasses = "no-underline font-bold text-base py-2.5 px-[18px] transition-all duration-200 rounded-[25px]";
+    $baseClasses = 'no-underline font-bold text-base py-2.5 px-[18px] transition-all duration-200 rounded-[25px]';
+
     if ($currentPath === $path) {
-        return "$baseClasses bg-[#2F80ED] text-white shadow-[0_4px_10px_rgba(47,128,237,0.3)]";
+        return $baseClasses . ' bg-[#2F80ED] text-white shadow-[0_4px_10px_rgba(47,128,237,0.3)]';
     }
-    return "$baseClasses text-black hover:bg-[#f5f5f5]";
+
+    return $baseClasses . ' text-black hover:bg-[#f5f5f5]';
 }
 ?>
 
 <header class="bg-white border-b border-[#f0f0f0] py-[15px] font-sans">
-    <div class="max-w-[1200px] mx-auto px-5 flex justify-between items-center">
-
+    <div class="mx-auto flex max-w-[1200px] items-center justify-between px-5">
         <a href="/" class="block">
-            <img src="/assets/img/homepage/logo.svg" alt="Haarlem Festival" class="h-10 block">
+            <img src="/assets/img/homepage/logo.svg" alt="Haarlem Festival" class="block h-10">
         </a>
 
         <nav class="flex items-center gap-[15px]">
@@ -55,34 +58,51 @@ function getNavClass($path, $currentPath)
             <a href="/stories" class="<?= getNavClass('/stories', $currentPath) ?>">Stories</a>
             <a href="/history" class="<?= getNavClass('/history', $currentPath) ?>">History</a>
 
-            <a href="/cart" class="<?= getNavClass('/cart', $currentPath) ?> flex items-center gap-2">
+            <button
+                type="button"
+                id="cartToggleBtn"
+                class="<?= getNavClass('/cart', $currentPath) ?> flex items-center gap-2 border-0 bg-transparent cursor-pointer"
+                aria-haspopup="dialog"
+                aria-controls="cartOverlay"
+                aria-expanded="false"
+            >
                 Program
-                <div class="relative flex items-center">
-                    <img src="/assets/img/headerfooter/cart.svg" alt="Cart" class="w-6 h-6">
+                <span class="relative flex items-center">
+                    <img src="/assets/img/headerfooter/cart.svg" alt="Cart" class="h-6 w-6">
                     <span
-                        class="absolute -top-2 -right-2 bg-[#E63946] text-white text-[0.7rem] font-bold w-[18px] h-[18px] rounded-full flex items-center justify-center border-2 border-white">
+                        id="cartBadge"
+                        class="absolute -top-2 -right-2 flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 border-white bg-[#E63946] text-[0.7rem] font-bold text-white"
+                    >
                         <?= (int) $headerCartCount ?>
                     </span>
-                </div>
-            </a>
+                </span>
+            </button>
 
             <?php if ($headerIsLoggedIn): ?>
-                <a class="inline-flex items-center gap-2 no-underline text-black font-bold text-[0.95rem] py-2 px-3 rounded-[25px] transition-all duration-200 hover:bg-[#f5f5f5]"
-                    href="/account/manage">
-                    <img class="w-8 h-8 rounded-full object-cover" src="<?= htmlspecialchars($headerProfilePicturePath); ?>"
-                        alt="Account">
+                <a
+                    class="inline-flex items-center gap-2 no-underline text-black font-bold text-[0.95rem] py-2 px-3 rounded-[25px] transition-all duration-200 hover:bg-[#f5f5f5]"
+                    href="/account/manage"
+                    title="Manage account"
+                    aria-label="Manage account"
+                >
+                    <img
+                        class="block h-8 w-8 min-w-[32px] rounded-full object-cover"
+                        src="<?= htmlspecialchars($headerProfilePicturePath) ?>"
+                        onerror="this.onerror=null;this.src='/assets/img/default-user.png';"
+                        alt="Account"
+                    >
                     <span>Account</span>
                 </a>
-                <a href="/logout"
-                    class="no-underline text-black font-bold text-base py-2.5 px-[18px] transition-all duration-200 rounded-[25px] hover:bg-[#f5f5f5]">Logout</a>
+                <a href="/logout" class="<?= getNavClass('/logout', $currentPath) ?>">Logout</a>
             <?php else: ?>
-                <a href="/login"
-                    class="no-underline text-black font-bold text-base py-2.5 px-[18px] transition-all duration-200 rounded-[25px] hover:bg-[#f5f5f5]">Login</a>
+                <a href="/login" class="<?= getNavClass('/login', $currentPath) ?>">Login</a>
             <?php endif; ?>
 
             <?php if ($headerIsAdmin): ?>
-                <a class="<?= getNavClass('/cms', $currentPath) ?>" href="/cms">CMS</a>
+                <a href="/cms" class="<?= getNavClass('/cms', $currentPath) ?>">CMS</a>
             <?php endif; ?>
         </nav>
     </div>
 </header>
+
+<?php require __DIR__ . '/cart.php'; ?>
