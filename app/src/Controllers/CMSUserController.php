@@ -65,13 +65,17 @@ final class CMSUserController
 
             $this->service->createUser($user);
             Flash::setSuccess('User created successfully.');
+
             header('Location: /cms/users', true, 302);
             exit;
         } catch (\Throwable $e) {
             Flash::setErrors(['general' => $e->getMessage()]);
+
+            // Strip passwords and tokens before flashing old input for security reasons
             $old = $_POST;
             unset($old['password'], $old['password_confirmation'], $old['confirm_password'], $old['_csrf'], $old['csrf_token']);
             Flash::setOld($old);
+
             header('Location: /cms/users/create', true, 302);
             exit;
         }
