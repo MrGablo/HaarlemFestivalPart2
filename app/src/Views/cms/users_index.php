@@ -25,8 +25,7 @@
                         + Create User
                     </a>
 
-                    <a href="/cms"
-                        class="text-sm font-medium text-slate-600 hover:text-slate-900">← Back to CMS</a>
+                    <a href="/cms" class="text-sm font-medium text-slate-600 hover:text-slate-900">← Back to CMS</a>
                 </div>
             </div>
 
@@ -39,10 +38,7 @@
                     <!-- Search -->
                     <div>
                         <label class="block text-sm font-medium text-slate-700">Search</label>
-                        <input
-                            type="text"
-                            name="search"
-                            placeholder="Name, username, or email..."
+                        <input type="text" name="search" placeholder="Name, username, or email..."
                             value="<?= htmlspecialchars((string)($search ?? '')) ?>"
                             class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
                     </div>
@@ -50,12 +46,12 @@
                     <!-- Role Filter -->
                     <div>
                         <label class="block text-sm font-medium text-slate-700">Role</label>
-                        <select
-                            name="role"
+                        <select name="role"
                             class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
                             <option value="">All Roles</option>
                             <?php foreach (($roles ?? []) as $role): ?>
-                                <option value="<?= htmlspecialchars($role) ?>" <?= ((string)($roleFilter ?? '') === $role) ? 'selected' : '' ?>>
+                                <option value="<?= htmlspecialchars($role) ?>"
+                                    <?= ((string)($roleFilter ?? '') === $role) ? 'selected' : '' ?>>
                                     <?= htmlspecialchars(ucfirst($role)) ?>
                                 </option>
                             <?php endforeach; ?>
@@ -66,20 +62,28 @@
                     <div>
                         <label class="block text-sm font-medium text-slate-700">Sort By</label>
                         <div class="mt-1 flex gap-2">
-                            <select
-                                name="sort"
+                            <select name="sort"
                                 class="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
-                                <option value="id" <?= ((string)($sortColumn ?? 'name') === 'id') ? 'selected' : '' ?>>ID</option>
-                                <option value="name" <?= ((string)($sortColumn ?? 'name') === 'name') ? 'selected' : '' ?>>Name</option>
-                                <option value="created_at" <?= ((string)($sortColumn ?? 'name') === 'created_at') ? 'selected' : '' ?>>Registration Date</option>
-                                <option value="email" <?= ((string)($sortColumn ?? 'name') === 'email') ? 'selected' : '' ?>>Email</option>
+                                <option value="id" <?= ((string)($sortColumn ?? 'name') === 'id') ? 'selected' : '' ?>>
+                                    ID</option>
+                                <option value="name"
+                                    <?= ((string)($sortColumn ?? 'name') === 'name') ? 'selected' : '' ?>>Name</option>
+                                <option value="created_at"
+                                    <?= ((string)($sortColumn ?? 'name') === 'created_at') ? 'selected' : '' ?>>
+                                    Registration Date</option>
+                                <option value="email"
+                                    <?= ((string)($sortColumn ?? 'name') === 'email') ? 'selected' : '' ?>>Email
+                                </option>
                             </select>
 
-                            <select
-                                name="dir"
+                            <select name="dir"
                                 class="w-24 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
-                                <option value="ASC" <?= ((string)($sortDirection ?? 'ASC') === 'ASC') ? 'selected' : '' ?>>↑ Asc</option>
-                                <option value="DESC" <?= ((string)($sortDirection ?? 'ASC') === 'DESC') ? 'selected' : '' ?>>↓ Desc</option>
+                                <option value="ASC"
+                                    <?= ((string)($sortDirection ?? 'ASC') === 'ASC') ? 'selected' : '' ?>>↑ Asc
+                                </option>
+                                <option value="DESC"
+                                    <?= ((string)($sortDirection ?? 'ASC') === 'DESC') ? 'selected' : '' ?>>↓ Desc
+                                </option>
                             </select>
                         </div>
                     </div>
@@ -92,7 +96,7 @@
                     </button>
                     <a href="/cms/users"
                         class="rounded-lg bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-300">
-                        Clear
+                        Reset
                     </a>
                 </div>
             </form>
@@ -124,10 +128,12 @@
                                     <td class="px-4 py-3 font-medium text-slate-900">
                                         <?= htmlspecialchars((string)($u->firstName ?? '')) . ' ' . htmlspecialchars((string)($u->lastName ?? '')) ?>
                                     </td>
-                                    <td class="px-4 py-3 text-slate-700"><?= htmlspecialchars((string)($u->userName ?? '')) ?></td>
+                                    <td class="px-4 py-3 text-slate-700"><?= htmlspecialchars((string)($u->userName ?? '')) ?>
+                                    </td>
                                     <td class="px-4 py-3 text-slate-700"><?= htmlspecialchars((string)($u->email ?? '')) ?></td>
                                     <td class="whitespace-nowrap px-4 py-3">
-                                        <span class="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
+                                        <span
+                                            class="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
                                             <?= htmlspecialchars(ucfirst((string)($u->role->value ?? ''))) ?>
                                         </span>
                                     </td>
@@ -141,11 +147,11 @@
                                                 Edit
                                             </a>
 
-                                            <form method="POST"
-                                                action="/cms/users/<?= (int)($u->id ?? 0) ?>/delete"
+                                            <form method="POST" action="/cms/users/<?= (int)($u->id ?? 0) ?>/delete"
                                                 style="display: inline;"
                                                 onsubmit="return confirm('Delete this user? This action cannot be undone.');">
-                                                <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string)($csrfToken ?? '')) ?>">
+                                                <input type="hidden" name="_csrf"
+                                                    value="<?= htmlspecialchars((string)($csrfToken ?? '')) ?>">
                                                 <button type="submit"
                                                     class="rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700">
                                                     Delete
