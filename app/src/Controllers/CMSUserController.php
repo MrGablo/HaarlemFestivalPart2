@@ -69,7 +69,9 @@ final class CMSUserController
             exit;
         } catch (\Throwable $e) {
             Flash::setErrors(['general' => $e->getMessage()]);
-            Flash::setOld($_POST);
+            $old = $_POST;
+            unset($old['password'], $old['password_confirmation'], $old['confirm_password'], $old['_csrf'], $old['csrf_token']);
+            Flash::setOld($old);
             header('Location: /cms/users/create', true, 302);
             exit;
         }
