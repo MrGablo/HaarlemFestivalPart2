@@ -69,6 +69,7 @@
                             <select
                                 name="sort"
                                 class="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
+                                <option value="id" <?= ((string)($sortColumn ?? 'name') === 'id') ? 'selected' : '' ?>>ID</option>
                                 <option value="name" <?= ((string)($sortColumn ?? 'name') === 'name') ? 'selected' : '' ?>>Name</option>
                                 <option value="created_at" <?= ((string)($sortColumn ?? 'name') === 'created_at') ? 'selected' : '' ?>>Registration Date</option>
                                 <option value="email" <?= ((string)($sortColumn ?? 'name') === 'email') ? 'selected' : '' ?>>Email</option>

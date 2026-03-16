@@ -97,6 +97,7 @@ class CmsUserService
 
         usort($users, function (UserModel $a, UserModel $b) use ($sortColumn, $directionMult) {
             $valA = match ($sortColumn) {
+                'id' => $a->id,
                 'created_at' => $a->created_at ?? '',
                 'email' => strtolower($a->email),
                 'first_name' => strtolower($a->firstName),
@@ -106,6 +107,7 @@ class CmsUserService
             };
 
             $valB = match ($sortColumn) {
+                'id' => $b->id,
                 'created_at' => $b->created_at ?? '',
                 'email' => strtolower($b->email),
                 'first_name' => strtolower($b->firstName),
