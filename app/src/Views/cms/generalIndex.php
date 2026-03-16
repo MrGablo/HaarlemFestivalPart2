@@ -60,6 +60,15 @@
                     'href' => '/cms/artists',
                     'label' => 'Open',
                 ],
+                [
+                    'id' => 5,
+                    'title' => 'Users',
+                    'type' => 'users',
+                    'updated' => '-',
+                    'created' => '-',
+                    'href' => '/cms/users',
+                    'label' => 'Open',
+                ],
             ];
             ?>
 
