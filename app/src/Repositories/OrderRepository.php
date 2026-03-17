@@ -101,7 +101,8 @@ class OrderRepository extends Repository implements IOrderRepository
                 e.event_type AS event_type,
                 j.start_date,
                 j.end_date,
-                j.location,
+                 j.venue_id,
+                 v.name AS venue_name,
                      j.artist_id,
                      a.name AS artist_name,
                 j.img_background,
@@ -110,7 +111,8 @@ class OrderRepository extends Repository implements IOrderRepository
              FROM `order_items` oi
              INNER JOIN Event e ON e.event_id = oi.event_id
              LEFT JOIN JazzEvent j ON j.event_id = e.event_id
-                 LEFT JOIN Artist a ON a.artist_id = j.artist_id
+                  LEFT JOIN Artist a ON a.artist_id = j.artist_id
+                  LEFT JOIN Venue v ON v.venue_id = j.venue_id
              WHERE oi.order_id = :order_id
              ORDER BY oi.created_at DESC, oi.order_item_id DESC'
         );
@@ -192,7 +194,8 @@ class OrderRepository extends Repository implements IOrderRepository
                 e.event_type,
                 j.start_date,
                 j.end_date,
-                j.location,
+                 j.venue_id,
+                 v.name AS venue_name,
                      j.artist_id,
                      a.name AS artist_name,
                 j.img_background,
@@ -200,7 +203,8 @@ class OrderRepository extends Repository implements IOrderRepository
                 j.page_id
              FROM Event e
              LEFT JOIN JazzEvent j ON j.event_id = e.event_id
-                 LEFT JOIN Artist a ON a.artist_id = j.artist_id
+                  LEFT JOIN Artist a ON a.artist_id = j.artist_id
+                  LEFT JOIN Venue v ON v.venue_id = j.venue_id
              WHERE e.event_id = :event_id
              LIMIT 1'
         );

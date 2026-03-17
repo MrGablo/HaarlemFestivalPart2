@@ -20,7 +20,8 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
                 e.event_type,
                 j.start_date,
                 j.end_date,
-                j.location,
+                j.venue_id,
+                v.name AS venue_name,
                 j.artist_id,
                 a.name AS artist_name,
                 j.img_background,
@@ -29,6 +30,7 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
             FROM Event e
             JOIN JazzEvent j ON j.event_id = e.event_id
             LEFT JOIN Artist a ON a.artist_id = j.artist_id
+            LEFT JOIN Venue v ON v.venue_id = j.venue_id
             WHERE e.event_type = 'jazz'
             ORDER BY j.start_date ASC
         ";
@@ -48,7 +50,8 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
                 e.event_type,
                 j.start_date,
                 j.end_date,
-                j.location,
+                j.venue_id,
+                v.name AS venue_name,
                 j.artist_id,
                 a.name AS artist_name,
                 j.img_background,
@@ -57,6 +60,7 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
             FROM Event e
             JOIN JazzEvent j ON j.event_id = e.event_id
             LEFT JOIN Artist a ON a.artist_id = j.artist_id
+            LEFT JOIN Venue v ON v.venue_id = j.venue_id
             WHERE e.event_id = :id AND e.event_type = 'jazz'
             LIMIT 1
         ");
@@ -82,17 +86,27 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
                 throw new \RuntimeException('Unable to create parent event.');
             }
 
-            $stmtJazz = $pdo->prepare("\n                INSERT INTO JazzEvent (\n                    event_id,\n                    start_date,\n                    end_date,\n                    location,\n                    artist_id,\n                    img_background,\n                    price,\n                    page_id\n                ) VALUES (\n                    :event_id,\n                    :start_date,\n                    :end_date,\n                    :location,\n                    :artist_id,\n                    :img_background,\n                    :price,\n                    :page_id\n                )\n            ");
+            $stmtJazz = $pdo->prepare("
+                INSERT INTO JazzEvent (
+                    event_id, start_date, end_date,
+                    venue_id, artist_id,
+                    img_background, price, page_id
+                ) VALUES (
+                    :event_id, :start_date, :end_date,
+                    :venue_id, :artist_id,
+                    :img_background, :price, :page_id
+                )
+            ");
 
             $stmtJazz->execute([
-                ':event_id' => $eventId,
-                ':start_date' => $event->start_date,
-                ':end_date' => $event->end_date,
-                ':location' => $event->location,
-                ':artist_id' => $event->artist_id,
+                ':event_id'       => $eventId,
+                ':start_date'     => $event->start_date,
+                ':end_date'       => $event->end_date,
+                ':venue_id'       => $event->venue_id,
+                ':artist_id'      => $event->artist_id,
                 ':img_background' => $event->img_background,
-                ':price' => $event->price,
-                ':page_id' => $event->page_id,
+                ':price'          => $event->price,
+                ':page_id'        => $event->page_id,
             ]);
 
             $pdo->commit();
@@ -138,7 +152,7 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
             UPDATE JazzEvent
             SET start_date = :start_date,
                 end_date = :end_date,
-                location = :location,
+                venue_id = :venue_id,
                 artist_id = :artist_id,
                 img_background = :img_background,
                 price = :price,
@@ -146,14 +160,14 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
             WHERE event_id = :id
         ");
             $stmt2->execute([
-                ':start_date' => $event->start_date,
-                ':end_date' => $event->end_date,
-                ':location' => $event->location,
-                ':artist_id' => $event->artist_id,
+                ':start_date'     => $event->start_date,
+                ':end_date'       => $event->end_date,
+                ':venue_id'       => $event->venue_id,
+                ':artist_id'      => $event->artist_id,
                 ':img_background' => $event->img_background,
-                ':price' => $event->price,
-                ':page_id' => $event->page_id,
-                ':id' => $event->event_id,
+                ':price'          => $event->price,
+                ':page_id'        => $event->page_id,
+                ':id'             => $event->event_id,
             ]);
 
             $pdo->commit();
@@ -179,7 +193,8 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
             e.event_type,
             j.start_date,
             j.end_date,
-            j.location,
+            j.venue_id,
+            v.name AS venue_name,
             j.artist_id,
             a.name AS artist_name,
             j.img_background,
@@ -188,6 +203,7 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
         FROM Event e
         JOIN JazzEvent j ON j.event_id = e.event_id
         LEFT JOIN Artist a ON a.artist_id = j.artist_id
+        LEFT JOIN Venue v ON v.venue_id = j.venue_id
         WHERE e.event_type = 'jazz'
           AND e.event_id IN ($placeholders)
         ORDER BY j.start_date ASC
@@ -208,7 +224,28 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
 
         $pdo = $this->getConnection();
 
-        $stmt = $pdo->prepare("\n            SELECT\n                e.event_id,\n                e.title,\n                e.event_type,\n                j.start_date,\n                j.end_date,\n                j.location,\n                j.artist_id,\n                a.name AS artist_name,\n                j.img_background,\n                j.price,\n                j.page_id\n            FROM Event e\n            JOIN JazzEvent j ON j.event_id = e.event_id\n            LEFT JOIN Artist a ON a.artist_id = j.artist_id\n            WHERE e.event_type = 'jazz'\n              AND j.page_id = :page_id\n            ORDER BY j.start_date ASC\n        ");
+        $stmt = $pdo->prepare("
+            SELECT
+                e.event_id,
+                e.title,
+                e.event_type,
+                j.start_date,
+                j.end_date,
+                j.venue_id,
+                v.name AS venue_name,
+                j.artist_id,
+                a.name AS artist_name,
+                j.img_background,
+                j.price,
+                j.page_id
+            FROM Event e
+            JOIN JazzEvent j ON j.event_id = e.event_id
+            LEFT JOIN Artist a ON a.artist_id = j.artist_id
+            LEFT JOIN Venue v ON v.venue_id = j.venue_id
+            WHERE e.event_type = 'jazz'
+              AND j.page_id = :page_id
+            ORDER BY j.start_date ASC
+        ");
 
         $stmt->execute([':page_id' => $pageId]);
 

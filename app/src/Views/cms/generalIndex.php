@@ -69,6 +69,15 @@
                     'href' => '/cms/users',
                     'label' => 'Open',
                 ],
+                [
+                    'id' => 6,
+                    'title' => 'Venues',
+                    'type' => 'venues',
+                    'updated' => '-',
+                    'created' => '-',
+                    'href' => '/cms/venues',
+                    'label' => 'Open',
+                ],
             ];
             ?>
 
