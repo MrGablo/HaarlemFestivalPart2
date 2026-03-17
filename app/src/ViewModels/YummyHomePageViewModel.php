@@ -34,9 +34,10 @@ class YummyHomePageViewModel
         $images = is_array($this->gallery['images'] ?? null) ? $this->gallery['images'] : [];
         $this->galleryImages = array_map([$this, 'normalizeAssetPath'], array_filter($images));
 
-        $this->visibleRestaurantItems = $this->buildRestaurantItemsFromDb($yummyEvents);
+        $captions = is_array($this->gallery['captions'] ?? null) ? $this->gallery['captions'] : [];
+        $this->galleryCaptions = array_values(array_filter($captions, 'is_string'));
 
-        $this->galleryCaptions = $this->buildGalleryCaptions($this->visibleRestaurantItems);
+        $this->visibleRestaurantItems = $this->buildRestaurantItemsFromDb($yummyEvents);
 
         $this->mapImageCaption = trim((string)($this->map['imageCaption'] ?? ''));
         $this->heroImage = $this->normalizeAssetPath((string)($this->hero['bgImage'] ?? ''));
@@ -78,17 +79,6 @@ class YummyHomePageViewModel
         }
 
         return $sectionMap;
-    }
-
-    private function buildGalleryCaptions(array $restaurantItems): array
-    {
-        $galleryCaptions = [];
-
-        foreach (array_slice($restaurantItems, 0, max(4, count($this->galleryImages))) as $restaurantItem) {
-            $galleryCaptions[] = ($restaurantItem['name'] ?? 'Featured Restaurant') . ' Food';
-        }
-
-        return $galleryCaptions;
     }
 
     private function normalizeAssetPath(string $path): string
