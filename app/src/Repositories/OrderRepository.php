@@ -179,6 +179,48 @@ class OrderRepository extends Repository implements IOrderRepository
         }
     }
 
+    public function getOrderItemsForOrders(array $orderIds): array
+    {
+        if ($orderIds === []) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
+
+        $stmt = $this->getConnection()->prepare(
+            "SELECT
+                oi.order_item_id,
+                oi.order_id,
+                oi.event_id,
+                oi.quantity,
+                oi.created_at AS order_item_created_at,
+                e.event_id,
+                e.title AS title,
+                e.event_type AS event_type,
+                j.start_date,
+                j.end_date,
+                j.venue_id,
+                v.name AS venue_name,
+                j.artist_id,
+                a.name AS artist_name,
+                j.img_background,
+                j.price,
+                j.page_id
+             FROM `order_items` oi
+             INNER JOIN Event e ON e.event_id = oi.event_id
+             LEFT JOIN JazzEvent j ON j.event_id = e.event_id
+             LEFT JOIN Artist a ON a.artist_id = j.artist_id
+             LEFT JOIN Venue v ON v.venue_id = j.venue_id
+             WHERE oi.order_id IN ($placeholders)
+             ORDER BY oi.order_id ASC, oi.created_at DESC, oi.order_item_id DESC"
+        );
+
+        $stmt->execute(array_values($orderIds));
+        $rows = $stmt->fetchAll();
+
+        return is_array($rows) ? $rows : [];
+    }
+
     public function getOrderItemsWithEventData(int $orderId): array
     {
         $stmt = $this->getConnection()->prepare(

@@ -270,25 +270,68 @@ final class CmsOrderService
             throw new \RuntimeException('No orders found for the selected export scope.');
         }
 
-        $rows = [];
+        // Collect all order IDs and index summaries — then fetch all items in one query (avoids N+1)
+        $orderIds = array_map(fn(array $o): int => (int)($o['order_id'] ?? 0), $orders);
+        $orderIds = array_values(array_filter($orderIds, fn(int $id): bool => $id > 0));
+
+        $allItems = $this->orders->getOrderItemsForOrders($orderIds);
+
+        // Group items by order_id
+        $itemsByOrder = [];
+        foreach ($allItems as $itemRow) {
+            $oid = (int)($itemRow['order_id'] ?? 0);
+            $itemsByOrder[$oid][] = $itemRow;
+        }
+
+        // Index summaries keyed by order_id so we can look them up below
+        $summaryByOrder = [];
         foreach ($orders as $orderSummary) {
-            $details = $this->findOrderDetails((int)($orderSummary['order_id'] ?? 0));
-            if ($details === null) {
+            $oid = (int)($orderSummary['order_id'] ?? 0);
+            $summaryByOrder[$oid] = $orderSummary;
+        }
+
+        $rows = [];
+        foreach ($orderIds as $oid) {
+            $orderSummary = $summaryByOrder[$oid] ?? null;
+            if ($orderSummary === null) {
                 continue;
             }
 
-            $order = $details['order'];
-            $items = $details['items'];
-            $orderTotal = (float)($order['total_amount'] ?? 0.0);
+            $rawItems = $itemsByOrder[$oid] ?? [];
+
+            // Calculate order total and build normalized item list from the raw DB rows
+            $items = [];
+            $calculatedTotal = 0.0;
+            foreach ($rawItems as $row) {
+                $quantity = max(0, (int)($row['quantity'] ?? 0));
+                $unitPrice = (float)($row['price'] ?? 0.0);
+                $lineTotal = $quantity * $unitPrice;
+                $calculatedTotal += $lineTotal;
+
+                $items[] = [
+                    'order_item_id' => (int)($row['order_item_id'] ?? 0),
+                    'event_id'      => (int)($row['event_id'] ?? 0),
+                    'title'         => (string)($row['title'] ?? 'Event'),
+                    'event_type'    => (string)($row['event_type'] ?? ''),
+                    'artist_name'   => (string)($row['artist_name'] ?? ''),
+                    'venue_name'    => (string)($row['venue_name'] ?? ''),
+                    'start_date'    => (string)($row['start_date'] ?? ''),
+                    'quantity'      => $quantity,
+                    'unit_price'    => $unitPrice,
+                    'line_total'    => $lineTotal,
+                ];
+            }
+
+            $orderTotal = $calculatedTotal;
 
             if ($items === []) {
                 $rows[] = [
-                    'order_id' => (string)($order['order_id'] ?? ''),
-                    'user_id' => (string)($order['user_id'] ?? ''),
-                    'customer_name' => (string)($order['customer_name'] ?? ''),
-                    'customer_email' => (string)($order['customer_email'] ?? ''),
-                    'status' => (string)($order['status'] ?? ''),
-                    'order_created_at' => (string)($order['created_at'] ?? ''),
+                    'order_id' => (string)($orderSummary['order_id'] ?? ''),
+                    'user_id' => (string)($orderSummary['user_id'] ?? ''),
+                    'customer_name' => (string)($orderSummary['customer_name'] ?? ''),
+                    'customer_email' => (string)($orderSummary['customer_email'] ?? ''),
+                    'status' => (string)($orderSummary['status'] ?? ''),
+                    'order_created_at' => (string)($orderSummary['created_at'] ?? ''),
                     'order_item_id' => '',
                     'event_id' => '',
                     'event_title' => '',
@@ -310,12 +353,12 @@ final class CmsOrderService
                 $lineTotal = (float)($item['line_total'] ?? 0.0);
 
                 $rows[] = [
-                    'order_id' => (string)($order['order_id'] ?? ''),
-                    'user_id' => (string)($order['user_id'] ?? ''),
-                    'customer_name' => (string)($order['customer_name'] ?? ''),
-                    'customer_email' => (string)($order['customer_email'] ?? ''),
-                    'status' => (string)($order['status'] ?? ''),
-                    'order_created_at' => (string)($order['created_at'] ?? ''),
+                    'order_id' => (string)($orderSummary['order_id'] ?? ''),
+                    'user_id' => (string)($orderSummary['user_id'] ?? ''),
+                    'customer_name' => (string)($orderSummary['customer_name'] ?? ''),
+                    'customer_email' => (string)($orderSummary['customer_email'] ?? ''),
+                    'status' => (string)($orderSummary['status'] ?? ''),
+                    'order_created_at' => (string)($orderSummary['created_at'] ?? ''),
                     'order_item_id' => (string)($item['order_item_id'] ?? ''),
                     'event_id' => (string)($item['event_id'] ?? ''),
                     'event_title' => (string)($item['title'] ?? ''),
