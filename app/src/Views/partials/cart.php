@@ -76,6 +76,13 @@ if ($headerCartOrder instanceof \App\Models\Order && is_array($headerCartOrder->
     </div>
 </aside>
 
+<div
+    id="cartActionFlash"
+    class="pointer-events-none fixed right-6 top-6 z-[1300] hidden rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 shadow-lg"
+    role="status"
+    aria-live="polite"
+></div>
+
 <script>
 (function () {
     var toggleBtn = document.getElementById('cartToggleBtn');
@@ -85,6 +92,8 @@ if ($headerCartOrder instanceof \App\Models\Order && is_array($headerCartOrder->
     var cartBadge = document.getElementById('cartBadge');
     var cartBody = document.getElementById('cartOverlayBody');
     var cartTotalValue = document.getElementById('cartTotalValue');
+    var cartActionFlash = document.getElementById('cartActionFlash');
+    var cartActionFlashTimer = null;
 
     if (!toggleBtn || !overlay || !backdrop || !closeBtn || !cartBody || !cartTotalValue || !cartBadge) {
         return;
@@ -155,6 +164,23 @@ if ($headerCartOrder instanceof \App\Models\Order && is_array($headerCartOrder->
         }
 
         cartBody.innerHTML = items.map(renderCartItem).join('');
+    }
+
+    function showCartActionFlash(message) {
+        if (!cartActionFlash || !message) {
+            return;
+        }
+
+        cartActionFlash.textContent = String(message);
+        cartActionFlash.classList.remove('hidden');
+
+        if (cartActionFlashTimer) {
+            window.clearTimeout(cartActionFlashTimer);
+        }
+
+        cartActionFlashTimer = window.setTimeout(function () {
+            cartActionFlash.classList.add('hidden');
+        }, 2600);
     }
 
     function setOpen(isOpen) {
@@ -246,6 +272,7 @@ if ($headerCartOrder instanceof \App\Models\Order && is_array($headerCartOrder->
 
                 updateCartUI(payload.cart || null);
                 setOpen(true);
+                showCartActionFlash(payload.message || 'Item removed from cart.');
             })
             .catch(function () {
                 window.alert('Network error while removing from cart. Please try again.');

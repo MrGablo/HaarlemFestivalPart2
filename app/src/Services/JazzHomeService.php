@@ -16,7 +16,6 @@ class JazzHomeService
 
     public function getJazzHomePageViewModel(): JazzHomePageViewModel
     {
-        // uses generic page repo now
         $content = $this->pageRepo->getPageContentByType('Jazz_Homepage');
 
         /** @var JazzEvent[] $eventsRaw */
@@ -24,7 +23,40 @@ class JazzHomeService
 
         $events = array_map([$this, 'mapEvent'], $eventsRaw);
 
-        return new JazzHomePageViewModel($content, $events);
+        $hero = is_array($content['hero'] ?? null) ? $content['hero'] : [];
+        $intro = is_array($content['intro'] ?? null) ? $content['intro'] : [];
+        $dayTicketPass = is_array($content['day_ticket_pass'] ?? null) ? $content['day_ticket_pass'] : [];
+        $schedule = is_array($content['schedule'] ?? null) ? $content['schedule'] : [];
+        $filters = is_array($schedule['filters'] ?? null) ? $schedule['filters'] : [];
+
+        $hallTabs = is_array($filters['tabs'] ?? null) ? $filters['tabs'] : ['Main Hall', 'Second Hall', 'Third Hall', 'Free'];
+        array_unshift($hallTabs, (string)($filters['group_label'] ?? 'By date'));
+
+        $dayTabs = is_array($filters['days'] ?? null)
+            ? $filters['days']
+            : ['All Days', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+        $allEventsButton = is_array($schedule['all_events_button'] ?? null) ? $schedule['all_events_button'] : [];
+        $showAllEventsButton = !empty((string)($allEventsButton['href'] ?? ''));
+        $allEventsButtonLabel = (string)($allEventsButton['label'] ?? 'All Events');
+
+        $pageTitle = (string)($hero['title'] ?? 'Jazz');
+        $scheduleTitle = (string)($schedule['title'] ?? 'SCHEDULE');
+        $scheduleVenueTitle = (string)($schedule['venue_title'] ?? 'PATRONAAT');
+
+        return new JazzHomePageViewModel(
+            $pageTitle,
+            $hero,
+            $intro,
+            $dayTicketPass,
+            $scheduleTitle,
+            $scheduleVenueTitle,
+            $hallTabs,
+            $dayTabs,
+            $showAllEventsButton,
+            $allEventsButtonLabel,
+            $events
+        );
     }
 
     private function mapEvent(JazzEvent $ev): array
