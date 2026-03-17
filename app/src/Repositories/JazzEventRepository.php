@@ -20,7 +20,7 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
                 e.event_type,
                 j.start_date,
                 j.end_date,
-                j.location,
+                COALESCE(v.name, '') AS location,
                 j.venue_id,
                 v.name AS venue_name,
                 j.artist_id,
@@ -51,7 +51,7 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
                 e.event_type,
                 j.start_date,
                 j.end_date,
-                j.location,
+                COALESCE(v.name, '') AS location,
                 j.venue_id,
                 v.name AS venue_name,
                 j.artist_id,
@@ -91,11 +91,11 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
             $stmtJazz = $pdo->prepare("
                 INSERT INTO JazzEvent (
                     event_id, start_date, end_date,
-                    location, venue_id, artist_id,
+                    venue_id, artist_id,
                     img_background, price, page_id
                 ) VALUES (
                     :event_id, :start_date, :end_date,
-                    :location, :venue_id, :artist_id,
+                    :venue_id, :artist_id,
                     :img_background, :price, :page_id
                 )
             ");
@@ -104,7 +104,6 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
                 ':event_id'       => $eventId,
                 ':start_date'     => $event->start_date,
                 ':end_date'       => $event->end_date,
-                ':location'       => $event->location,
                 ':venue_id'       => $event->venue_id,
                 ':artist_id'      => $event->artist_id,
                 ':img_background' => $event->img_background,
@@ -155,7 +154,6 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
             UPDATE JazzEvent
             SET start_date = :start_date,
                 end_date = :end_date,
-                location = :location,
                 venue_id = :venue_id,
                 artist_id = :artist_id,
                 img_background = :img_background,
@@ -166,7 +164,6 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
             $stmt2->execute([
                 ':start_date'     => $event->start_date,
                 ':end_date'       => $event->end_date,
-                ':location'       => $event->location,
                 ':venue_id'       => $event->venue_id,
                 ':artist_id'      => $event->artist_id,
                 ':img_background' => $event->img_background,
@@ -198,7 +195,7 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
             e.event_type,
             j.start_date,
             j.end_date,
-            j.location,
+            COALESCE(v.name, '') AS location,
             j.venue_id,
             v.name AS venue_name,
             j.artist_id,
@@ -237,7 +234,7 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
                 e.event_type,
                 j.start_date,
                 j.end_date,
-                j.location,
+                COALESCE(v.name, '') AS location,
                 j.venue_id,
                 v.name AS venue_name,
                 j.artist_id,

@@ -29,9 +29,11 @@ class JazzEvent extends Event
         $this->start_date = (string)($row['start_date'] ?? '');
         $this->end_date = (string)($row['end_date'] ?? '');
 
-        $this->location = (string)($row['location'] ?? '');
         $this->venue_id = isset($row['venue_id']) ? (int)$row['venue_id'] : null;
         $this->venue_name = (string)($row['venue_name'] ?? '');
+        $this->location = $this->venue_name !== ''
+            ? $this->venue_name
+            : (string)($row['location'] ?? '');
         $this->artist_id = isset($row['artist_id']) ? (int)$row['artist_id'] : null;
         $this->artist_name = (string)($row['artist_name'] ?? '');
 
