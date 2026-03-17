@@ -20,13 +20,9 @@
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <a href="/cms/orders/export?format=csv&amp;scope=order&amp;order_id=<?= (int)($order['order_id'] ?? 0) ?>"
+                    <a href="/cms/orders/<?= (int)($order['order_id'] ?? 0) ?>/export"
                         class="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700">
-                        Export CSV
-                    </a>
-                    <a href="/cms/orders/export?format=excel&amp;scope=order&amp;order_id=<?= (int)($order['order_id'] ?? 0) ?>"
-                        class="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700">
-                        Export Excel
+                        Export Order
                     </a>
                     <a href="/cms/orders" class="text-sm font-medium text-slate-600 hover:text-slate-900">← Back to Orders</a>
                 </div>

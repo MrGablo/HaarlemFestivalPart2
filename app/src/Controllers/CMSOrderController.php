@@ -31,14 +31,11 @@ final class CMSOrderController
 
         $orders = $this->service->searchOrders($search, $statusFilter, $sortColumn, $sortDirection);
         $statuses = $this->service->getStatuses();
-        $exportColumns = $this->service->getExportColumns();
-        $selectedExportColumns = $this->service->normalizeSelectedColumns($_GET['columns'] ?? []);
         $exportScope = strtolower(trim((string)($_GET['scope'] ?? 'all')));
-        if (!in_array($exportScope, ['all', 'user', 'order'], true)) {
+        if (!in_array($exportScope, ['all', 'user'], true)) {
             $exportScope = 'all';
         }
         $exportUserId = isset($_GET['user_id']) ? max(0, (int)$_GET['user_id']) : 0;
-        $exportOrderId = isset($_GET['order_id']) ? max(0, (int)$_GET['order_id']) : 0;
 
         $errors = Flash::getErrors();
         $flashSuccess = Flash::getSuccess();
@@ -61,6 +58,28 @@ final class CMSOrderController
         $csrfToken = Csrf::token();
 
         require __DIR__ . '/../Views/cms/order_edit.php';
+    }
+
+    public function exportOptions(int $id): void
+    {
+        AdminGuard::requireAdmin(true);
+
+        $details = $this->getOrderDetailsOrRedirect($id);
+        $order = $details['order'];
+
+        try {
+            $availableColumns = $this->service->getAvailableExportColumnsForOrder($id);
+        } catch (\Throwable $e) {
+            Flash::setErrors(['general' => $e->getMessage()]);
+            header('Location: /cms/orders/' . $id, true, 302);
+            exit;
+        }
+
+        $defaultSelectedColumns = array_keys($availableColumns);
+        $errors = Flash::getErrors();
+        $flashSuccess = Flash::getSuccess();
+
+        require __DIR__ . '/../Views/cms/order_export.php';
     }
 
     public function update(int $id): void
@@ -101,7 +120,6 @@ final class CMSOrderController
         $userId = isset($_GET['user_id']) ? max(0, (int)$_GET['user_id']) : 0;
         $orderId = isset($_GET['order_id']) ? max(0, (int)$_GET['order_id']) : 0;
 
-        $columns = $this->service->normalizeSelectedColumns($_GET['columns'] ?? []);
         $columnMap = $this->service->getExportColumns();
         $query = http_build_query([
             'search' => $search,
@@ -127,6 +145,17 @@ final class CMSOrderController
             Flash::setErrors(['general' => $e->getMessage()]);
             header('Location: /cms/orders' . ($query !== '' ? ('?' . $query) : ''), true, 302);
             exit;
+        }
+
+        if ($scope === 'order' && $orderId > 0) {
+            $availableForOrder = $this->service->getAvailableExportColumnsForOrder($orderId);
+            $requestedColumns = $_GET['columns'] ?? [];
+            $columns = $this->normalizeColumnsFromMap($requestedColumns, $availableForOrder, array_keys($availableForOrder));
+            $columnMap = $availableForOrder;
+        } else {
+            $requestedColumns = $_GET['columns'] ?? [];
+            $allColumnKeys = array_keys($columnMap);
+            $columns = $this->normalizeColumnsFromMap($requestedColumns, $columnMap, $allColumnKeys);
         }
 
         $safeRows = [];
@@ -181,14 +210,14 @@ final class CMSOrderController
         }
 
         $headerLabels = array_map(fn(string $column): string => (string)($columnMap[$column] ?? $column), $columns);
-        fputcsv($output, $headerLabels);
+        fputcsv($output, $headerLabels, ',', '"', '\\');
 
         foreach ($rows as $row) {
             $line = [];
             foreach ($headerLabels as $label) {
                 $line[] = $row[$label] ?? '';
             }
-            fputcsv($output, $line);
+            fputcsv($output, $line, ',', '"', '\\');
         }
 
         fclose($output);
@@ -247,5 +276,27 @@ final class CMSOrderController
     private function xmlEscape(string $value): string
     {
         return htmlspecialchars($value, ENT_XML1 | ENT_COMPAT, 'UTF-8');
+    }
+
+    /** @param mixed $requestedColumns */
+    /** @param array<string, string> $columnMap */
+    /** @param array<int, string> $defaultColumns */
+    /** @return array<int, string> */
+    private function normalizeColumnsFromMap(mixed $requestedColumns, array $columnMap, array $defaultColumns): array
+    {
+        if (!is_array($requestedColumns) || $requestedColumns === []) {
+            return $defaultColumns;
+        }
+
+        $allowed = array_keys($columnMap);
+        $selected = [];
+        foreach ($requestedColumns as $column) {
+            $key = trim((string)$column);
+            if ($key !== '' && in_array($key, $allowed, true) && !in_array($key, $selected, true)) {
+                $selected[] = $key;
+            }
+        }
+
+        return $selected !== [] ? $selected : $defaultColumns;
     }
 }

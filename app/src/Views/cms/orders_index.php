@@ -88,7 +88,7 @@
                 <div class="flex flex-wrap items-start justify-between gap-4">
                     <div>
                         <h2 class="text-base font-semibold text-slate-900">Export order information</h2>
-                        <p class="mt-1 text-sm text-slate-600">Export a single order, one user's orders, or all orders with detailed item/event pricing.</p>
+                        <p class="mt-1 text-sm text-slate-600">Export all orders or a specific user's orders. For single-order export with custom columns, click Export from the order row.</p>
                     </div>
 
                     <div class="flex items-center gap-2">
@@ -110,7 +110,6 @@
                             class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
                             <option value="all" <?= ((string)($exportScope ?? 'all') === 'all') ? 'selected' : '' ?>>All Orders</option>
                             <option value="user" <?= ((string)($exportScope ?? 'all') === 'user') ? 'selected' : '' ?>>Specific User</option>
-                            <option value="order" <?= ((string)($exportScope ?? 'all') === 'order') ? 'selected' : '' ?>>Single Order</option>
                         </select>
                     </div>
 
@@ -123,23 +122,11 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-slate-700">Order ID (for single order scope)</label>
-                        <input type="number" min="1" name="order_id"
-                            value="<?= (int)($exportOrderId ?? 0) > 0 ? (int)$exportOrderId : '' ?>"
-                            placeholder="e.g. 26"
-                            class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
+                        <label class="block text-sm font-medium text-slate-700">Single-order export</label>
+                        <div class="mt-1 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                            Open an order and use its Export button to choose columns based on available data.
+                        </div>
                     </div>
-                </div>
-
-                <div class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-                    <?php foreach (($exportColumns ?? []) as $key => $label): ?>
-                        <label class="inline-flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700">
-                            <input type="checkbox" name="columns[]" value="<?= htmlspecialchars((string)$key) ?>"
-                                <?= in_array((string)$key, $selectedExportColumns ?? [], true) ? 'checked' : '' ?>
-                                class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
-                            <span><?= htmlspecialchars((string)$label) ?></span>
-                        </label>
-                    <?php endforeach; ?>
                 </div>
             </form>
 
@@ -186,7 +173,7 @@
                                             class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">
                                             Manage
                                         </a>
-                                        <a href="/cms/orders/export?format=csv&amp;scope=order&amp;order_id=<?= (int)($order['order_id'] ?? 0) ?>"
+                                        <a href="/cms/orders/<?= (int)($order['order_id'] ?? 0) ?>/export"
                                             class="ml-2 rounded-lg bg-slate-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800">
                                             Export
                                         </a>

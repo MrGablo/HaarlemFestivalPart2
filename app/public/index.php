@@ -82,6 +82,7 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     // CMS Order routes (admin only)
     $r->addRoute('GET',  '/cms/orders', ['App\Controllers\CMSOrderController', 'index']);
     $r->addRoute('GET',  '/cms/orders/export', ['App\Controllers\CMSOrderController', 'export']);
+    $r->addRoute('GET',  '/cms/orders/{id:\\d+}/export', ['App\Controllers\CMSOrderController', 'exportOptions']);
     $r->addRoute('GET',  '/cms/orders/{id:\\d+}', ['App\Controllers\CMSOrderController', 'edit']);
     $r->addRoute('POST', '/cms/orders/{id:\\d+}', ['App\Controllers\CMSOrderController', 'update']);
 

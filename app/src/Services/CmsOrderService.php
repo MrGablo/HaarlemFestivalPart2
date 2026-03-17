@@ -43,6 +43,26 @@ final class CmsOrderService
         ];
     }
 
+    /** @return array<string, string> */
+    public function getAvailableExportColumnsForOrder(int $orderId): array
+    {
+        $allColumns = $this->getExportColumns();
+        $rows = $this->buildExportRows('order', $orderId, 0);
+
+        $available = [];
+        foreach ($allColumns as $key => $label) {
+            foreach ($rows as $row) {
+                $value = (string)($row[$key] ?? '');
+                if (trim($value) !== '') {
+                    $available[$key] = $label;
+                    break;
+                }
+            }
+        }
+
+        return $available;
+    }
+
     /** @return array<int, string> */
     public function normalizeSelectedColumns(mixed $columns): array
     {
