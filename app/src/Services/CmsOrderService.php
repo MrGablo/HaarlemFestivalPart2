@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\OrderStatus;
 use App\Repositories\OrderRepository;
+use Illuminate\Support\Facades\DB;
 
 final class CmsOrderService
 {
@@ -181,11 +182,6 @@ final class CmsOrderService
             throw new \RuntimeException('Invalid order status.');
         }
 
-        $updated = $this->orders->updateOrderStatus($orderId, $normalizedStatus);
-        if (!$updated) {
-            throw new \RuntimeException('Order status could not be updated.');
-        }
-
         $allowedItemIds = [];
         foreach (($details['items'] ?? []) as $item) {
             $itemId = (int)($item['order_item_id'] ?? 0);
@@ -194,26 +190,40 @@ final class CmsOrderService
             }
         }
 
-        foreach ($quantitiesByItemId as $rawItemId => $rawQuantity) {
-            $orderItemId = (int)$rawItemId;
-            if (!in_array($orderItemId, $allowedItemIds, true)) {
-                continue;
+        DB::beginTransaction();
+
+        try {
+            $updated = $this->orders->updateOrderStatus($orderId, $normalizedStatus);
+            if (!$updated) {
+                throw new \RuntimeException('Order status could not be updated.');
             }
 
-            $quantity = (int)$rawQuantity;
-            if ($quantity < 0) {
-                throw new \RuntimeException('Quantities cannot be negative.');
+            foreach ($quantitiesByItemId as $rawItemId => $rawQuantity) {
+                $orderItemId = (int)$rawItemId;
+                if (!in_array($orderItemId, $allowedItemIds, true)) {
+                    continue;
+                }
+
+                $quantity = (int)$rawQuantity;
+                if ($quantity < 0) {
+                    throw new \RuntimeException('Quantities cannot be negative.');
+                }
+
+                if ($quantity === 0) {
+                    $this->orders->removeOrderItem($orderId, $orderItemId);
+                    continue;
+                }
+
+                $itemUpdated = $this->orders->updateOrderItemQuantity($orderId, $orderItemId, $quantity);
+                if (!$itemUpdated) {
+                    throw new \RuntimeException('One of the order items could not be updated.');
+                }
             }
 
-            if ($quantity === 0) {
-                $this->orders->removeOrderItem($orderId, $orderItemId);
-                continue;
-            }
-
-            $itemUpdated = $this->orders->updateOrderItemQuantity($orderId, $orderItemId, $quantity);
-            if (!$itemUpdated) {
-                throw new \RuntimeException('One of the order items could not be updated.');
-            }
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
         }
     }
 
