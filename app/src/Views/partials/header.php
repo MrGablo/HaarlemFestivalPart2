@@ -15,6 +15,7 @@ $headerIsAdmin = strtolower((string) ($authPayload['userRole'] ?? '')) === 'admi
 
 // order count logic 
 $headerCartCount = 0;
+$headerCartOrder = null;
 if ($headerIsLoggedIn && isset($authPayload['userId'])) {
     try {
         $orderService = new OrderService(new OrderRepository(), new EventModelBuilderService());
