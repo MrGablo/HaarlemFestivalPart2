@@ -48,16 +48,18 @@ final class CmsOrderService
     public function getAvailableExportColumnsForOrder(int $orderId): array
     {
         $allColumns = $this->getExportColumns();
-        $rows = $this->buildExportRows('order', $orderId, 0);
+
+        // Load only the requested order to determine which columns have data.
+        $orderDetails = $this->orders->findOrderDetails($orderId);
+        if ($orderDetails === null) {
+            return [];
+        }
 
         $available = [];
         foreach ($allColumns as $key => $label) {
-            foreach ($rows as $row) {
-                $value = (string)($row[$key] ?? '');
-                if (trim($value) !== '') {
-                    $available[$key] = $label;
-                    break;
-                }
+            $value = (string)($orderDetails[$key] ?? '');
+            if (trim($value) !== '') {
+                $available[$key] = $label;
             }
         }
 
