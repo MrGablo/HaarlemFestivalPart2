@@ -23,7 +23,12 @@ class YummyController
         Session::ensureStarted();
 
         try {
-            $vm = $this->service->getYummyHomePageViewModel();
+            // Fetch raw underlying data from the Service
+            $content = $this->service->getHomepageContent();
+            $events = $this->service->getAllYummyEvents();
+
+            // Assemble the ViewModel directly in the Controller
+            $vm = new YummyHomePageViewModel($content, $events);
 
             $auth = AuthSessionData::read();
             $isLoggedIn = $auth !== null;

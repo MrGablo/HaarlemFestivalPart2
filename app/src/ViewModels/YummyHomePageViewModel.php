@@ -18,7 +18,7 @@ class YummyHomePageViewModel
     public string $mapImage;
     public string $mapImageCaption;
 
-    public function __construct(array $content = [])
+    public function __construct(array $content = [], array $yummyEvents = [])
     {
         $sectionMap = $this->buildSectionMap($content['sections'] ?? []);
 
@@ -40,11 +40,31 @@ class YummyHomePageViewModel
 
         $restaurantItems = $this->buildRestaurantItems();
         $this->galleryCaptions = $this->buildGalleryCaptions($restaurantItems);
-        $this->visibleRestaurantItems = array_slice($restaurantItems, 0, 7);
+
+        if (!empty($yummyEvents)) {
+            $this->visibleRestaurantItems = $this->buildRestaurantItemsFromDb($yummyEvents);
+        } else {
+            $this->visibleRestaurantItems = array_slice($restaurantItems, 0, 7);
+        }
 
         $this->mapImageCaption = trim((string)($this->map['imageCaption'] ?? ''));
         $this->heroImage = $this->normalizeAssetPath((string)($this->hero['bgImage'] ?? ''));
         $this->mapImage = $this->normalizeAssetPath((string)($this->map['image'] ?? ''));
+    }
+
+    private function buildRestaurantItemsFromDb(array $yummyEvents): array
+    {
+        $items = [];
+        foreach ($yummyEvents as $event) {
+            $items[] = [
+                'id' => $event->event_id,
+                'name' => $event->title,
+                'image' => $event->thumbnail_path ?? '',
+                'cuisine' => str_replace([' - ', ','], ' • ', $event->cuisine ?? ''),
+                'star_rating' => $event->star_rating ?? 0,
+            ];
+        }
+        return $items;
     }
 
     private function buildSectionMap(mixed $rawSections): array
