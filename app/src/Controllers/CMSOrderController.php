@@ -119,13 +119,32 @@ final class CMSOrderController
         $scope = strtolower(trim((string)($_GET['scope'] ?? 'all')));
         $userId = isset($_GET['user_id']) ? max(0, (int)$_GET['user_id']) : 0;
         $orderId = isset($_GET['order_id']) ? max(0, (int)$_GET['order_id']) : 0;
-        $allOrdersGrandTotal = null;
+        $statusTotals = null;
 
-        if ($scope === 'all') {
-            $allOrdersGrandTotal = 0.0;
+        if (in_array($scope, ['all', 'user'], true)) {
+            $statusTotals = [
+                'payed' => 0.0,
+                'pending' => 0.0,
+                'general' => 0.0,
+            ];
+
             $orderSummaries = $this->service->searchOrders($search, $statusFilter, $sortColumn, $sortDirection);
             foreach ($orderSummaries as $summary) {
-                $allOrdersGrandTotal += (float)($summary['total_amount'] ?? 0.0);
+                $summaryUserId = (int)($summary['user_id'] ?? 0);
+                if ($scope === 'user' && $userId > 0 && $summaryUserId !== $userId) {
+                    continue;
+                }
+
+                $amount = (float)($summary['total_amount'] ?? 0.0);
+                $status = strtolower((string)($summary['status'] ?? 'pending'));
+
+                if ($status === 'payed') {
+                    $statusTotals['payed'] += $amount;
+                } else {
+                    $statusTotals['pending'] += $amount;
+                }
+
+                $statusTotals['general'] += $amount;
             }
         }
 
@@ -180,8 +199,11 @@ final class CMSOrderController
             $safeRows[] = $row;
         }
 
-        if ($scope === 'all' && is_float($allOrdersGrandTotal) && $safeRows !== []) {
-            $safeRows[] = $this->buildAllOrdersTotalRow($columns, $columnMap, $allOrdersGrandTotal);
+        if (in_array($scope, ['all', 'user'], true) && is_array($statusTotals) && $safeRows !== []) {
+            $summaryRows = $this->buildStatusSummaryRows($columns, $columnMap, $statusTotals);
+            foreach ($summaryRows as $summaryRow) {
+                $safeRows[] = $summaryRow;
+            }
         }
 
         if ($format === 'excel') {
@@ -293,19 +315,15 @@ final class CMSOrderController
 
     /** @param array<int, string> $columns */
     /** @param array<string, string> $columnMap */
-    /** @return array<string, string> */
-    private function buildAllOrdersTotalRow(array $columns, array $columnMap, float $grandTotal): array
+    /** @param array{payed: float, pending: float, general: float} $statusTotals */
+    /** @return array<int, array<string, string>> */
+    private function buildStatusSummaryRows(array $columns, array $columnMap, array $statusTotals): array
     {
         $labels = [];
         foreach ($columns as $column) {
             if (isset($columnMap[$column])) {
                 $labels[$column] = $columnMap[$column];
             }
-        }
-
-        $row = [];
-        foreach ($labels as $label) {
-            $row[$label] = '';
         }
 
         $labelColumnPreference = ['customer_name', 'event_title', 'order_id'];
@@ -323,19 +341,37 @@ final class CMSOrderController
             }
         }
 
-        if ($labelColumn !== null) {
-            $row[$labels[$labelColumn]] = 'ALL ORDERS TOTAL';
-        }
-
         $totalColumnPreference = ['order_total', 'line_total', 'unit_price'];
+        $totalColumn = null;
         foreach ($totalColumnPreference as $candidate) {
             if (isset($labels[$candidate])) {
-                $row[$labels[$candidate]] = number_format($grandTotal, 2, '.', '');
+                $totalColumn = $candidate;
                 break;
             }
         }
 
-        return $row;
+        $buildSingleRow = function (string $label, float $value) use ($labels, $labelColumn, $totalColumn): array {
+            $row = [];
+            foreach ($labels as $displayLabel) {
+                $row[$displayLabel] = '';
+            }
+
+            if ($labelColumn !== null) {
+                $row[$labels[$labelColumn]] = $label;
+            }
+
+            if ($totalColumn !== null) {
+                $row[$labels[$totalColumn]] = number_format($value, 2, '.', '');
+            }
+
+            return $row;
+        };
+
+        return [
+            $buildSingleRow('TOTAL PAYED', (float)$statusTotals['payed']),
+            $buildSingleRow('TOTAL PENDING', (float)$statusTotals['pending']),
+            $buildSingleRow('TOTAL GENERAL', (float)$statusTotals['general']),
+        ];
     }
 
     /** @param mixed $requestedColumns */
