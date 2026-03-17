@@ -119,6 +119,15 @@ final class CMSOrderController
         $scope = strtolower(trim((string)($_GET['scope'] ?? 'all')));
         $userId = isset($_GET['user_id']) ? max(0, (int)$_GET['user_id']) : 0;
         $orderId = isset($_GET['order_id']) ? max(0, (int)$_GET['order_id']) : 0;
+        $allOrdersGrandTotal = null;
+
+        if ($scope === 'all') {
+            $allOrdersGrandTotal = 0.0;
+            $orderSummaries = $this->service->searchOrders($search, $statusFilter, $sortColumn, $sortDirection);
+            foreach ($orderSummaries as $summary) {
+                $allOrdersGrandTotal += (float)($summary['total_amount'] ?? 0.0);
+            }
+        }
 
         $columnMap = $this->service->getExportColumns();
         $query = http_build_query([
@@ -169,6 +178,10 @@ final class CMSOrderController
                 $row[$columnMap[$column]] = (string)($exportRow[$column] ?? '');
             }
             $safeRows[] = $row;
+        }
+
+        if ($scope === 'all' && is_float($allOrdersGrandTotal) && $safeRows !== []) {
+            $safeRows[] = $this->buildAllOrdersTotalRow($columns, $columnMap, $allOrdersGrandTotal);
         }
 
         if ($format === 'excel') {
@@ -276,6 +289,53 @@ final class CMSOrderController
     private function xmlEscape(string $value): string
     {
         return htmlspecialchars($value, ENT_XML1 | ENT_COMPAT, 'UTF-8');
+    }
+
+    /** @param array<int, string> $columns */
+    /** @param array<string, string> $columnMap */
+    /** @return array<string, string> */
+    private function buildAllOrdersTotalRow(array $columns, array $columnMap, float $grandTotal): array
+    {
+        $labels = [];
+        foreach ($columns as $column) {
+            if (isset($columnMap[$column])) {
+                $labels[$column] = $columnMap[$column];
+            }
+        }
+
+        $row = [];
+        foreach ($labels as $label) {
+            $row[$label] = '';
+        }
+
+        $labelColumnPreference = ['customer_name', 'event_title', 'order_id'];
+        $labelColumn = null;
+        foreach ($labelColumnPreference as $candidate) {
+            if (isset($labels[$candidate])) {
+                $labelColumn = $candidate;
+                break;
+            }
+        }
+        if ($labelColumn === null && $columns !== []) {
+            $first = (string)$columns[0];
+            if (isset($labels[$first])) {
+                $labelColumn = $first;
+            }
+        }
+
+        if ($labelColumn !== null) {
+            $row[$labels[$labelColumn]] = 'ALL ORDERS TOTAL';
+        }
+
+        $totalColumnPreference = ['order_total', 'line_total', 'unit_price'];
+        foreach ($totalColumnPreference as $candidate) {
+            if (isset($labels[$candidate])) {
+                $row[$labels[$candidate]] = number_format($grandTotal, 2, '.', '');
+                break;
+            }
+        }
+
+        return $row;
     }
 
     /** @param mixed $requestedColumns */
