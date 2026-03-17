@@ -6,6 +6,13 @@ interface IOrderRepository
 {
     public function findPendingOrderByUserId(int $userId): ?array;
 
+    /** @return array<int, array<string, mixed>> */
+    public function getAllOrdersWithSummary(): array;
+
+    public function findOrderSummaryById(int $orderId): ?array;
+
+    public function updateOrderStatus(int $orderId, string $status): bool;
+
     public function createPendingOrder(int $userId): int;
 
     public function addOrIncrementOrderItem(int $orderId, int $eventId): void;

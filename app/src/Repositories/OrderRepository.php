@@ -26,6 +26,98 @@ class OrderRepository extends Repository implements IOrderRepository
         return is_array($row) ? $row : null;
     }
 
+    public function getAllOrdersWithSummary(): array
+    {
+        $stmt = $this->getConnection()->query(
+            'SELECT
+                o.order_id,
+                o.user_id,
+                o.order_status,
+                o.created_at,
+                u.first_name,
+                u.last_name,
+                u.email,
+                COALESCE(SUM(oi.quantity), 0) AS item_count,
+                COALESCE(SUM(oi.quantity * COALESCE(j.price, 0)), 0) AS total_amount
+             FROM `orders` o
+             LEFT JOIN `User` u ON u.id = o.user_id
+             LEFT JOIN `order_items` oi ON oi.order_id = o.order_id
+             LEFT JOIN `JazzEvent` j ON j.event_id = oi.event_id
+             GROUP BY
+                o.order_id,
+                o.user_id,
+                o.order_status,
+                o.created_at,
+                u.first_name,
+                u.last_name,
+                u.email'
+        );
+
+        $rows = $stmt->fetchAll();
+        return is_array($rows) ? $rows : [];
+    }
+
+    public function findOrderSummaryById(int $orderId): ?array
+    {
+        $stmt = $this->getConnection()->prepare(
+            'SELECT
+                o.order_id,
+                o.user_id,
+                o.order_status,
+                o.created_at,
+                u.first_name,
+                u.last_name,
+                u.email,
+                COALESCE(SUM(oi.quantity), 0) AS item_count,
+                COALESCE(SUM(oi.quantity * COALESCE(j.price, 0)), 0) AS total_amount
+             FROM `orders` o
+             LEFT JOIN `User` u ON u.id = o.user_id
+             LEFT JOIN `order_items` oi ON oi.order_id = o.order_id
+             LEFT JOIN `JazzEvent` j ON j.event_id = oi.event_id
+             WHERE o.order_id = :order_id
+             GROUP BY
+                o.order_id,
+                o.user_id,
+                o.order_status,
+                o.created_at,
+                u.first_name,
+                u.last_name,
+                u.email
+             LIMIT 1'
+        );
+
+        $stmt->execute([':order_id' => $orderId]);
+        $row = $stmt->fetch();
+        return is_array($row) ? $row : null;
+    }
+
+    public function updateOrderStatus(int $orderId, string $status): bool
+    {
+        $stmt = $this->getConnection()->prepare(
+            'UPDATE `orders`
+             SET order_status = :status
+             WHERE order_id = :order_id'
+        );
+
+        $stmt->execute([
+            ':status' => $status,
+            ':order_id' => $orderId,
+        ]);
+
+        if ($stmt->rowCount() > 0) {
+            return true;
+        }
+
+        $existsStmt = $this->getConnection()->prepare(
+            'SELECT 1 FROM `orders`
+             WHERE order_id = :order_id
+             LIMIT 1'
+        );
+        $existsStmt->execute([':order_id' => $orderId]);
+
+        return (bool)$existsStmt->fetchColumn();
+    }
+
     public function createPendingOrder(int $userId): int
     {
         $stmt = $this->getConnection()->prepare(
