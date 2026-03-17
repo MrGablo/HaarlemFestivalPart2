@@ -20,6 +20,14 @@ interface IOrderRepository
     /** @return array<int, array<string, mixed>> */
     public function getOrderItemsWithEventData(int $orderId): array;
 
+    /**
+     * Fetch items (with event data) for multiple orders in a single query.
+     *
+     * @param  array<int, int>          $orderIds
+     * @return array<int, array<string, mixed>>
+     */
+    public function getOrderItemsForOrders(array $orderIds): array;
+
     public function removeOrderItem(int $orderId, int $orderItemId): bool;
 
     public function updateOrderItemQuantity(int $orderId, int $orderItemId, int $quantity): bool;
