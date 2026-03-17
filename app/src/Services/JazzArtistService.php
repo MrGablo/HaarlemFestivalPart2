@@ -119,7 +119,7 @@ class JazzArtistService
             'event_id' => $ev->event_id,
             'start_label' => $ts ? date('l j F Y H:i', $ts) : '',
             'title' => $ev->title,
-            'location' => $ev->location,
+            'location' => $ev->venue_name !== '' ? $ev->venue_name : $ev->location,
             'img_background' => (string)($ev->img_background ?? ''),
             'price' => (float)$ev->price
         ];

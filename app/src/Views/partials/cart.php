@@ -9,7 +9,7 @@ if ($headerCartOrder instanceof \App\Models\Order && is_array($headerCartOrder->
 <div id="cartOverlayBackdrop" class="fixed inset-0 z-[999] hidden bg-black/35" aria-hidden="true"></div>
 <aside
     id="cartOverlay"
-    class="fixed top-0 right-0 z-[1000] flex h-dvh w-full max-w-[420px] translate-x-full flex-col bg-white text-[#1a1a1a] shadow-[-12px_0_28px_rgba(0,0,0,.2)] transition-transform duration-200"
+    class="fixed top-0 right-0 z-[1000] flex h-dvh w-full max-w-[560px] translate-x-full flex-col bg-white text-[#1a1a1a] shadow-[-12px_0_28px_rgba(0,0,0,.2)] transition-transform duration-200"
     role="dialog"
     aria-modal="true"
     aria-hidden="true"

@@ -5,13 +5,15 @@ namespace App\Services;
 use App\Models\JazzEvent;
 use App\Repositories\Interfaces\IPageRepository;
 use App\Repositories\Interfaces\IJazzEventRepository;
+use App\Repositories\Interfaces\IVenueRepository;
 use App\ViewModels\JazzHomePageViewModel;
 
 class JazzHomeService
 {
     public function __construct(
         private IPageRepository $pageRepo,
-        private IJazzEventRepository $eventRepo
+        private IJazzEventRepository $eventRepo,
+        private IVenueRepository $venueRepo
     ) {}
 
     public function getJazzHomePageViewModel(): JazzHomePageViewModel
@@ -29,8 +31,10 @@ class JazzHomeService
         $schedule = is_array($content['schedule'] ?? null) ? $content['schedule'] : [];
         $filters = is_array($schedule['filters'] ?? null) ? $schedule['filters'] : [];
 
-        $hallTabs = is_array($filters['tabs'] ?? null) ? $filters['tabs'] : ['Main Hall', 'Second Hall', 'Third Hall', 'Free'];
-        array_unshift($hallTabs, (string)($filters['group_label'] ?? 'By date'));
+        $venues = $this->venueRepo->getAllVenues();
+        $groupLabel = (string)($filters['group_label'] ?? 'By date');
+        $hallTabs = array_map(fn(\App\Models\Venue $v) => $v->displayName(), $venues);
+        array_unshift($hallTabs, $groupLabel);
 
         $dayTabs = is_array($filters['days'] ?? null)
             ? $filters['days']
@@ -63,12 +67,8 @@ class JazzHomeService
     {
         $ts = strtotime($ev->start_date) ?: 0;
 
-        $location = (string)$ev->location;
-
-        // Free is only Grote Markt (your rule)
-        $hall = (mb_strtolower(trim($location)) === mb_strtolower('Grote Markt'))
-            ? 'Free'
-            : $location;
+        $venueName = $ev->venue_name !== '' ? $ev->venue_name : (string)$ev->location;
+        $hall = mb_strtolower(trim($venueName)) === 'grote markt' ? 'Free' : $venueName;
 
         return [
             'event_id' => $ev->event_id,
@@ -76,7 +76,7 @@ class JazzHomeService
             'artist_name' => $ev->artist_name,
             'img_background' => (string)($ev->img_background ?? ''),
             'price' => (float)$ev->price,
-            'location' => $location,
+            'location' => $venueName,
             'hall' => $hall,
             'page_id' => $ev->page_id,
 
