@@ -20,9 +20,14 @@ class YummyHomePageViewModel
 
     public function __construct(array $content = [], array $yummyEvents = [])
     {
-        $sectionMap = $this->buildSectionMap($content['sections'] ?? []);
+        // Re-index the sections array using 'sectionType' as the key and 'data' as the value
+        $sections = $content['sections'] ?? [];
+        $sectionMap = array_combine(
+            array_column($sections, 'sectionType'),
+            array_column($sections, 'data')
+        ) ?: [];
 
-        $this->pageTitle = (string)($content['pageTitle'] ?? 'Haarlem Yummy Event');
+        $this->pageTitle = (string)($content['pageTitle'] ?? '');
         $this->hero = $sectionMap['hero'] ?? [];
         $this->heroTitleHtml = strip_tags((string)($this->hero['titleHtml'] ?? ''), '<br><span><strong><em><b><i>');
 
@@ -57,28 +62,6 @@ class YummyHomePageViewModel
             ];
         }
         return $items;
-    }
-
-    private function buildSectionMap(mixed $rawSections): array
-    {
-        $sectionMap = [];
-
-        foreach (is_array($rawSections) ? $rawSections : [] as $section) {
-            if (!is_array($section)) {
-                continue;
-            }
-
-            $sectionType = (string)($section['sectionType'] ?? '');
-            if ($sectionType === '') {
-                continue;
-            }
-
-            $sectionMap[$sectionType] = is_array($section['data'] ?? null)
-                ? $section['data']
-                : [];
-        }
-
-        return $sectionMap;
     }
 
     private function normalizeAssetPath(string $path): string
