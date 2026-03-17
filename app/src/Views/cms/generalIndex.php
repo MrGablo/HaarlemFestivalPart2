@@ -78,6 +78,15 @@
                     'href' => '/cms/venues',
                     'label' => 'Open',
                 ],
+                [
+                    'id' => 7,
+                    'title' => 'Orders',
+                    'type' => 'orders',
+                    'updated' => '-',
+                    'created' => '-',
+                    'href' => '/cms/orders',
+                    'label' => 'Open',
+                ],
             ];
             ?>
 
