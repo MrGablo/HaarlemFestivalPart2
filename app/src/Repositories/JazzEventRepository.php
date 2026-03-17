@@ -18,6 +18,7 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
                 e.event_id,
                 e.title,
                 e.event_type,
+                e.availability,
                 j.start_date,
                 j.end_date,
                 j.venue_id,
@@ -48,6 +49,7 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
                 e.event_id,
                 e.title,
                 e.event_type,
+                e.availability,
                 j.start_date,
                 j.end_date,
                 j.venue_id,
@@ -76,9 +78,10 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
         $pdo->beginTransaction();
 
         try {
-            $stmtEvent = $pdo->prepare("\n                INSERT INTO Event (title, event_type)\n                VALUES (:title, 'jazz')\n            ");
+            $stmtEvent = $pdo->prepare("\n                INSERT INTO Event (title, event_type, availability)\n                VALUES (:title, 'jazz', :availability)\n            ");
             $stmtEvent->execute([
                 ':title' => $event->title,
+                ':availability' => $event->availability,
             ]);
 
             $eventId = (int)$pdo->lastInsertId();
@@ -191,6 +194,7 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
             e.event_id,
             e.title,
             e.event_type,
+            e.availability,
             j.start_date,
             j.end_date,
             j.venue_id,
@@ -229,6 +233,7 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
                 e.event_id,
                 e.title,
                 e.event_type,
+                e.availability,
                 j.start_date,
                 j.end_date,
                 j.venue_id,
