@@ -5,10 +5,15 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Repositories\EventRepository;
-
+enum EventTypes: string
+    {
+        case JAZZ = 'jazz';
+        case STORIES = 'stories';
+        case DANCE = 'dance';
+    }
 class CmsEventService
 {
-    private const ALLOWED_EVENT_TYPES = ['jazz', 'stories', 'dance'];
+    
 
     public function __construct(
         private EventRepository $events = new EventRepository()
@@ -16,7 +21,7 @@ class CmsEventService
 
     public function getAllowedEventTypes(): array
     {
-        return self::ALLOWED_EVENT_TYPES;
+        return $values = array_map(fn($case) => $case->value, EventTypes::cases());
     }
 
     public function normalizeFilterType(mixed $rawType): ?string
@@ -30,7 +35,7 @@ class CmsEventService
             return null;
         }
 
-        return in_array($type, self::ALLOWED_EVENT_TYPES, true) ? $type : null;
+        return in_array($type, $this->getAllowedEventTypes(), true) ? $type : null;
     }
 
     public function allEvents(?string $eventType): array
