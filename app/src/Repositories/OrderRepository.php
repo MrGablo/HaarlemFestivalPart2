@@ -4,8 +4,6 @@ namespace App\Repositories;
 
 use App\Framework\Repository;
 use App\Repositories\Interfaces\IOrderRepository;
-use App\Support\VenueSchemaHelper;
-use PDO;
 
 class OrderRepository extends Repository implements IOrderRepository
 {
@@ -24,72 +22,6 @@ class OrderRepository extends Repository implements IOrderRepository
             ':status' => 'pending',
         ]);
 
-        $row = $stmt->fetch();
-
-        return is_array($row) ? $row : null;
-    }
-
-    public function getAllOrdersWithSummary(): array
-    {
-        $stmt = $this->getConnection()->query(
-            'SELECT
-                o.order_id,
-                o.user_id,
-                o.order_status,
-                o.created_at,
-                u.first_name,
-                u.last_name,
-                u.email,
-                COALESCE(SUM(oi.quantity), 0) AS item_count,
-                COALESCE(SUM(oi.quantity * COALESCE(j.price, 0)), 0) AS total_amount
-             FROM `orders` o
-             LEFT JOIN `User` u ON u.id = o.user_id
-             LEFT JOIN `order_items` oi ON oi.order_id = o.order_id
-             LEFT JOIN `JazzEvent` j ON j.event_id = oi.event_id
-             GROUP BY
-                o.order_id,
-                o.user_id,
-                o.order_status,
-                o.created_at,
-                u.first_name,
-                u.last_name,
-                u.email'
-        );
-
-        $rows = $stmt->fetchAll();
-        return is_array($rows) ? $rows : [];
-    }
-
-    public function findOrderSummaryById(int $orderId): ?array
-    {
-        $stmt = $this->getConnection()->prepare(
-            'SELECT
-                o.order_id,
-                o.user_id,
-                o.order_status,
-                o.created_at,
-                u.first_name,
-                u.last_name,
-                u.email,
-                COALESCE(SUM(oi.quantity), 0) AS item_count,
-                COALESCE(SUM(oi.quantity * COALESCE(j.price, 0)), 0) AS total_amount
-             FROM `orders` o
-             LEFT JOIN `User` u ON u.id = o.user_id
-             LEFT JOIN `order_items` oi ON oi.order_id = o.order_id
-             LEFT JOIN `JazzEvent` j ON j.event_id = oi.event_id
-             WHERE o.order_id = :order_id
-             GROUP BY
-                o.order_id,
-                o.user_id,
-                o.order_status,
-                o.created_at,
-                u.first_name,
-                u.last_name,
-                u.email
-             LIMIT 1'
-        );
-
-        $stmt->execute([':order_id' => $orderId]);
         $row = $stmt->fetch();
         return is_array($row) ? $row : null;
     }
@@ -198,7 +130,7 @@ class OrderRepository extends Repository implements IOrderRepository
             ':status' => 'pending',
         ]);
 
-        return (int) $this->getConnection()->lastInsertId();
+        return (int)$this->getConnection()->lastInsertId();
     }
 
     public function addOrIncrementOrderItem(int $orderId, int $eventId): void
@@ -227,7 +159,7 @@ class OrderRepository extends Repository implements IOrderRepository
                      WHERE order_item_id = :order_item_id'
                 );
                 $update->execute([
-                    ':order_item_id' => (int) $row['order_item_id'],
+                    ':order_item_id' => (int)$row['order_item_id'],
                 ]);
             } else {
                 $insert = $pdo->prepare(
@@ -291,10 +223,8 @@ class OrderRepository extends Repository implements IOrderRepository
 
     public function getOrderItemsWithEventData(int $orderId): array
     {
-        $pdo = $this->getConnection();
-        $rows = [];
-
-        $jazzSql = 'SELECT
+        $stmt = $this->getConnection()->prepare(
+            'SELECT
                 oi.order_item_id,
                 oi.order_id,
                 oi.event_id,
@@ -311,30 +241,20 @@ class OrderRepository extends Repository implements IOrderRepository
                      a.name AS artist_name,
                 j.img_background,
                 j.price,
-                j.page_id,
-                NULL AS venue_id
+                j.page_id
              FROM `order_items` oi
-             INNER JOIN Event e ON e.event_id = oi.event_id AND e.event_type = \'jazz\'
+             INNER JOIN Event e ON e.event_id = oi.event_id
              LEFT JOIN JazzEvent j ON j.event_id = e.event_id
                   LEFT JOIN Artist a ON a.artist_id = j.artist_id
                   LEFT JOIN Venue v ON v.venue_id = j.venue_id
              WHERE oi.order_id = :order_id
-               AND LOWER(e.event_type) NOT IN (\'jazz\', \'dance\')';
-        $stmt = $pdo->prepare($otherSql);
+             ORDER BY oi.created_at DESC, oi.order_item_id DESC'
+        );
+
         $stmt->execute([':order_id' => $orderId]);
-        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
-            $rows[] = $r;
-        }
+        $rows = $stmt->fetchAll();
 
-        usort($rows, static function (array $a, array $b): int {
-            $ta = (string) ($a['order_item_created_at'] ?? '');
-            $tb = (string) ($b['order_item_created_at'] ?? '');
-            $c = strcmp($tb, $ta);
-
-            return $c !== 0 ? $c : ((int) ($b['order_item_id'] ?? 0) - (int) ($a['order_item_id'] ?? 0));
-        });
-
-        return $rows;
+        return is_array($rows) ? $rows : [];
     }
 
     public function removeOrderItem(int $orderId, int $orderItemId): bool
@@ -380,7 +300,7 @@ class OrderRepository extends Repository implements IOrderRepository
             ':order_item_id' => $orderItemId,
         ]);
 
-        return (bool) $existsStmt->fetchColumn();
+        return (bool)$existsStmt->fetchColumn();
     }
 
     public function countItems(int $orderId): int
@@ -390,7 +310,7 @@ class OrderRepository extends Repository implements IOrderRepository
         );
         $stmt->execute([':order_id' => $orderId]);
 
-        return (int) $stmt->fetchColumn();
+        return (int)$stmt->fetchColumn();
     }
 
     public function deleteOrder(int $orderId): void
@@ -401,46 +321,8 @@ class OrderRepository extends Repository implements IOrderRepository
 
     public function findEventById(int $eventId): ?array
     {
-        $pdo = $this->getConnection();
-        $st = $pdo->prepare('SELECT event_type FROM Event WHERE event_id = :id LIMIT 1');
-        $st->execute([':id' => $eventId]);
-        $meta = $st->fetch(PDO::FETCH_ASSOC);
-        if (!is_array($meta)) {
-            return null;
-        }
-        $type = strtolower((string) ($meta['event_type'] ?? ''));
-
-        if ($type === 'dance') {
-            $vpk = VenueSchemaHelper::primaryKeyColumn($pdo);
-            $vt = '`' . str_replace('`', '``', VenueSchemaHelper::venueTableName($pdo)) . '`';
-            $vName = VenueSchemaHelper::displayNameExpression($pdo, 'v');
-            $sql = 'SELECT
-                e.event_id,
-                e.title,
-                e.event_type,
-                NULL AS start_date,
-                NULL AS end_date,
-                ' . $vName . ' AS location,
-                NULL AS artist_id,
-                NULL AS artist_name,
-                NULL AS img_background,
-                d.price,
-                NULL AS page_id,
-                d.venue_id AS venue_id
-             FROM Event e
-             INNER JOIN DanceEvent d ON d.event_id = e.event_id
-             LEFT JOIN ' . $vt . ' v ON v.`' . $vpk . '` = d.venue_id
-             WHERE e.event_id = :id AND e.event_type = \'dance\'
-             LIMIT 1';
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([':id' => $eventId]);
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            return is_array($row) ? $row : null;
-        }
-
-        if ($type === 'jazz') {
-            $sql = 'SELECT
+        $stmt = $this->getConnection()->prepare(
+            'SELECT
                 e.event_id,
                 e.title,
                 e.event_type,
@@ -452,8 +334,7 @@ class OrderRepository extends Repository implements IOrderRepository
                      a.name AS artist_name,
                 j.img_background,
                 j.price,
-                j.page_id,
-                NULL AS venue_id
+                j.page_id
              FROM Event e
              LEFT JOIN JazzEvent j ON j.event_id = e.event_id
                   LEFT JOIN Artist a ON a.artist_id = j.artist_id
