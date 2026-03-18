@@ -65,6 +65,9 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     $r->addRoute('GET', '/cms/pages', ['App\Controllers\CMSController', 'index']);
     $r->addRoute('GET', '/cms/page/{id:\\d+}', ['App\Controllers\CMSController', 'edit']);
     $r->addRoute('POST', '/cms/page/{id:\\d+}/update', ['App\Controllers\CMSController', 'update']);
+    $r->addRoute('GET',  '/cms/events', ['App\Controllers\CMSEventController', 'index']);
+    $r->addRoute('GET',  '/cms/events/{id:\\d+}', ['App\Controllers\CMSEventController', 'edit']);
+    $r->addRoute('POST', '/cms/events/{id:\\d+}', ['App\Controllers\CMSEventController', 'update']);
     $r->addRoute('GET',  '/cms/artists', ['App\Controllers\CMSArtistController', 'index']);
     $r->addRoute('GET',  '/cms/artists/create', ['App\Controllers\CMSArtistController', 'createForm']);
     $r->addRoute('POST', '/cms/artists/create', ['App\Controllers\CMSArtistController', 'create']);
