@@ -5,9 +5,11 @@ declare(strict_types=1);
 use App\Utils\Wysiwyg;
 use App\Utils\Media;
 
-$hero = $content['hero'] ?? [];
-$intro = $content['intro'] ?? [];
-$dayTicket = $content['day_ticket_pass'] ?? [];
+/** @var \App\ViewModels\JazzHomePageViewModel $vm */
+
+$hero = $vm->hero;
+$intro = $vm->intro;
+$dayTicket = $vm->dayTicketPass;
 $bg = Media::image($hero['background_image'] ?? null);
 ?>
 
@@ -82,6 +84,6 @@ $bg = Media::image($hero['background_image'] ?? null);
   <?php endif; ?>
 
   <a class="mt-[10px] inline-block text-white no-underline opacity-90" href="#schedule">
-    <?= htmlspecialchars((string)($content['schedule']['title'] ?? 'SCHEDULE')) ?>
+    <?= htmlspecialchars($vm->scheduleTitle) ?>
   </a>
 </section>

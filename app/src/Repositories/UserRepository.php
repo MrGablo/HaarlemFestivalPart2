@@ -73,6 +73,8 @@ class UserRepository extends Repository implements IUserRepository
                 SET first_name = :first_name,
                     last_name = :last_name,
                     email = :email,
+                    phone_number = :phone_number,
+                    role = :role,
                     password_hash = :password_hash,
                     profile_picture_path = :profile_picture_path,
                     updated_at = CURRENT_TIMESTAMP
@@ -84,6 +86,8 @@ class UserRepository extends Repository implements IUserRepository
             ':first_name' => $user->firstName,
             ':last_name' => $user->lastName,
             ':email' => $user->email,
+            ':phone_number' => $user->phoneNumber,
+            ':role' => $user->role->value,
             ':password_hash' => $user->password_hash,
             ':profile_picture_path' => $user->profilePicturePath,
             ':id' => $id,

@@ -2,39 +2,31 @@
 
 declare(strict_types=1);
 
-/** @var array $content */
-/** @var array $events */
-
-use App\Utils\Wysiwyg; // not strictly needed here, but fine
-
-$filters = $content['schedule']['filters'] ?? [];
-$days = $filters['days'] ?? ['All Days', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+/** @var \App\ViewModels\JazzHomePageViewModel $vm */
+/** @var string|null $flashSuccess */
 ?>
 <!doctype html>
 <html lang="en">
 
 <head>
     <meta charset="utf-8">
-    <title><?= htmlspecialchars((string)($content['hero']['title'] ?? 'Jazz')) ?></title>
+    <title><?= htmlspecialchars($vm->pageTitle) ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
 <body class="m-0 bg-[#0b0b0b] font-[system-ui,Arial] text-white">
     <?php include __DIR__ . '/../partials/header.php'; ?>
+    <div class="mx-auto w-full max-w-[1200px] px-5">
+        <?php require __DIR__ . '/../partials/flash_success.php'; ?>
+    </div>
     <?php require __DIR__ . '/../partials/jazz_home_content.php'; ?>
 
     <section id="schedule" class="px-20 pb-20 pt-10 max-[1200px]:px-6">
-        <h2 class="mb-3 text-5xl"><?= htmlspecialchars((string)($content['schedule']['venue_title'] ?? 'PATRONAAT')) ?></h2>
+        <h2 class="mb-3 text-5xl"><?= htmlspecialchars($vm->scheduleVenueTitle) ?></h2>
 
         <div class="my-[10px] mb-[18px]">
             <div class="flex flex-wrap items-center gap-[14px]">
-                <?php
-                // Build hall tabs but prepend "By date" which means ALL halls
-                $hallTabs = $filters['tabs'] ?? ['Main Hall', 'Second Hall', 'Third Hall', 'Free'];
-                array_unshift($hallTabs, (string)($filters['group_label'] ?? 'By date'));
-                ?>
-
-                <?php foreach ($hallTabs as $i => $tab): ?>
+                <?php foreach ($vm->hallTabs as $i => $tab): ?>
                     <button type="button" class="hall-chip cursor-pointer border-0 bg-transparent px-[6px] py-1 text-lg <?= $i === 0 ? 'opacity-100 underline underline-offset-[6px]' : 'opacity-75' ?>"
                         data-active-class="opacity-100 underline underline-offset-[6px]"
                         data-inactive-class="opacity-75"
@@ -45,7 +37,7 @@ $days = $filters['days'] ?? ['All Days', 'Thursday', 'Friday', 'Saturday', 'Sund
             </div>
 
             <div class="mt-2 flex flex-wrap items-center gap-[14px]">
-                <?php foreach ($days as $i => $d): ?>
+                <?php foreach ($vm->dayTabs as $i => $d): ?>
                     <button type="button" class="day-chip cursor-pointer border-0 bg-transparent px-[6px] py-1 text-lg <?= $i === 0 ? 'opacity-100 underline underline-offset-[6px]' : 'opacity-75' ?>"
                         data-active-class="opacity-100 underline underline-offset-[6px]"
                         data-inactive-class="opacity-75"
@@ -57,7 +49,7 @@ $days = $filters['days'] ?? ['All Days', 'Thursday', 'Friday', 'Saturday', 'Sund
         </div>
 
         <div class="mt-[18px] grid grid-cols-4 gap-[22px] max-[1200px]:grid-cols-2" id="eventGrid">
-            <?php foreach ($events as $ev): ?>
+            <?php foreach ($vm->events as $ev): ?>
                 <article class="event-card"
                     data-hall="<?= htmlspecialchars((string)($ev['hall'] ?? '')) ?>"
                     data-day="<?= htmlspecialchars((string)($ev['day_key'] ?? '')) ?>">
@@ -93,10 +85,9 @@ $days = $filters['days'] ?? ['All Days', 'Thursday', 'Friday', 'Saturday', 'Sund
         <div class="mt-5 flex items-center justify-center gap-[18px]">
             <button id="toggleMoreBtn" class="cursor-pointer rounded-[10px] border-0 bg-[#f7c600] px-[18px] py-3 font-extrabold text-[#111]" type="button">Show more</button>
 
-            <?php $allBtn = $content['schedule']['all_events_button'] ?? null; ?>
-            <?php if (is_array($allBtn) && !empty($allBtn['href'])): ?>
+            <?php if ($vm->showAllEventsButton): ?>
                 <button id="allEventsBtn" class="cursor-pointer rounded-[10px] border-0 bg-[#f7c600] px-[18px] py-3 font-extrabold text-[#111]" type="button">
-                    <?= htmlspecialchars((string)($allBtn['label'] ?? 'All Events')) ?>
+                    <?= htmlspecialchars($vm->allEventsButtonLabel) ?>
                 </button>
             <?php endif; ?>
         </div>

@@ -16,6 +16,7 @@ $headerIsAdmin = strtolower((string) ($authPayload['userRole'] ?? '')) === 'admi
 // order count logic
 $headerCartOrder = null;
 $headerCartCount = 0;
+$headerCartOrder = null;
 if ($headerIsLoggedIn && isset($authPayload['userId'])) {
     try {
         $orderService = new OrderService(new OrderRepository(), new EventModelBuilderService());
@@ -69,7 +70,7 @@ function getNavClass($path, $currentPath)
             >
                 Program
                 <span class="relative flex items-center">
-                    <img src="/assets/img/headerfooter/cart.svg" alt="Cart" class="h-6 w-6">
+                    <img src="/assets/img/headerfooter/cart.svg" alt="Cart" class="block h-5 w-5 min-w-[20px] flex-none object-contain">
                     <span
                         id="cartBadge"
                         class="absolute -top-2 -right-2 flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 border-white bg-[#E63946] text-[0.7rem] font-bold text-white"

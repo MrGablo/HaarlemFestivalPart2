@@ -44,6 +44,7 @@ final class CMSJazzController
         $old = Flash::getOld();
         $pages = $this->service->allPages();
         $artists = $this->service->allArtists();
+        $venues = $this->service->allVenues();
         $errors = Flash::getErrors();
         $flashSuccess = Flash::getSuccess();
         $csrfToken = Csrf::token();
@@ -85,6 +86,8 @@ final class CMSJazzController
         $event = $this->getEventOrRedirect($id);
 
         $artists = $this->service->allArtists();
+        $pages = $this->service->allPages();
+        $venues = $this->service->allVenues();
         $errors = Flash::getErrors();
         $flashSuccess = Flash::getSuccess();
         $csrfToken = Csrf::token();
