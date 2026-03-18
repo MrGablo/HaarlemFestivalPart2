@@ -4,6 +4,8 @@ namespace App\Repositories;
 
 use App\Framework\Repository;
 use App\Repositories\Interfaces\IOrderRepository;
+use App\Support\VenueSchemaHelper;
+use PDO;
 
 class OrderRepository extends Repository implements IOrderRepository
 {
@@ -23,6 +25,7 @@ class OrderRepository extends Repository implements IOrderRepository
         ]);
 
         $row = $stmt->fetch();
+
         return is_array($row) ? $row : null;
     }
 
@@ -38,7 +41,7 @@ class OrderRepository extends Repository implements IOrderRepository
             ':status' => 'pending',
         ]);
 
-        return (int)$this->getConnection()->lastInsertId();
+        return (int) $this->getConnection()->lastInsertId();
     }
 
     public function addOrIncrementOrderItem(int $orderId, int $eventId): void
@@ -67,7 +70,7 @@ class OrderRepository extends Repository implements IOrderRepository
                      WHERE order_item_id = :order_item_id'
                 );
                 $update->execute([
-                    ':order_item_id' => (int)$row['order_item_id'],
+                    ':order_item_id' => (int) $row['order_item_id'],
                 ]);
             } else {
                 $insert = $pdo->prepare(
@@ -89,8 +92,10 @@ class OrderRepository extends Repository implements IOrderRepository
 
     public function getOrderItemsWithEventData(int $orderId): array
     {
-        $stmt = $this->getConnection()->prepare(
-            'SELECT
+        $pdo = $this->getConnection();
+        $rows = [];
+
+        $jazzSql = 'SELECT
                 oi.order_item_id,
                 oi.order_id,
                 oi.event_id,
@@ -101,24 +106,100 @@ class OrderRepository extends Repository implements IOrderRepository
                 e.event_type AS event_type,
                 j.start_date,
                 j.end_date,
-                j.location,
-                     j.artist_id,
-                     a.name AS artist_name,
+                j.location AS location,
+                j.artist_id,
+                a.name AS artist_name,
                 j.img_background,
                 j.price,
-                j.page_id
+                j.page_id,
+                NULL AS venue_id
+             FROM `order_items` oi
+             INNER JOIN Event e ON e.event_id = oi.event_id AND e.event_type = \'jazz\'
+             LEFT JOIN JazzEvent j ON j.event_id = e.event_id
+             LEFT JOIN Artist a ON a.artist_id = j.artist_id
+             WHERE oi.order_id = :order_id';
+
+        try {
+            $stmt = $pdo->prepare($jazzSql);
+            $stmt->execute([':order_id' => $orderId]);
+            $jazz = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            foreach ($jazz as $r) {
+                $rows[] = $r;
+            }
+        } catch (\Throwable) {
+            // Jazz schema differs; skip jazz lines rather than failing whole cart
+        }
+
+        $vpk = VenueSchemaHelper::primaryKeyColumn($pdo);
+        $vt = '`' . str_replace('`', '``', VenueSchemaHelper::venueTableName($pdo)) . '`';
+        $vName = VenueSchemaHelper::displayNameExpression($pdo, 'v');
+        $danceSql = 'SELECT
+                oi.order_item_id,
+                oi.order_id,
+                oi.event_id,
+                oi.quantity,
+                oi.created_at AS order_item_created_at,
+                e.event_id AS event_id,
+                e.title AS title,
+                e.event_type AS event_type,
+                NULL AS start_date,
+                NULL AS end_date,
+                ' . $vName . ' AS location,
+                NULL AS artist_id,
+                NULL AS artist_name,
+                NULL AS img_background,
+                d.price,
+                NULL AS page_id,
+                d.venue_id AS venue_id
+             FROM `order_items` oi
+             INNER JOIN Event e ON e.event_id = oi.event_id AND e.event_type = \'dance\'
+             LEFT JOIN DanceEvent d ON d.event_id = e.event_id
+             LEFT JOIN ' . $vt . ' v ON v.`' . $vpk . '` = d.venue_id
+             WHERE oi.order_id = :order_id';
+
+        $stmt = $pdo->prepare($danceSql);
+        $stmt->execute([':order_id' => $orderId]);
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+            $rows[] = $r;
+        }
+
+        $otherSql = 'SELECT
+                oi.order_item_id,
+                oi.order_id,
+                oi.event_id,
+                oi.quantity,
+                oi.created_at AS order_item_created_at,
+                e.event_id AS event_id,
+                e.title AS title,
+                e.event_type AS event_type,
+                NULL AS start_date,
+                NULL AS end_date,
+                \'\' AS location,
+                NULL AS artist_id,
+                NULL AS artist_name,
+                NULL AS img_background,
+                NULL AS price,
+                NULL AS page_id,
+                NULL AS venue_id
              FROM `order_items` oi
              INNER JOIN Event e ON e.event_id = oi.event_id
-             LEFT JOIN JazzEvent j ON j.event_id = e.event_id
-                 LEFT JOIN Artist a ON a.artist_id = j.artist_id
              WHERE oi.order_id = :order_id
-             ORDER BY oi.created_at DESC, oi.order_item_id DESC'
-        );
-
+               AND LOWER(e.event_type) NOT IN (\'jazz\', \'dance\')';
+        $stmt = $pdo->prepare($otherSql);
         $stmt->execute([':order_id' => $orderId]);
-        $rows = $stmt->fetchAll();
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+            $rows[] = $r;
+        }
 
-        return is_array($rows) ? $rows : [];
+        usort($rows, static function (array $a, array $b): int {
+            $ta = (string) ($a['order_item_created_at'] ?? '');
+            $tb = (string) ($b['order_item_created_at'] ?? '');
+            $c = strcmp($tb, $ta);
+
+            return $c !== 0 ? $c : ((int) ($b['order_item_id'] ?? 0) - (int) ($a['order_item_id'] ?? 0));
+        });
+
+        return $rows;
     }
 
     public function removeOrderItem(int $orderId, int $orderItemId): bool
@@ -164,7 +245,7 @@ class OrderRepository extends Repository implements IOrderRepository
             ':order_item_id' => $orderItemId,
         ]);
 
-        return (bool)$existsStmt->fetchColumn();
+        return (bool) $existsStmt->fetchColumn();
     }
 
     public function countItems(int $orderId): int
@@ -174,7 +255,7 @@ class OrderRepository extends Repository implements IOrderRepository
         );
         $stmt->execute([':order_id' => $orderId]);
 
-        return (int)$stmt->fetchColumn();
+        return (int) $stmt->fetchColumn();
     }
 
     public function deleteOrder(int $orderId): void
@@ -185,28 +266,80 @@ class OrderRepository extends Repository implements IOrderRepository
 
     public function findEventById(int $eventId): ?array
     {
-        $stmt = $this->getConnection()->prepare(
-            'SELECT
+        $pdo = $this->getConnection();
+        $st = $pdo->prepare('SELECT event_type FROM Event WHERE event_id = :id LIMIT 1');
+        $st->execute([':id' => $eventId]);
+        $meta = $st->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($meta)) {
+            return null;
+        }
+        $type = strtolower((string) ($meta['event_type'] ?? ''));
+
+        if ($type === 'dance') {
+            $vpk = VenueSchemaHelper::primaryKeyColumn($pdo);
+            $vt = '`' . str_replace('`', '``', VenueSchemaHelper::venueTableName($pdo)) . '`';
+            $vName = VenueSchemaHelper::displayNameExpression($pdo, 'v');
+            $sql = 'SELECT
+                e.event_id,
+                e.title,
+                e.event_type,
+                NULL AS start_date,
+                NULL AS end_date,
+                ' . $vName . ' AS location,
+                NULL AS artist_id,
+                NULL AS artist_name,
+                NULL AS img_background,
+                d.price,
+                NULL AS page_id,
+                d.venue_id AS venue_id
+             FROM Event e
+             INNER JOIN DanceEvent d ON d.event_id = e.event_id
+             LEFT JOIN ' . $vt . ' v ON v.`' . $vpk . '` = d.venue_id
+             WHERE e.event_id = :id AND e.event_type = \'dance\'
+             LIMIT 1';
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([':id' => $eventId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return is_array($row) ? $row : null;
+        }
+
+        if ($type === 'jazz') {
+            $sql = 'SELECT
                 e.event_id,
                 e.title,
                 e.event_type,
                 j.start_date,
                 j.end_date,
-                j.location,
-                     j.artist_id,
-                     a.name AS artist_name,
+                j.location AS location,
+                j.artist_id,
+                a.name AS artist_name,
                 j.img_background,
                 j.price,
-                j.page_id
+                j.page_id,
+                NULL AS venue_id
              FROM Event e
-             LEFT JOIN JazzEvent j ON j.event_id = e.event_id
-                 LEFT JOIN Artist a ON a.artist_id = j.artist_id
-             WHERE e.event_id = :event_id
-             LIMIT 1'
-        );
+             INNER JOIN JazzEvent j ON j.event_id = e.event_id
+             LEFT JOIN Artist a ON a.artist_id = j.artist_id
+             WHERE e.event_id = :id AND e.event_type = \'jazz\'
+             LIMIT 1';
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([':id' => $eventId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        $stmt->execute([':event_id' => $eventId]);
-        $row = $stmt->fetch();
+            return is_array($row) ? $row : null;
+        }
+
+        $stmt = $pdo->prepare(
+            'SELECT event_id, title, event_type,
+                    NULL AS start_date, NULL AS end_date,
+                    \'\' AS location,
+                    NULL AS artist_id, NULL AS artist_name, NULL AS img_background,
+                    NULL AS price, NULL AS page_id, NULL AS venue_id
+               FROM Event WHERE event_id = :id LIMIT 1'
+        );
+        $stmt->execute([':id' => $eventId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return is_array($row) ? $row : null;
     }

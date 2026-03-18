@@ -13,7 +13,8 @@ $headerIsLoggedIn = isset($isLoggedIn) ? (bool) $isLoggedIn : ($authPayload !== 
 $headerProfilePicturePath = (string) ($profilePicturePath ?? ($authPayload['profilePicturePath'] ?? '/assets/img/default-user.png'));
 $headerIsAdmin = strtolower((string) ($authPayload['userRole'] ?? '')) === 'admin';
 
-// order count logic 
+// order count logic
+$headerCartOrder = null;
 $headerCartCount = 0;
 if ($headerIsLoggedIn && isset($authPayload['userId'])) {
     try {

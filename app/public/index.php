@@ -47,8 +47,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && strpos($uri, '/dance/assets/') === 0
  */
 $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     $r->addRoute('GET', '/', ['App\Controllers\HomeController', 'home']);
-    $r->addRoute('GET', '/hello/{name}', ['App\Controllers\HelloController', 'greet']);
-
 
     // Dance Festival routes
     $r->addRoute('GET', '/dance', ['App\Controllers\DanceController', 'home']);
@@ -153,7 +151,7 @@ switch ($routeInfo[0]) {
             break;
         }
 
-        // Pass dynamic route params (e.g. /hello/{name})
+        // Pass dynamic route params from FastRoute
         call_user_func_array([$controller, $method], array_values($vars));
         break;
 }
