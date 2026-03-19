@@ -8,6 +8,8 @@ use App\Support\VenueSchemaHelper;
 
 class OrderRepository extends Repository implements IOrderRepository
 {
+    private ?bool $hasPassDateColumn = null;
+
     public function findPendingOrderByUserId(int $userId): ?array
     {
         $stmt = $this->getConnection()->prepare(
@@ -136,22 +138,56 @@ class OrderRepository extends Repository implements IOrderRepository
         return (int)$this->getConnection()->lastInsertId();
     }
 
-    public function addOrIncrementOrderItem(int $orderId, int $eventId): void
+    public function addOrIncrementOrderItem(int $orderId, int $eventId, ?string $passDate = null): void
     {
         $pdo = $this->getConnection();
         $pdo->beginTransaction();
 
         try {
-            $existing = $pdo->prepare(
-                'SELECT order_item_id, quantity
-                  FROM `order_items`
-                 WHERE order_id = :order_id AND event_id = :event_id
-                 LIMIT 1'
-            );
-            $existing->execute([
-                ':order_id' => $orderId,
-                ':event_id' => $eventId,
-            ]);
+            $passDate = $this->normalizePassDate($passDate);
+            $hasPassDateColumn = $this->orderItemsHasPassDateColumn();
+
+            if ($hasPassDateColumn) {
+                if ($passDate !== null) {
+                    $existing = $pdo->prepare(
+                        'SELECT order_item_id, quantity
+                          FROM `order_items`
+                         WHERE order_id = :order_id
+                           AND event_id = :event_id
+                           AND pass_date = :pass_date
+                         LIMIT 1'
+                    );
+                    $existing->execute([
+                        ':order_id' => $orderId,
+                        ':event_id' => $eventId,
+                        ':pass_date' => $passDate,
+                    ]);
+                } else {
+                    $existing = $pdo->prepare(
+                        'SELECT order_item_id, quantity
+                          FROM `order_items`
+                         WHERE order_id = :order_id
+                           AND event_id = :event_id
+                           AND pass_date IS NULL
+                         LIMIT 1'
+                    );
+                    $existing->execute([
+                        ':order_id' => $orderId,
+                        ':event_id' => $eventId,
+                    ]);
+                }
+            } else {
+                $existing = $pdo->prepare(
+                    'SELECT order_item_id, quantity
+                      FROM `order_items`
+                     WHERE order_id = :order_id AND event_id = :event_id
+                     LIMIT 1'
+                );
+                $existing->execute([
+                    ':order_id' => $orderId,
+                    ':event_id' => $eventId,
+                ]);
+            }
 
             $row = $existing->fetch();
 
@@ -165,14 +201,26 @@ class OrderRepository extends Repository implements IOrderRepository
                     ':order_item_id' => (int)$row['order_item_id'],
                 ]);
             } else {
-                $insert = $pdo->prepare(
-                    'INSERT INTO `order_items` (order_id, event_id, quantity, created_at)
-                     VALUES (:order_id, :event_id, 1, NOW())'
-                );
-                $insert->execute([
-                    ':order_id' => $orderId,
-                    ':event_id' => $eventId,
-                ]);
+                if ($hasPassDateColumn) {
+                    $insert = $pdo->prepare(
+                        'INSERT INTO `order_items` (order_id, event_id, pass_date, quantity, created_at)
+                         VALUES (:order_id, :event_id, :pass_date, 1, NOW())'
+                    );
+                    $insert->execute([
+                        ':order_id' => $orderId,
+                        ':event_id' => $eventId,
+                        ':pass_date' => $passDate,
+                    ]);
+                } else {
+                    $insert = $pdo->prepare(
+                        'INSERT INTO `order_items` (order_id, event_id, quantity, created_at)
+                         VALUES (:order_id, :event_id, 1, NOW())'
+                    );
+                    $insert->execute([
+                        ':order_id' => $orderId,
+                        ':event_id' => $eventId,
+                    ]);
+                }
             }
 
             $pdo->commit();
@@ -373,5 +421,33 @@ class OrderRepository extends Repository implements IOrderRepository
         $row = $stmt->fetch();
 
         return is_array($row) ? $row : null;
+    }
+
+    private function orderItemsHasPassDateColumn(): bool
+    {
+        if ($this->hasPassDateColumn !== null) {
+            return $this->hasPassDateColumn;
+        }
+
+        $stmt = $this->getConnection()->query("SHOW COLUMNS FROM `order_items` LIKE 'pass_date'");
+        $row = $stmt ? $stmt->fetch() : false;
+
+        $this->hasPassDateColumn = is_array($row);
+        return $this->hasPassDateColumn;
+    }
+
+    private function normalizePassDate(?string $value): ?string
+    {
+        $value = $value !== null ? trim($value) : null;
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $dt = \DateTimeImmutable::createFromFormat('Y-m-d', $value);
+        if (!$dt instanceof \DateTimeImmutable || $dt->format('Y-m-d') !== $value) {
+            return null;
+        }
+
+        return $value;
     }
 }

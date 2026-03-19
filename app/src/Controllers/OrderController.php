@@ -33,9 +33,10 @@ class OrderController
         }
 
         $eventId = isset($_POST['event_id']) ? (int)$_POST['event_id'] : 0;
+        $passDate = isset($_POST['pass_date']) ? (string)$_POST['pass_date'] : null;
 
         try {
-            $order = $this->orderService->addEventToUserPendingOrder($userId, $eventId);
+            $order = $this->orderService->addEventToUserPendingOrder($userId, $eventId, $passDate);
             Flash::setSuccess('Ticket added to cart.');
             $this->jsonResponse([
                 'ok' => true,

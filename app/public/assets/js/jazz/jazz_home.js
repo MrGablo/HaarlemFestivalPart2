@@ -194,5 +194,104 @@
         });
     });
 
+    const passDayButtons = Array.from(document.querySelectorAll('.pass-day-picker-btn'));
+    const passDayModal = document.getElementById('jazzPassDayModal');
+    const passDayModalClose = document.getElementById('jazzPassDayModalClose');
+    const passDayModalDates = document.getElementById('jazzPassDayModalDates');
+    const passDayModalEmpty = document.getElementById('jazzPassDayModalEmpty');
+    const passDayModalSubtitle = document.getElementById('jazzPassDayModalSubtitle');
+    const passDayForm = document.getElementById('jazzPassDayForm');
+    const passDayFormEventId = document.getElementById('jazzPassDayFormEventId');
+    const passDayFormDate = document.getElementById('jazzPassDayFormDate');
+
+    function closePassDayModal() {
+        if (!(passDayModal instanceof HTMLElement)) return;
+        passDayModal.classList.add('hidden');
+        passDayModal.classList.remove('flex');
+    }
+
+    function formatDateLabel(dateValue) {
+        const dt = new Date(dateValue + 'T00:00:00');
+        if (Number.isNaN(dt.getTime())) {
+            return dateValue;
+        }
+
+        return dt.toLocaleDateString(undefined, {
+            weekday: 'long',
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+        });
+    }
+
+    function parseDatesFromButton(button) {
+        const raw = button.getAttribute('data-available-dates') || '[]';
+
+        try {
+            const parsed = JSON.parse(raw);
+            if (!Array.isArray(parsed)) return [];
+
+            return parsed
+                .map((value) => String(value || '').trim())
+                .filter((value) => /^\d{4}-\d{2}-\d{2}$/.test(value));
+        } catch (_err) {
+            return [];
+        }
+    }
+
+    function openPassDayModal(button) {
+        if (!(passDayModal instanceof HTMLElement)) return;
+        if (!(passDayModalDates instanceof HTMLElement)) return;
+        if (!(passDayModalEmpty instanceof HTMLElement)) return;
+        if (!(passDayModalSubtitle instanceof HTMLElement)) return;
+        if (!(passDayFormEventId instanceof HTMLInputElement)) return;
+        if (!(passDayFormDate instanceof HTMLInputElement)) return;
+        if (!(passDayForm instanceof HTMLFormElement)) return;
+
+        const eventId = String(button.getAttribute('data-event-id') || '0').trim();
+        const passLabel = String(button.getAttribute('data-pass-label') || 'Day Pass').trim();
+        const dates = parseDatesFromButton(button);
+
+        passDayFormEventId.value = eventId;
+        passDayFormDate.value = '';
+        passDayModalSubtitle.textContent = passLabel;
+
+        passDayModalDates.innerHTML = '';
+        if (dates.length === 0) {
+            passDayModalEmpty.classList.remove('hidden');
+        } else {
+            passDayModalEmpty.classList.add('hidden');
+
+            dates.forEach((dateValue) => {
+                const dateBtn = document.createElement('button');
+                dateBtn.type = 'button';
+                dateBtn.className = 'cursor-pointer rounded-lg border border-white/25 px-3 py-2 text-sm hover:bg-white/10';
+                dateBtn.textContent = formatDateLabel(dateValue);
+
+                dateBtn.addEventListener('click', () => {
+                    passDayFormDate.value = dateValue;
+                    closePassDayModal();
+                    passDayForm.requestSubmit();
+                });
+
+                passDayModalDates.appendChild(dateBtn);
+            });
+        }
+
+        passDayModal.classList.remove('hidden');
+        passDayModal.classList.add('flex');
+    }
+
+    passDayButtons.forEach((button) => {
+        button.addEventListener('click', () => openPassDayModal(button));
+    });
+
+    passDayModalClose?.addEventListener('click', closePassDayModal);
+    passDayModal?.addEventListener('click', (event) => {
+        if (event.target === passDayModal) {
+            closePassDayModal();
+        }
+    });
+
     apply();
 })();
