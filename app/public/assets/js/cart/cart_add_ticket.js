@@ -1,8 +1,12 @@
 (function () {
-    var toast = document.getElementById('cartToast');
     var toastTimer = null;
 
+    function getToast() {
+        return document.getElementById('cartToast');
+    }
+
     function showCartToast() {
+        var toast = getToast();
         if (!toast) {
             return;
         }
@@ -17,14 +21,22 @@
         }, 3800);
     }
 
-    if (toast) {
-        toast.addEventListener('click', function () {
+    document.addEventListener('click', function (event) {
+        var target = event.target;
+        if (!(target instanceof Element)) {
+            return;
+        }
+
+        var toast = target.closest('#cartToast');
+        if (!(toast instanceof HTMLElement)) {
+            return;
+        }
+
             if (window.HaarlemCart && typeof window.HaarlemCart.open === 'function') {
                 window.HaarlemCart.open();
             }
             toast.classList.add('hidden');
-        });
-    }
+    });
 
     function addTicketWithoutReload(form) {
         var submitBtn = form.querySelector('button[type="submit"]');
