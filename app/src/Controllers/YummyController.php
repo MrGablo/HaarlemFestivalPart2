@@ -4,18 +4,23 @@ namespace App\Controllers;
 
 use App\Config;
 use App\Repositories\PageRepository;
+use App\Repositories\YummyEventRepository;
 use App\Services\YummyHomeService;
+use App\Services\YummyDetailService;
 use App\Utils\AuthSessionData;
 use App\Utils\Session;
 use App\ViewModels\YummyHomePageViewModel;
+use App\ViewModels\YummyDetailPageViewModel;
 
 class YummyController
 {
     private YummyHomeService $service;
+    private YummyDetailService $detailService;
 
     public function __construct()
     {
         $this->service = new YummyHomeService(new PageRepository());
+        $this->detailService = new YummyDetailService(new YummyEventRepository(), new PageRepository());
     }
 
     public function home(): void
@@ -44,5 +49,34 @@ class YummyController
 
             require __DIR__ . '/../Views/pages/yummy_home.php';
         }
+    }
+
+    public function gerRestaurant(): void
+    {
+        Session::ensureStarted();
+
+        $eventId = (int)($_GET['id'] ?? 0);
+        if ($eventId === 0) {
+            header('Location: /yummy');
+            exit;
+        }
+
+        $event = $this->detailService->getEventDetails($eventId);
+
+        if (!$event) {
+            header('Location: /yummy');
+            exit;
+        }
+
+        $pageContent = $event->page_id ? $this->detailService->getPageContent($event->page_id) : [];
+        $sessions = $this->detailService->getEventSessions($eventId);
+
+        $vm = new YummyDetailPageViewModel($event, $sessions, $pageContent);
+
+        $auth = AuthSessionData::read();
+        $isLoggedIn = $auth !== null;
+        $activeNav = 'yummy';
+
+        require __DIR__ . '/../Views/pages/yummy_detail.php';
     }
 }

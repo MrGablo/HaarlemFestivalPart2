@@ -54,7 +54,7 @@ class YummyHomePageViewModel
         $items = [];
         foreach ($yummyEvents as $event) {
             $items[] = [
-                'id' => $event->event_id,
+                'id' => $event->id,
                 'name' => $event->title,
                 'image' => $event->thumbnail_path ?? '',
                 'cuisine' => str_replace([' - ', ','], ' • ', $event->cuisine ?? ''),
