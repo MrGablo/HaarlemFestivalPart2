@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderStatus;
+use App\Models\PassEvent;
 use App\Repositories\PassRepository;
 use App\Repositories\Interfaces\IOrderRepository;
 
@@ -54,9 +55,9 @@ class OrderService
         $passService = $this->passService ?? new PassService(new PassRepository());
         $pass = $passService->findActivePassProductByEventId($eventId);
 
-        if ($pass !== null) {
-            $passScope = strtolower((string)($pass['pass_scope'] ?? ''));
-            $festivalType = strtolower((string)($pass['festival_type'] ?? ''));
+        if ($pass instanceof PassEvent) {
+            $passScope = strtolower($pass->pass_scope);
+            $festivalType = strtolower($pass->festival_type);
 
             if ($festivalType === 'jazz' && $passScope === 'day') {
                 if ($passDate === null) {
@@ -187,6 +188,7 @@ class OrderService
                 $rowOrderId,
                 $eventId,
                 $quantity,
+                isset($row['pass_date']) ? (string)$row['pass_date'] : null,
                 isset($row['order_item_created_at']) ? (string)$row['order_item_created_at'] : null,
                 $event
             );

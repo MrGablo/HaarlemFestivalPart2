@@ -8,7 +8,7 @@ use App\Support\VenueSchemaHelper;
 
 class OrderRepository extends Repository implements IOrderRepository
 {
-    private ?bool $hasPassDateColumn = null;
+    private ?string $orderItemPassDateColumn = null;
 
     public function findPendingOrderByUserId(int $userId): ?array
     {
@@ -41,12 +41,13 @@ class OrderRepository extends Repository implements IOrderRepository
                 u.last_name,
                 u.email,
                 COALESCE(SUM(oi.quantity), 0) AS item_count,
-                COALESCE(SUM(oi.quantity * COALESCE(j.price, d.price, 0)), 0) AS total_amount
+                     COALESCE(SUM(oi.quantity * COALESCE(j.price, d.price, p.base_price, 0)), 0) AS total_amount
              FROM `orders` o
              LEFT JOIN `User` u ON u.id = o.user_id
              LEFT JOIN `order_items` oi ON oi.order_id = o.order_id
              LEFT JOIN `JazzEvent` j ON j.event_id = oi.event_id
              LEFT JOIN `DanceEvent` d ON d.event_id = oi.event_id
+                 LEFT JOIN `PassEvent` p ON p.event_id = oi.event_id
              GROUP BY
                 o.order_id,
                 o.user_id,
@@ -73,12 +74,13 @@ class OrderRepository extends Repository implements IOrderRepository
                 u.last_name,
                 u.email,
                 COALESCE(SUM(oi.quantity), 0) AS item_count,
-                COALESCE(SUM(oi.quantity * COALESCE(j.price, d.price, 0)), 0) AS total_amount
+                     COALESCE(SUM(oi.quantity * COALESCE(j.price, d.price, p.base_price, 0)), 0) AS total_amount
              FROM `orders` o
              LEFT JOIN `User` u ON u.id = o.user_id
              LEFT JOIN `order_items` oi ON oi.order_id = o.order_id
              LEFT JOIN `JazzEvent` j ON j.event_id = oi.event_id
              LEFT JOIN `DanceEvent` d ON d.event_id = oi.event_id
+                 LEFT JOIN `PassEvent` p ON p.event_id = oi.event_id
              WHERE o.order_id = :order_id
              GROUP BY
                 o.order_id,
@@ -145,10 +147,25 @@ class OrderRepository extends Repository implements IOrderRepository
 
         try {
             $passDate = $this->normalizePassDate($passDate);
-            $hasPassDateColumn = $this->orderItemsHasPassDateColumn();
+            $passDateColumn = $this->orderItemsPassDateColumn();
 
-            if ($hasPassDateColumn) {
-                if ($passDate !== null) {
+            if ($passDateColumn !== null) {
+                if ($passDateColumn === 'pass_date_key') {
+                    $resolvedPassDate = $passDate ?? '1000-01-01';
+                    $existing = $pdo->prepare(
+                        'SELECT order_item_id, quantity
+                          FROM `order_items`
+                         WHERE order_id = :order_id
+                           AND event_id = :event_id
+                           AND pass_date_key = :pass_date
+                         LIMIT 1'
+                    );
+                    $existing->execute([
+                        ':order_id' => $orderId,
+                        ':event_id' => $eventId,
+                        ':pass_date' => $resolvedPassDate,
+                    ]);
+                } elseif ($passDate !== null) {
                     $existing = $pdo->prepare(
                         'SELECT order_item_id, quantity
                           FROM `order_items`
@@ -201,16 +218,29 @@ class OrderRepository extends Repository implements IOrderRepository
                     ':order_item_id' => (int)$row['order_item_id'],
                 ]);
             } else {
-                if ($hasPassDateColumn) {
-                    $insert = $pdo->prepare(
-                        'INSERT INTO `order_items` (order_id, event_id, pass_date, quantity, created_at)
-                         VALUES (:order_id, :event_id, :pass_date, 1, NOW())'
-                    );
-                    $insert->execute([
-                        ':order_id' => $orderId,
-                        ':event_id' => $eventId,
-                        ':pass_date' => $passDate,
-                    ]);
+                if ($passDateColumn !== null) {
+                    if ($passDateColumn === 'pass_date_key') {
+                        $resolvedPassDate = $passDate ?? '1000-01-01';
+                        $insert = $pdo->prepare(
+                            'INSERT INTO `order_items` (order_id, event_id, pass_date_key, quantity, created_at)
+                             VALUES (:order_id, :event_id, :pass_date, 1, NOW())'
+                        );
+                        $insert->execute([
+                            ':order_id' => $orderId,
+                            ':event_id' => $eventId,
+                            ':pass_date' => $resolvedPassDate,
+                        ]);
+                    } else {
+                        $insert = $pdo->prepare(
+                            'INSERT INTO `order_items` (order_id, event_id, pass_date, quantity, created_at)
+                             VALUES (:order_id, :event_id, :pass_date, 1, NOW())'
+                        );
+                        $insert->execute([
+                            ':order_id' => $orderId,
+                            ':event_id' => $eventId,
+                            ':pass_date' => $passDate,
+                        ]);
+                    }
                 } else {
                     $insert = $pdo->prepare(
                         'INSERT INTO `order_items` (order_id, event_id, quantity, created_at)
@@ -241,12 +271,14 @@ class OrderRepository extends Repository implements IOrderRepository
         $vt = '`' . str_replace('`', '``', VenueSchemaHelper::venueTableName($pdo)) . '`';
         $vpk = '`' . str_replace('`', '``', VenueSchemaHelper::primaryKeyColumn($pdo)) . '`';
         $danceVenueName = VenueSchemaHelper::displayNameExpression($pdo, 'vd');
+        $passDateExpr = $this->orderItemsPassDateSelectExpression('oi');
 
         $sql = "SELECT
                 oi.order_item_id,
                 oi.order_id,
                 oi.event_id,
                 oi.quantity,
+                {$passDateExpr} AS pass_date,
                 oi.created_at AS order_item_created_at,
                 e.event_id,
                 e.title AS title,
@@ -258,13 +290,14 @@ class OrderRepository extends Repository implements IOrderRepository
                 j.artist_id,
                 a.name AS artist_name,
                 j.img_background,
-                COALESCE(j.price, d.price, 0) AS price,
+                     COALESCE(j.price, d.price, p.base_price, 0) AS price,
                 j.page_id,
                 CASE WHEN LOWER(TRIM(e.event_type)) = 'dance' THEN {$danceVenueName} ELSE '' END AS location
              FROM `order_items` oi
              INNER JOIN Event e ON e.event_id = oi.event_id
              LEFT JOIN JazzEvent j ON j.event_id = e.event_id
              LEFT JOIN DanceEvent d ON d.event_id = e.event_id
+                 LEFT JOIN PassEvent p ON p.event_id = e.event_id
              LEFT JOIN Artist a ON a.artist_id = j.artist_id
              LEFT JOIN {$vt} v ON v.{$vpk} = j.venue_id
              LEFT JOIN {$vt} vd ON vd.{$vpk} = d.venue_id
@@ -285,12 +318,14 @@ class OrderRepository extends Repository implements IOrderRepository
         $vt = '`' . str_replace('`', '``', VenueSchemaHelper::venueTableName($pdo)) . '`';
         $vpk = '`' . str_replace('`', '``', VenueSchemaHelper::primaryKeyColumn($pdo)) . '`';
         $danceVenueName = VenueSchemaHelper::displayNameExpression($pdo, 'vd');
+        $passDateExpr = $this->orderItemsPassDateSelectExpression('oi');
 
         $sql = "SELECT
                 oi.order_item_id,
                 oi.order_id,
                 oi.event_id,
                 oi.quantity,
+                {$passDateExpr} AS pass_date,
                 oi.created_at AS order_item_created_at,
                 e.event_id AS event_id,
                 e.title AS title,
@@ -302,13 +337,14 @@ class OrderRepository extends Repository implements IOrderRepository
                 j.artist_id,
                 a.name AS artist_name,
                 j.img_background,
-                COALESCE(j.price, d.price, 0) AS price,
+                     COALESCE(j.price, d.price, p.base_price, 0) AS price,
                 j.page_id,
                 CASE WHEN LOWER(TRIM(e.event_type)) = 'dance' THEN {$danceVenueName} ELSE '' END AS location
              FROM `order_items` oi
              INNER JOIN Event e ON e.event_id = oi.event_id
              LEFT JOIN JazzEvent j ON j.event_id = e.event_id
              LEFT JOIN DanceEvent d ON d.event_id = e.event_id
+                 LEFT JOIN PassEvent p ON p.event_id = e.event_id
              LEFT JOIN Artist a ON a.artist_id = j.artist_id
              LEFT JOIN {$vt} v ON v.{$vpk} = j.venue_id
              LEFT JOIN {$vt} vd ON vd.{$vpk} = d.venue_id
@@ -403,12 +439,13 @@ class OrderRepository extends Repository implements IOrderRepository
                 j.artist_id,
                 a.name AS artist_name,
                 j.img_background,
-                COALESCE(j.price, d.price, 0) AS price,
+                     COALESCE(j.price, d.price, p.base_price, 0) AS price,
                 j.page_id,
                 CASE WHEN LOWER(TRIM(e.event_type)) = 'dance' THEN {$danceVenueName} ELSE '' END AS location
              FROM Event e
              LEFT JOIN JazzEvent j ON j.event_id = e.event_id
              LEFT JOIN DanceEvent d ON d.event_id = e.event_id
+                 LEFT JOIN PassEvent p ON p.event_id = e.event_id
              LEFT JOIN Artist a ON a.artist_id = j.artist_id
              LEFT JOIN {$vt} v ON v.{$vpk} = j.venue_id
              LEFT JOIN {$vt} vd ON vd.{$vpk} = d.venue_id
@@ -423,17 +460,27 @@ class OrderRepository extends Repository implements IOrderRepository
         return is_array($row) ? $row : null;
     }
 
-    private function orderItemsHasPassDateColumn(): bool
+    private function orderItemsPassDateColumn(): ?string
     {
-        if ($this->hasPassDateColumn !== null) {
-            return $this->hasPassDateColumn;
+        if ($this->orderItemPassDateColumn !== null) {
+            return $this->orderItemPassDateColumn;
+        }
+
+        $stmt = $this->getConnection()->query("SHOW COLUMNS FROM `order_items` LIKE 'pass_date_key'");
+        $row = $stmt ? $stmt->fetch() : false;
+        if (is_array($row)) {
+            $this->orderItemPassDateColumn = 'pass_date_key';
+            return $this->orderItemPassDateColumn;
         }
 
         $stmt = $this->getConnection()->query("SHOW COLUMNS FROM `order_items` LIKE 'pass_date'");
         $row = $stmt ? $stmt->fetch() : false;
+        if (is_array($row)) {
+            $this->orderItemPassDateColumn = 'pass_date';
+            return $this->orderItemPassDateColumn;
+        }
 
-        $this->hasPassDateColumn = is_array($row);
-        return $this->hasPassDateColumn;
+        return null;
     }
 
     private function normalizePassDate(?string $value): ?string
@@ -449,5 +496,15 @@ class OrderRepository extends Repository implements IOrderRepository
         }
 
         return $value;
+    }
+
+    private function orderItemsPassDateSelectExpression(string $tableAlias): string
+    {
+        $column = $this->orderItemsPassDateColumn();
+        if ($column === null) {
+            return 'NULL';
+        }
+
+        return $tableAlias . '.' . $column;
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\PassEvent;
 use App\Repositories\Interfaces\IPassRepository;
 
 class PassService
@@ -21,31 +22,35 @@ class PassService
             : [];
 
         $buttons = [];
-        foreach ($rows as $row) {
-            $eventId = (int)($row['event_id'] ?? 0);
+        foreach ($rows as $pass) {
+            if (!$pass instanceof PassEvent) {
+                continue;
+            }
+
+            $eventId = (int)$pass->event_id;
             if ($eventId <= 0) {
                 continue;
             }
 
-            $title = trim((string)($row['title'] ?? 'Pass'));
-            $price = (float)($row['base_price'] ?? 0);
+            $title = trim((string)$pass->title);
+            $price = (float)$pass->base_price;
             $priceLabel = rtrim(rtrim(number_format($price, 2, '.', ''), '0'), '.');
+            $requiresDaySelection = $pass->requiresDaySelection();
 
             $buttons[] = [
                 'event_id' => $eventId,
                 'label' => $title . ': ' . $priceLabel . '€ p.p',
-                'pass_scope' => (string)($row['pass_scope'] ?? ''),
+                'pass_scope' => (string)$pass->pass_scope,
                 'base_price' => $price,
-                'requires_day_selection' => (string)($row['pass_scope'] ?? '') === 'day',
-                'available_dates' => (string)($row['pass_scope'] ?? '') === 'day' ? $availableJazzDates : [],
+                'requires_day_selection' => $requiresDaySelection,
+                'available_dates' => $requiresDaySelection ? $availableJazzDates : [],
             ];
         }
 
         return $buttons;
     }
 
-    /** @return array{event_id:int, festival_type:string, pass_scope:string, base_price:float, title:string, active:int}|null */
-    public function findActivePassProductByEventId(int $eventId): ?array
+    public function findActivePassProductByEventId(int $eventId): ?PassEvent
     {
         return $this->passRepo->findActivePassProductByEventId($eventId);
     }

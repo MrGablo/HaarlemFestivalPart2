@@ -210,6 +210,7 @@ class OrderController
                 'orderItemId' => (int)$item->order_item_id,
                 'title' => (string)($item->event?->title ?? 'Event'),
                 'location' => (string)$item->getLocation(),
+                'passDateLabel' => (string)$item->getPassDateLabel(),
                 'quantity' => (int)$item->quantity,
                 'unitPrice' => (float)$item->getUnitPrice(),
                 'unitPriceLabel' => number_format($item->getUnitPrice(), 2),

@@ -2,15 +2,16 @@
 
 namespace App\Repositories\Interfaces;
 
+use App\Models\PassEvent;
+
 interface IPassRepository
 {
     /**
-     * @return array<int, array{event_id:int, festival_type:string, pass_scope:string, base_price:float, title:string, active:int}>
+     * @return array<int, PassEvent>
      */
     public function getActivePassProductsByFestivalType(string $festivalType): array;
 
-    /** @return array{event_id:int, festival_type:string, pass_scope:string, base_price:float, title:string, active:int}|null */
-    public function findActivePassProductByEventId(int $eventId): ?array;
+    public function findActivePassProductByEventId(int $eventId): ?PassEvent;
 
     /** @return array<int, string> */
     public function getAvailableJazzPassDates(): array;

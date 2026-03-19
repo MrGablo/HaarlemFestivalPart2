@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Framework\Repository;
+use App\Models\PassEvent;
 use App\Repositories\Interfaces\IPassRepository;
 
 class PassRepository extends Repository implements IPassRepository
@@ -46,12 +47,12 @@ class PassRepository extends Repository implements IPassRepository
             return [];
         }
 
-        return array_values(array_map(function (array $row): array {
+        return array_values(array_map(function (array $row): PassEvent {
             return $this->normalizePassRow($row);
         }, $rows));
     }
 
-    public function findActivePassProductByEventId(int $eventId): ?array
+    public function findActivePassProductByEventId(int $eventId): ?PassEvent
     {
         if ($eventId <= 0) {
             return null;
@@ -114,15 +115,8 @@ class PassRepository extends Repository implements IPassRepository
     }
 
     /** @param array<string, mixed> $row */
-    private function normalizePassRow(array $row): array
+    private function normalizePassRow(array $row): PassEvent
     {
-        return [
-            'event_id' => (int)($row['event_id'] ?? 0),
-            'festival_type' => (string)($row['festival_type'] ?? ''),
-            'pass_scope' => (string)($row['pass_scope'] ?? ''),
-            'base_price' => (float)($row['base_price'] ?? 0),
-            'title' => (string)($row['title'] ?? ''),
-            'active' => (int)($row['active'] ?? 0),
-        ];
+        return PassEvent::fromRow($row);
     }
 }
