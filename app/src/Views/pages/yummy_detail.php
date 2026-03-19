@@ -47,7 +47,7 @@ declare(strict_types=1);
             <div class="flex items-center gap-4">
                 <h1 class="text-5xl font-extrabold tracking-tight"><?= htmlspecialchars($vm->event->title) ?></h1>
                 <div class="flex text-yellow-400 text-3xl">
-                    <?= str_repeat('★', $vm->event->star_rating) ?><?= str_repeat('☆', 5 - $vm->event->star_rating) ?>
+                    <?= str_repeat('★', $vm->event->star_rating) ?>
                 </div>
             </div>
             <p class="text-gray-400 mt-2 text-lg"><?= htmlspecialchars($vm->event->cuisine) ?></p>
@@ -134,7 +134,8 @@ declare(strict_types=1);
 
                 <div class="col-span-2 bg-[#F8E1AC] rounded-3xl p-6">
                     <form action="/reservation/book" method="POST" class="grid md:grid-cols-2 gap-6">
-                        <input type="hidden" name="event_id" value="<?= $vm->event->id ?>">
+                        <input type="hidden" name="event_id" value="<?= $vm->event->event_id ?>">
+                        <input type="hidden" name="yummy_event_id" value="<?= $vm->event->id ?>">
                         <div>
                             <label class="block text-sm mb-2">Number of guests</label>
                             <div class="flex gap-4 mb-4">
@@ -143,8 +144,14 @@ declare(strict_types=1);
                                 <input type="number" name="child_count" value="0" min="0"
                                     class="w-16 p-2 rounded-xl text-center">
                             </div>
-                            <label class="block text-sm mb-2">Choose the date</label>
-                            <select id="date_select" name="session_id" class="w-full p-3 rounded-xl mb-4">
+                            <label class="block text-sm mb-2">Leave a note (optional)</label>
+                            <textarea name="note" class="w-full p-3 rounded-xl h-24 text-sm"
+                                placeholder="Leave a note about allergies..."></textarea>
+                        </div>
+
+                        <div class="flex flex-col">
+                            <label class="block text-sm mb-2">Available time-slots</label>
+                            <div class="space-y-3 mb-6">
                                 <?php
                                 $currentDate = '';
                                 foreach ($vm->sessions as $session):
@@ -152,25 +159,25 @@ declare(strict_types=1);
                                     $time = date('H:i', strtotime($session['start_time'])) . ' - ' . date('H:i', strtotime($session['end_time']));
 
                                     if ($date !== $currentDate):
-                                        if ($currentDate !== '') echo '</optgroup>';
-                                        echo "<optgroup label=\"" . htmlspecialchars($date) . "\">";
+                                        if ($currentDate !== '') echo '</div><div class="space-y-3 mb-6">';
+                                        echo "<p class=\"text-xs text-gray-500 mb-2 mt-4 font-bold uppercase tracking-wider\">" . htmlspecialchars($date) . "</p>";
                                         $currentDate = $date;
                                     endif;
-                                ?>
-                                    <option value="<?= $session['id'] ?>">
-                                        <?= htmlspecialchars($time) ?> - <?= $session['capacity'] ?> seats left
-                                    </option>
-                                <?php endforeach; ?>
-                                <?php if ($currentDate !== '') echo '</optgroup>'; ?>
-                            </select>
-                            <label class="block text-sm mb-2">Leave a note (optional)</label>
-                            <textarea name="note" class="w-full p-3 rounded-xl h-24 text-sm"
-                                placeholder="Leave a note about allergies..."></textarea>
-                        </div>
 
-                        <div class="flex flex-col justify-end">
+                                    $isActive = (int)$session['event_id'] === $vm->event->event_id;
+                                ?>
+                                    <a href="/yummy/restaurant?id=<?= $session['event_id'] ?>"
+                                        class="w-full p-3 rounded-xl text-left text-sm flex justify-between items-center no-underline transition-colors block
+                                       <?= $isActive ? 'bg-yellow-100 border-2 border-yellow-400 text-black font-semibold' : 'bg-white hover:bg-gray-50 text-gray-800' ?>">
+                                        <span><?= htmlspecialchars($time) ?></span>
+                                        <span
+                                            class="text-xs <?= $isActive ? 'text-black' : 'text-gray-400' ?>"><?= $session['capacity'] ?>
+                                            seats left</span>
+                                    </a>
+                                <?php endforeach; ?>
+                            </div>
                             <button type="submit"
-                                class="w-full mt-auto bg-yellow-400 hover:bg-yellow-500 font-bold py-3 rounded-xl transition-colors">Reserve</button>
+                                class="w-full mt-auto bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-3 rounded-xl transition-colors">Reserve</button>
                         </div>
                     </form>
                 </div>

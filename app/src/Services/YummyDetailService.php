@@ -19,7 +19,7 @@ class YummyDetailService
 
     public function getEventDetails(int $id): ?YummyEvent
     {
-        return $this->eventRepository->getYummyEventById($id);
+        return $this->eventRepository->getEventDetails($id);
     }
 
     public function getEventSessions(int $id): array

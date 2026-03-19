@@ -10,6 +10,8 @@ class YummyEvent extends Event
     public ?string $thumbnail_path;
     public int $star_rating;
     public ?int $page_id;
+    public string $start_time;
+    public string $end_time;
 
     public function __construct(array $row)
     {
@@ -24,5 +26,7 @@ class YummyEvent extends Event
         $this->thumbnail_path = isset($row['thumbnail_path']) ? (string)$row['thumbnail_path'] : null;
         $this->star_rating = isset($row['star_rating']) ? (int)$row['star_rating'] : 0;
         $this->page_id = isset($row['page_id']) ? (int)$row['page_id'] : null;
+        $this->start_time = (string)($row['start_time'] ?? '');
+        $this->end_time = (string)($row['end_time'] ?? '');
     }
 }
