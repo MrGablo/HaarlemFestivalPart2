@@ -3,8 +3,6 @@
 declare(strict_types=1);
 
 /** @var \App\ViewModels\JazzArtistPageViewModel $vm */
-/** @var string|null $flashSuccess */
-
 use App\Utils\Wysiwyg;
 ?>
 <!doctype html>
@@ -19,10 +17,6 @@ use App\Utils\Wysiwyg;
 
 <body class="m-0 bg-jazz-dark bg-[#0b0b0b] font-[system-ui,Arial] text-white">
     <?php include __DIR__ . '/../partials/header.php'; ?>
-
-    <div class="mx-auto w-full max-w-jazz-container max-w-[1200px] px-5">
-        <?php require __DIR__ . '/../partials/flash_success.php'; ?>
-    </div>
 
     <!-- HERO -->
     <section class="relative min-h-[62vh] bg-cover bg-center"
@@ -120,7 +114,8 @@ use App\Utils\Wysiwyg;
                                 <input type="hidden" name="event_id" value="<?= (int)($ev['event_id'] ?? 0) ?>">
                                 <button class="min-w-40 cursor-pointer rounded-xl border-0 bg-jazz-accent bg-[#f7c600] px-[22px] py-3 font-black text-jazz-accent-text text-[#111]" type="submit">
                                     <?php if (isset($ev['price']) && is_numeric($ev['price'])): ?>
-                                        Ticket: <?= htmlspecialchars((string)$ev['price']) ?> p.p
+                                        <?php $price = (float)$ev['price']; ?>
+                                        Ticket: <?= htmlspecialchars(rtrim(rtrim(number_format($price, 2, '.', ''), '0'), '.')) ?>€ p.p
                                     <?php else: ?>
                                         <?= htmlspecialchars($vm->ticketButtonLabel) ?>
                                     <?php endif; ?>

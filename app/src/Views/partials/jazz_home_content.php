@@ -76,7 +76,7 @@ $bg = Media::image($hero['background_image'] ?? null);
     <div class="my-3 flex flex-wrap justify-center gap-[10px]">
       <?php foreach ($dayTicket['buttons'] as $b): ?>
         <button class="cursor-pointer rounded-[10px] border-0 bg-jazz-accent bg-[#f7c600] px-[18px] py-[10px] font-bold text-jazz-accent-text text-[#111]" type="button"
-          data-pass="<?= htmlspecialchars((string)($b['value'] ?? '')) ?>">
+            data-pass="<?= htmlspecialchars((string)($b['value'] ?? '')) ?>">
           <?= htmlspecialchars((string)($b['label'] ?? '')) ?>
         </button>
       <?php endforeach; ?>
