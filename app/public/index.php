@@ -60,7 +60,7 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     // Venue API
     $r->addRoute('GET', '/api/venues', ['App\Controllers\VenueController', 'list']);
 
-    // Scanner routes (admin only)
+    // Scanner routes (admin and employee access)
     $r->addRoute('GET', '/scanner', ['App\Controllers\ScannerController', 'index']);
     $r->addRoute('POST', '/scanner/process', ['App\Controllers\ScannerController', 'processScan']);
 
