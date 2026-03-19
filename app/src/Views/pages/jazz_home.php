@@ -11,12 +11,13 @@ declare(strict_types=1);
 <head>
     <meta charset="utf-8">
     <title><?= htmlspecialchars($vm->pageTitle) ?></title>
+    <script src="/assets/js/jazz/tailwind.config.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="m-0 bg-[#0b0b0b] font-[system-ui,Arial] text-white">
+<body class="m-0 bg-jazz-dark bg-[#0b0b0b] font-[system-ui,Arial] text-white">
     <?php include __DIR__ . '/../partials/header.php'; ?>
-    <div class="mx-auto w-full max-w-[1200px] px-5">
+    <div class="mx-auto w-full max-w-jazz-container max-w-[1200px] px-5">
         <?php require __DIR__ . '/../partials/flash_success.php'; ?>
     </div>
     <?php require __DIR__ . '/../partials/jazz_home_content.php'; ?>
@@ -74,7 +75,7 @@ declare(strict_types=1);
 
                     <form method="POST" action="/order/item/add" class="ticket-form">
                         <input type="hidden" name="event_id" value="<?= (int)($ev['event_id'] ?? 0) ?>">
-                        <button class="mt-[10px] w-full cursor-pointer rounded-[10px] border-0 bg-[#f7c600] px-[14px] py-3 font-extrabold text-[#111]" type="submit">
+                        <button class="mt-[10px] w-full cursor-pointer rounded-[10px] border-0 bg-jazz-accent bg-[#f7c600] px-[14px] py-3 font-extrabold text-jazz-accent-text text-[#111]" type="submit">
                             Ticket: <?= htmlspecialchars((string)($ev['price'] ?? '')) ?> p.p
                         </button>
                     </form>
@@ -83,10 +84,10 @@ declare(strict_types=1);
         </div>
 
         <div class="mt-5 flex items-center justify-center gap-[18px]">
-            <button id="toggleMoreBtn" class="cursor-pointer rounded-[10px] border-0 bg-[#f7c600] px-[18px] py-3 font-extrabold text-[#111]" type="button">Show more</button>
+            <button id="toggleMoreBtn" class="cursor-pointer rounded-[10px] border-0 bg-jazz-accent bg-[#f7c600] px-[18px] py-3 font-extrabold text-jazz-accent-text text-[#111]" type="button">Show more</button>
 
             <?php if ($vm->showAllEventsButton): ?>
-                <button id="allEventsBtn" class="cursor-pointer rounded-[10px] border-0 bg-[#f7c600] px-[18px] py-3 font-extrabold text-[#111]" type="button">
+                <button id="allEventsBtn" class="cursor-pointer rounded-[10px] border-0 bg-jazz-accent bg-[#f7c600] px-[18px] py-3 font-extrabold text-jazz-accent-text text-[#111]" type="button">
                     <?= htmlspecialchars($vm->allEventsButtonLabel) ?>
                 </button>
             <?php endif; ?>

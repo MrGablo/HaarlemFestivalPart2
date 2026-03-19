@@ -16,7 +16,7 @@ $bg = Media::image($hero['background_image'] ?? null);
 <section class="relative min-h-[70vh] bg-cover bg-center"
   style="background-image:url('/<?= htmlspecialchars($bg['src']) ?>')">
   <div class="absolute inset-0 bg-gradient-to-r from-black/75 to-black/15"></div>
-  <div class="relative z-[1] max-w-[900px] px-20 pb-10 pt-20 max-[1200px]:px-6">
+  <div class="relative z-[1] max-w-jazz-hero-content max-w-[900px] px-20 pb-10 pt-20 max-[1200px]:px-6">
     <div class="tracking-[0.2em] opacity-75"><?= htmlspecialchars((string)($hero['kicker'] ?? '')) ?></div>
     <h1 class="mb-4 mt-2 text-[64px] leading-none max-[1200px]:text-[44px]"><?= htmlspecialchars((string)($hero['title'] ?? '')) ?></h1>
 
@@ -40,13 +40,13 @@ $bg = Media::image($hero['background_image'] ?? null);
     <?php endif; ?>
 
     <!-- Scroll button (uses JS). href in JSON stays as fallback -->
-    <button class="cursor-pointer rounded-lg border-0 bg-[#2b2b2b] px-4 py-[10px] text-white" type="button" data-scroll-target="#dayTicket">
+    <button class="cursor-pointer rounded-lg border-0 bg-jazz-button-dark bg-[#2b2b2b] px-4 py-[10px] text-white" type="button" data-scroll-target="#dayTicket">
       <?= htmlspecialchars((string)($hero['primary_button']['label'] ?? 'Buy ticket')) ?>
     </button>
   </div>
 </section>
 
-<section class="max-w-[1000px] px-20 py-10 max-[1200px]:px-6">
+<section class="max-w-jazz-intro max-w-[1000px] px-20 py-10 max-[1200px]:px-6">
   <div>
     <h2><?= htmlspecialchars((string)($intro['heading'] ?? '')) ?></h2>
 
@@ -58,12 +58,12 @@ $bg = Media::image($hero['background_image'] ?? null);
     ?>
 
     <?php if (is_string($bodyHtml) && $bodyHtml !== ''): ?>
-      <div class="max-w-[820px] opacity-90 wysiwyg">
+      <div class="max-w-jazz-text max-w-[820px] opacity-90 wysiwyg">
         <?= Wysiwyg::render($bodyHtml) ?>
       </div>
     <?php elseif (is_array($paras) && !empty($paras)): ?>
       <?php foreach ($paras as $p): ?>
-        <p class="max-w-[820px] opacity-90"><?= htmlspecialchars((string)$p) ?></p>
+        <p class="max-w-jazz-text max-w-[820px] opacity-90"><?= htmlspecialchars((string)$p) ?></p>
       <?php endforeach; ?>
     <?php endif; ?>
   </div>
@@ -75,7 +75,7 @@ $bg = Media::image($hero['background_image'] ?? null);
   <?php if (!empty($dayTicket['buttons']) && is_array($dayTicket['buttons'])): ?>
     <div class="my-3 flex flex-wrap justify-center gap-[10px]">
       <?php foreach ($dayTicket['buttons'] as $b): ?>
-        <button class="cursor-pointer rounded-[10px] border-0 bg-[#f7c600] px-[18px] py-[10px] font-bold text-[#111]" type="button"
+        <button class="cursor-pointer rounded-[10px] border-0 bg-jazz-accent bg-[#f7c600] px-[18px] py-[10px] font-bold text-jazz-accent-text text-[#111]" type="button"
           data-pass="<?= htmlspecialchars((string)($b['value'] ?? '')) ?>">
           <?= htmlspecialchars((string)($b['label'] ?? '')) ?>
         </button>
