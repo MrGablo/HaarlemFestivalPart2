@@ -1,3 +1,17 @@
+<?php
+/**
+ * 
+ * 
+ * Renders the ticket scanning interface and its success/error feedback.
+ * 
+ * Variables injected by the controller:
+ * 
+ * @var string|null $status    The result of a scan ('success', 'warning', 'error')
+ * @var string|null $message   The message string describing the result 
+ * @var string|null $eventName Name of the event checked in (available on 'success')
+ * @var string|null $eventTime Start time of the event (available on 'success')
+ */
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -14,7 +28,7 @@
         <h1 class="text-3xl font-bold mb-6 text-gray-800">Festival Ticket Scanner</h1>
 
         <?php if (isset($status)): ?>
-            <?php
+        <?php
             $bgClass = 'bg-gray-100 border-gray-400 text-gray-800';
             $icon = '❌';
             if ($status === 'success') {
@@ -26,70 +40,70 @@
             }
             ?>
 
-            <div class="border-l-4 p-6 rounded mb-6 text-xl font-medium <?= $bgClass ?>">
-                <div class="mb-2 text-4xl"><?= $icon ?></div>
-                <div class="mb-4"><?= htmlspecialchars($message ?? '') ?></div>
+        <div class="border-l-4 p-6 rounded mb-6 text-xl font-medium <?= $bgClass ?>">
+            <div class="mb-2 text-4xl"><?= $icon ?></div>
+            <div class="mb-4"><?= htmlspecialchars($message ?? '') ?></div>
 
-                <?php if (isset($eventName)): ?>
-                    <div class="mt-4 pt-4 border-t border-opacity-30 border-current bg-white bg-opacity-30 rounded px-2 py-3">
-                        <p class="text-lg font-bold mb-1"><?= htmlspecialchars($eventName) ?></p>
-                        <?php if (isset($eventTime)): ?>
-                            <p class="text-sm">Time: <?= htmlspecialchars($eventTime) ?></p>
-                        <?php endif; ?>
-                    </div>
+            <?php if (isset($eventName)): ?>
+            <div class="mt-4 pt-4 border-t border-opacity-30 border-current bg-white bg-opacity-30 rounded px-2 py-3">
+                <p class="text-lg font-bold mb-1"><?= htmlspecialchars($eventName) ?></p>
+                <?php if (isset($eventTime)): ?>
+                <p class="text-sm">Time: <?= htmlspecialchars($eventTime) ?></p>
                 <?php endif; ?>
             </div>
+            <?php endif; ?>
+        </div>
 
-            <a href="/scanner"
-                class="inline-block w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded shadow transition-colors text-lg">
-                Scan Next Ticket
-            </a>
+        <a href="/scanner"
+            class="inline-block w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded shadow transition-colors text-lg">
+            Scan Next Ticket
+        </a>
         <?php else: ?>
-            <div id="reader" class="mb-4 overflow-hidden outline-none"></div>
+        <div id="reader" class="mb-4 overflow-hidden outline-none"></div>
 
-            <form id="scanForm" method="POST" action="/scanner/process">
-                <input type="hidden" name="qr_hash" id="qrInput">
-            </form>
+        <form id="scanForm" method="POST" action="/scanner/process">
+            <input type="hidden" name="qr_hash" id="qrInput">
+        </form>
 
-            <script>
-                document.addEventListener('DOMContentLoaded', () => {
-                    let isProcessing = false;
+        <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let isProcessing = false;
 
-                    function onScanSuccess(decodedText, decodedResult) {
-                        if (isProcessing) return;
-                        isProcessing = true;
+            function onScanSuccess(decodedText, decodedResult) {
+                if (isProcessing) return;
+                isProcessing = true;
 
-                        const scanner = document.getElementById('reader');
-                        if (scanner) scanner.style.display = 'none'; // Stop scanning loop visually
+                const scanner = document.getElementById('reader');
+                if (scanner) scanner.style.display = 'none'; // Stop scanning loop visually
 
-                        try {
-                            html5QrcodeScanner.clear(); // Stop the scanner completely to prevent multiple fires
-                        } catch (e) {
-                            console.error(e);
-                        }
+                try {
+                    html5QrcodeScanner.clear(); // Stop the scanner completely to prevent multiple fires
+                } catch (e) {
+                    console.error(e);
+                }
 
-                        document.getElementById('qrInput').value = decodedText;
-                        document.getElementById('scanForm').submit();
+                document.getElementById('qrInput').value = decodedText;
+                document.getElementById('scanForm').submit();
+            }
+
+            function onScanFailure(error) {
+                // Keep scanning
+            }
+
+            const html5QrcodeScanner = new Html5QrcodeScanner(
+                "reader", {
+                    fps: 10,
+                    qrbox: {
+                        width: 250,
+                        height: 250
                     }
-
-                    function onScanFailure(error) {
-                        // Keep scanning
-                    }
-
-                    const html5QrcodeScanner = new Html5QrcodeScanner(
-                        "reader", {
-                            fps: 10,
-                            qrbox: {
-                                width: 250,
-                                height: 250
-                            }
-                        },
-                        /* verbose= */
-                        false
-                    );
-                    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
-                });
-            </script>
+                },
+                /* verbose= */
+                false
+            );
+            html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+        });
+        </script>
         <?php endif; ?>
     </div>
 </body>
