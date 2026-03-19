@@ -85,7 +85,8 @@ declare(strict_types=1);
                     <form method="POST" action="/order/item/add" class="ticket-form">
                         <input type="hidden" name="event_id" value="<?= (int)($ev['event_id'] ?? 0) ?>">
                         <button class="mt-[10px] w-full cursor-pointer rounded-[10px] border-0 bg-jazz-accent bg-[#f7c600] px-[14px] py-3 font-extrabold text-jazz-accent-text text-[#111]" type="submit">
-                            Ticket: <?= htmlspecialchars((string)($ev['price'] ?? '')) ?> p.p
+                            <?php $price = isset($ev['price']) ? (float)$ev['price'] : 0.0; ?>
+                            Ticket: <?= htmlspecialchars(rtrim(rtrim(number_format($price, 2, '.', ''), '0'), '.')) ?>€ p.p
                         </button>
                     </form>
                 </article>
