@@ -1,0 +1,100 @@
+(function () {
+    var toast = document.getElementById('cartToast');
+    var toastTimer = null;
+
+    function showCartToast() {
+        if (!toast) {
+            return;
+        }
+
+        toast.classList.remove('hidden');
+        if (toastTimer) {
+            window.clearTimeout(toastTimer);
+        }
+
+        toastTimer = window.setTimeout(function () {
+            toast.classList.add('hidden');
+        }, 3800);
+    }
+
+    if (toast) {
+        toast.addEventListener('click', function () {
+            if (window.HaarlemCart && typeof window.HaarlemCart.open === 'function') {
+                window.HaarlemCart.open();
+            }
+            toast.classList.add('hidden');
+        });
+    }
+
+    function addTicketWithoutReload(form) {
+        var submitBtn = form.querySelector('button[type="submit"]');
+        if (!(submitBtn instanceof HTMLButtonElement)) {
+            return;
+        }
+
+        var originalLabel = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Adding...';
+
+        fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
+        })
+            .then(function (response) {
+                return response.json().catch(function () { return null; }).then(function (payload) {
+                    return { response: response, payload: payload };
+                });
+            })
+            .then(function (result) {
+                var response = result.response;
+                var payload = result.payload;
+
+                if (!response.ok || !payload || payload.ok !== true) {
+                    var redirect = payload && typeof payload.redirect === 'string' ? payload.redirect : '';
+                    if (redirect) {
+                        window.location.href = redirect;
+                        return;
+                    }
+
+                    var message = payload && typeof payload.message === 'string'
+                        ? payload.message
+                        : 'Could not add ticket to cart.';
+                    window.alert(message);
+                    return;
+                }
+
+                if (window.HaarlemCart && typeof window.HaarlemCart.update === 'function') {
+                    window.HaarlemCart.update(payload.cart || null);
+                }
+
+                showCartToast();
+            })
+            .catch(function () {
+                window.alert('Network error while adding ticket. Please try again.');
+            })
+            .finally(function () {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalLabel || 'Ticket';
+            });
+    }
+
+    // Capture submit at document level to guarantee no full page navigation.
+    document.addEventListener('submit', function (event) {
+        var target = event.target;
+        if (!(target instanceof HTMLFormElement)) {
+            return;
+        }
+
+        if (!target.classList.contains('ticket-form')) {
+            return;
+        }
+
+        event.preventDefault();
+        addTicketWithoutReload(target);
+    }, true);
+})();

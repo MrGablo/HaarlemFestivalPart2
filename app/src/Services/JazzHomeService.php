@@ -79,6 +79,7 @@ class JazzHomeService
             'location' => $venueName,
             'hall' => $hall,
             'page_id' => $ev->page_id,
+            'start_ts' => $ts,
 
             'day_key' => $ts ? date('l', $ts) : 'Unknown',
             'display_date' => $ts ? date('D j M', $ts) : '',
