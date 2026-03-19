@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Framework\Repository;
 use App\Repositories\Interfaces\IOrderRepository;
+use App\Support\VenueSchemaHelper;
 
 class OrderRepository extends Repository implements IOrderRepository
 {
@@ -38,11 +39,12 @@ class OrderRepository extends Repository implements IOrderRepository
                 u.last_name,
                 u.email,
                 COALESCE(SUM(oi.quantity), 0) AS item_count,
-                COALESCE(SUM(oi.quantity * COALESCE(j.price, 0)), 0) AS total_amount
+                COALESCE(SUM(oi.quantity * COALESCE(j.price, d.price, 0)), 0) AS total_amount
              FROM `orders` o
              LEFT JOIN `User` u ON u.id = o.user_id
              LEFT JOIN `order_items` oi ON oi.order_id = o.order_id
              LEFT JOIN `JazzEvent` j ON j.event_id = oi.event_id
+             LEFT JOIN `DanceEvent` d ON d.event_id = oi.event_id
              GROUP BY
                 o.order_id,
                 o.user_id,
@@ -69,11 +71,12 @@ class OrderRepository extends Repository implements IOrderRepository
                 u.last_name,
                 u.email,
                 COALESCE(SUM(oi.quantity), 0) AS item_count,
-                COALESCE(SUM(oi.quantity * COALESCE(j.price, 0)), 0) AS total_amount
+                COALESCE(SUM(oi.quantity * COALESCE(j.price, d.price, 0)), 0) AS total_amount
              FROM `orders` o
              LEFT JOIN `User` u ON u.id = o.user_id
              LEFT JOIN `order_items` oi ON oi.order_id = o.order_id
              LEFT JOIN `JazzEvent` j ON j.event_id = oi.event_id
+             LEFT JOIN `DanceEvent` d ON d.event_id = oi.event_id
              WHERE o.order_id = :order_id
              GROUP BY
                 o.order_id,
@@ -186,9 +189,12 @@ class OrderRepository extends Repository implements IOrderRepository
         }
 
         $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
+        $pdo = $this->getConnection();
+        $vt = '`' . str_replace('`', '``', VenueSchemaHelper::venueTableName($pdo)) . '`';
+        $vpk = '`' . str_replace('`', '``', VenueSchemaHelper::primaryKeyColumn($pdo)) . '`';
+        $danceVenueName = VenueSchemaHelper::displayNameExpression($pdo, 'vd');
 
-        $stmt = $this->getConnection()->prepare(
-            "SELECT
+        $sql = "SELECT
                 oi.order_item_id,
                 oi.order_id,
                 oi.event_id,
@@ -199,21 +205,25 @@ class OrderRepository extends Repository implements IOrderRepository
                 e.event_type AS event_type,
                 j.start_date,
                 j.end_date,
-                j.venue_id,
+                COALESCE(j.venue_id, d.venue_id) AS venue_id,
                 v.name AS venue_name,
                 j.artist_id,
                 a.name AS artist_name,
                 j.img_background,
-                j.price,
-                j.page_id
+                COALESCE(j.price, d.price, 0) AS price,
+                j.page_id,
+                CASE WHEN LOWER(TRIM(e.event_type)) = 'dance' THEN {$danceVenueName} ELSE '' END AS location
              FROM `order_items` oi
              INNER JOIN Event e ON e.event_id = oi.event_id
              LEFT JOIN JazzEvent j ON j.event_id = e.event_id
+             LEFT JOIN DanceEvent d ON d.event_id = e.event_id
              LEFT JOIN Artist a ON a.artist_id = j.artist_id
-             LEFT JOIN Venue v ON v.venue_id = j.venue_id
+             LEFT JOIN {$vt} v ON v.{$vpk} = j.venue_id
+             LEFT JOIN {$vt} vd ON vd.{$vpk} = d.venue_id
              WHERE oi.order_id IN ($placeholders)
-             ORDER BY oi.order_id ASC, oi.created_at DESC, oi.order_item_id DESC"
-        );
+             ORDER BY oi.order_id ASC, oi.created_at DESC, oi.order_item_id DESC";
+
+        $stmt = $pdo->prepare($sql);
 
         $stmt->execute(array_values($orderIds));
         $rows = $stmt->fetchAll();
@@ -223,8 +233,12 @@ class OrderRepository extends Repository implements IOrderRepository
 
     public function getOrderItemsWithEventData(int $orderId): array
     {
-        $stmt = $this->getConnection()->prepare(
-            'SELECT
+        $pdo = $this->getConnection();
+        $vt = '`' . str_replace('`', '``', VenueSchemaHelper::venueTableName($pdo)) . '`';
+        $vpk = '`' . str_replace('`', '``', VenueSchemaHelper::primaryKeyColumn($pdo)) . '`';
+        $danceVenueName = VenueSchemaHelper::displayNameExpression($pdo, 'vd');
+
+        $sql = "SELECT
                 oi.order_item_id,
                 oi.order_id,
                 oi.event_id,
@@ -235,21 +249,25 @@ class OrderRepository extends Repository implements IOrderRepository
                 e.event_type AS event_type,
                 j.start_date,
                 j.end_date,
-                 j.venue_id,
-                 v.name AS venue_name,
-                     j.artist_id,
-                     a.name AS artist_name,
+                COALESCE(j.venue_id, d.venue_id) AS venue_id,
+                v.name AS venue_name,
+                j.artist_id,
+                a.name AS artist_name,
                 j.img_background,
-                j.price,
-                j.page_id
+                COALESCE(j.price, d.price, 0) AS price,
+                j.page_id,
+                CASE WHEN LOWER(TRIM(e.event_type)) = 'dance' THEN {$danceVenueName} ELSE '' END AS location
              FROM `order_items` oi
              INNER JOIN Event e ON e.event_id = oi.event_id
              LEFT JOIN JazzEvent j ON j.event_id = e.event_id
-                  LEFT JOIN Artist a ON a.artist_id = j.artist_id
-                  LEFT JOIN Venue v ON v.venue_id = j.venue_id
+             LEFT JOIN DanceEvent d ON d.event_id = e.event_id
+             LEFT JOIN Artist a ON a.artist_id = j.artist_id
+             LEFT JOIN {$vt} v ON v.{$vpk} = j.venue_id
+             LEFT JOIN {$vt} vd ON vd.{$vpk} = d.venue_id
              WHERE oi.order_id = :order_id
-             ORDER BY oi.created_at DESC, oi.order_item_id DESC'
-        );
+             ORDER BY oi.created_at DESC, oi.order_item_id DESC";
+
+        $stmt = $pdo->prepare($sql);
 
         $stmt->execute([':order_id' => $orderId]);
         $rows = $stmt->fetchAll();
@@ -321,27 +339,35 @@ class OrderRepository extends Repository implements IOrderRepository
 
     public function findEventById(int $eventId): ?array
     {
-        $stmt = $this->getConnection()->prepare(
-            'SELECT
+        $pdo = $this->getConnection();
+        $vt = '`' . str_replace('`', '``', VenueSchemaHelper::venueTableName($pdo)) . '`';
+        $vpk = '`' . str_replace('`', '``', VenueSchemaHelper::primaryKeyColumn($pdo)) . '`';
+        $danceVenueName = VenueSchemaHelper::displayNameExpression($pdo, 'vd');
+
+        $sql = "SELECT
                 e.event_id,
                 e.title,
                 e.event_type,
                 j.start_date,
                 j.end_date,
-                 j.venue_id,
-                 v.name AS venue_name,
-                     j.artist_id,
-                     a.name AS artist_name,
+                COALESCE(j.venue_id, d.venue_id) AS venue_id,
+                v.name AS venue_name,
+                j.artist_id,
+                a.name AS artist_name,
                 j.img_background,
-                j.price,
-                j.page_id
+                COALESCE(j.price, d.price, 0) AS price,
+                j.page_id,
+                CASE WHEN LOWER(TRIM(e.event_type)) = 'dance' THEN {$danceVenueName} ELSE '' END AS location
              FROM Event e
              LEFT JOIN JazzEvent j ON j.event_id = e.event_id
-                  LEFT JOIN Artist a ON a.artist_id = j.artist_id
-                  LEFT JOIN Venue v ON v.venue_id = j.venue_id
+             LEFT JOIN DanceEvent d ON d.event_id = e.event_id
+             LEFT JOIN Artist a ON a.artist_id = j.artist_id
+             LEFT JOIN {$vt} v ON v.{$vpk} = j.venue_id
+             LEFT JOIN {$vt} vd ON vd.{$vpk} = d.venue_id
              WHERE e.event_id = :event_id
-             LIMIT 1'
-        );
+             LIMIT 1";
+
+        $stmt = $pdo->prepare($sql);
 
         $stmt->execute([':event_id' => $eventId]);
         $row = $stmt->fetch();

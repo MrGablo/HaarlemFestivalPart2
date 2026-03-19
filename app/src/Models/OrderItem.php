@@ -33,7 +33,8 @@ class OrderItem
 
         return match (strtolower($this->event->event_type)) {
             'jazz' => $this->event instanceof JazzEvent ? $this->event->price : 0.0,
-            default => $this->event instanceof GenericEvent ? (float)($this->event->price ?? 0.0) : 0.0,
+            'dance' => $this->event instanceof DanceEvent ? $this->event->price : 0.0,
+            default => $this->event instanceof GenericEvent ? (float) ($this->event->price ?? 0.0) : 0.0,
         };
     }
 
@@ -43,6 +44,7 @@ class OrderItem
 
         return match (strtolower($this->event->event_type)) {
             'jazz' => $this->event instanceof JazzEvent ? $this->event->location : '',
+            'dance' => $this->event instanceof DanceEvent ? $this->event->location : '',
             default => $this->event instanceof GenericEvent ? $this->event->location : '',
         };
     }
