@@ -34,11 +34,13 @@ class ScannerController
             $message = $errors['message'] ?? 'An error occurred';
         }
 
+        $csrfToken = Csrf::token();
         require __DIR__ . '/../Views/scanner.php';
     }
 
     public function processScan(): void
     {
+        Csrf::assertPost();
         $qrHash = $_POST['qr_hash'] ?? '';
 
         if (empty($qrHash)) {
