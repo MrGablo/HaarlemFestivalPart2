@@ -13,7 +13,8 @@ class JazzHomeService
     public function __construct(
         private IPageRepository $pageRepo,
         private IJazzEventRepository $eventRepo,
-        private IVenueRepository $venueRepo
+        private IVenueRepository $venueRepo,
+        private PassService $passService
     ) {}
 
     public function getJazzHomePageViewModel(): JazzHomePageViewModel
@@ -27,7 +28,11 @@ class JazzHomeService
 
         $hero = is_array($content['hero'] ?? null) ? $content['hero'] : [];
         $intro = is_array($content['intro'] ?? null) ? $content['intro'] : [];
-        $dayTicketPass = is_array($content['day_ticket_pass'] ?? null) ? $content['day_ticket_pass'] : [];
+        $dayTicketPassContent = is_array($content['day_ticket_pass'] ?? null) ? $content['day_ticket_pass'] : [];
+        $dayTicketPass = [
+            'title' => (string)($dayTicketPassContent['title'] ?? 'Day Ticket Pass'),
+            'buttons' => $this->passService->getPassButtonsForFestivalType('jazz'),
+        ];
         $schedule = is_array($content['schedule'] ?? null) ? $content['schedule'] : [];
         $filters = is_array($schedule['filters'] ?? null) ? $schedule['filters'] : [];
 

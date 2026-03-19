@@ -28,9 +28,13 @@ if ($headerCartOrder instanceof \App\Models\Order && is_array($headerCartOrder->
         <?php else: ?>
             <?php foreach ($headerCartItems as $item): ?>
                 <?php $event = $item->event; ?>
+                <?php $passDateLabel = method_exists($item, 'getPassDateLabel') ? (string)$item->getPassDateLabel() : ''; ?>
                 <article class="mb-[10px] rounded-xl border border-[#ececec] bg-white px-3 py-[10px] text-[#171717]">
                     <h3 class="m-0 text-[0.98rem] font-extrabold text-[#0f0f0f]"><?= htmlspecialchars((string) ($event?->title ?? 'Event')) ?></h3>
                     <p class="my-[6px] mb-[10px] text-[0.9rem] text-[#2d2d2d]"><?= htmlspecialchars((string) $item->getLocation()) ?></p>
+                    <?php if ($passDateLabel !== ''): ?>
+                        <p class="my-[6px] mb-[10px] text-[0.9rem] font-semibold text-[#2d2d2d]">Date: <?= htmlspecialchars($passDateLabel) ?></p>
+                    <?php endif; ?>
 
                     <div class="flex items-center justify-between gap-[10px]">
                         <div class="inline-flex items-center gap-2">

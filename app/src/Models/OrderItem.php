@@ -8,6 +8,7 @@ class OrderItem
     public int $order_id;
     public int $event_id;
     public int $quantity;
+    public ?string $pass_date;
     public ?string $created_at;
     public ?Event $event;
 
@@ -16,6 +17,7 @@ class OrderItem
         int $orderId,
         int $eventId,
         int $quantity,
+        ?string $passDate = null,
         ?string $createdAt = null,
         ?Event $event = null
     ) {
@@ -23,8 +25,24 @@ class OrderItem
         $this->order_id = $orderId;
         $this->event_id = $eventId;
         $this->quantity = $quantity;
+        $this->pass_date = $passDate;
         $this->created_at = $createdAt;
         $this->event = $event;
+    }
+
+    public function getPassDateLabel(): string
+    {
+        $value = trim((string)($this->pass_date ?? ''));
+        if ($value === '' || $value === '1000-01-01') {
+            return '';
+        }
+
+        $dt = \DateTimeImmutable::createFromFormat('Y-m-d', $value);
+        if (!$dt instanceof \DateTimeImmutable) {
+            return '';
+        }
+
+        return $dt->format('l, d M Y');
     }
 
     public function getUnitPrice(): float

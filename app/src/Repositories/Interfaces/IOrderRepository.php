@@ -15,7 +15,7 @@ interface IOrderRepository
 
     public function createPendingOrder(int $userId): int;
 
-    public function addOrIncrementOrderItem(int $orderId, int $eventId): void;
+    public function addOrIncrementOrderItem(int $orderId, int $eventId, ?string $passDate = null): void;
 
     /** @return array<int, array<string, mixed>> */
     public function getOrderItemsWithEventData(int $orderId): array;

@@ -4,9 +4,11 @@ namespace App\Controllers;
 
 use App\Repositories\PageRepository;
 use App\Repositories\JazzEventRepository;
+use App\Repositories\PassRepository;
 use App\Repositories\VenueRepository;
 use App\Services\JazzHomeService;
 use App\Services\JazzArtistService;
+use App\Services\PassService;
 use App\Utils\Flash;
 
 class JazzController
@@ -18,7 +20,8 @@ class JazzController
         $this->service = new JazzHomeService(
             new PageRepository(),
             new JazzEventRepository(),
-            new VenueRepository()
+            new VenueRepository(),
+            new PassService(new PassRepository())
         );
     }
 

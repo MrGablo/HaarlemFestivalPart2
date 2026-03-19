@@ -29,6 +29,7 @@
     function renderCartItem(item) {
         var title = escapeHtml(item.title || 'Event');
         var location = escapeHtml(item.location || '');
+        var passDateLabel = escapeHtml(item.passDateLabel || '');
         var quantity = Number(item.quantity || 0);
         var unitPriceLabel = escapeHtml(item.unitPriceLabel || Number(item.unitPrice || 0).toFixed(2));
         var orderItemId = Number(item.orderItemId || 0);
@@ -37,6 +38,9 @@
             '<article class="mb-[10px] rounded-xl border border-[#ececec] bg-white px-3 py-[10px] text-[#171717]">',
                 '<h3 class="m-0 text-[0.98rem] font-extrabold text-[#0f0f0f]">' + title + '</h3>',
                 '<p class="my-[6px] mb-[10px] text-[0.9rem] text-[#2d2d2d]">' + location + '</p>',
+                (passDateLabel !== ''
+                    ? '<p class="my-[6px] mb-[10px] text-[0.9rem] font-semibold text-[#2d2d2d]">Date: ' + passDateLabel + '</p>'
+                    : ''),
                 '<div class="flex items-center justify-between gap-[10px]">',
                     '<div class="inline-flex items-center gap-2">',
                         '<span class="font-bold text-[#171717]">Qty: ' + quantity + ' x EUR ' + unitPriceLabel + '</span>',
