@@ -53,6 +53,12 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     $r->addRoute('POST', '/order/item/remove', ['App\Controllers\OrderController', 'removeItem']);
     $r->addRoute('POST', '/order/item/quantity', ['App\Controllers\OrderController', 'updateItemQuantity']);
 
+    // Payment routes (Stripe checkout)
+    $r->addRoute('POST', '/api/payment/create-session', ['App\Controllers\PaymentController', 'createCheckoutSession']);
+    $r->addRoute('POST', '/api/payment/webhook', ['App\Controllers\PaymentController', 'handleWebhook']);
+    $r->addRoute('GET',  '/payment/success', ['App\Controllers\PaymentController', 'success']);
+    $r->addRoute('GET',  '/payment/cancel', ['App\Controllers\PaymentController', 'cancel']);
+
     // CMS routes (admin only)
     $r->addRoute('GET', '/cms', ['App\Controllers\CMSController', 'generalIndex']);
     $r->addRoute('GET', '/cms/pages', ['App\Controllers\CMSController', 'index']);
