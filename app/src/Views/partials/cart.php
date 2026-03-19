@@ -84,3 +84,4 @@ if ($headerCartOrder instanceof \App\Models\Order && is_array($headerCartOrder->
 ></div>
 
 <script src="/assets/js/cart/cart_overlay.js"></script>
+<script src="/assets/js/cart/cart_add_ticket.js"></script>
