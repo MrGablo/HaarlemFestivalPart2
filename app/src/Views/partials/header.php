@@ -33,11 +33,17 @@ $headerCartCount = $headerCartOrder ? $headerCartOrder->getItemCount() : 0;
 $headerCartTotal = $headerCartOrder ? $headerCartOrder->getTotalPrice() : 0.0;
 $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 
-function getNavClass($path, $currentPath)
+function getNavClass($path, $currentPath, $matchPrefix = false)
 {
     $baseClasses = 'no-underline font-bold text-base py-2.5 px-[18px] transition-all duration-200 rounded-[25px]';
 
-    if ($currentPath === $path) {
+    $isActive = $currentPath === $path;
+
+    if ($matchPrefix && $path !== '/') {
+        $isActive = $isActive || strpos($currentPath, $path . '/') === 0;
+    }
+
+    if ($isActive) {
         return $baseClasses . ' bg-[#2F80ED] text-white shadow-[0_4px_10px_rgba(47,128,237,0.3)]';
     }
 
@@ -54,7 +60,7 @@ function getNavClass($path, $currentPath)
         <nav class="flex items-center gap-[15px]">
             <a href="/" class="<?= getNavClass('/', $currentPath) ?>">Home</a>
             <a href="/dance" class="<?= getNavClass('/dance', $currentPath) ?>">Dance</a>
-            <a href="/jazz" class="<?= getNavClass('/jazz', $currentPath) ?>">Jazz</a>
+            <a href="/jazz" class="<?= getNavClass('/jazz', $currentPath, true) ?>">Jazz</a>
             <a href="/yummy" class="<?= getNavClass('/yummy', $currentPath) ?>">Yummy</a>
             <a href="/stories" class="<?= getNavClass('/stories', $currentPath) ?>">Stories</a>
             <a href="/history" class="<?= getNavClass('/history', $currentPath) ?>">History</a>
