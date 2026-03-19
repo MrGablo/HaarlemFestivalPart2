@@ -1,128 +1,43 @@
-<style>
-    .main-footer {
-        background-color: #fff;
-        padding: 60px 0;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        margin-top: 50px;
-    }
-
-    .footer-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 0 20px;
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 40px;
-    }
-
-    .footer-col {
-        flex: 1;
-        min-width: 200px;
-    }
-
-    /* Branding Column  */
-    .footer-brand {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-        max-width: 300px;
-    }
-
-    .footer-logo {
-        width: 60px; 
-    }
-
-    .social-icons {
-        display: flex;
-        gap: 15px;
-    }
-
-    .social-icon {
-        width: 24px;
-        height: 24px;
-
-        opacity: 0.6; 
-        transition: opacity 0.2s;
-    }
-
-    .social-icon:hover {
-        opacity: 1;
-    }
-
-    .copyright {
-        font-size: 0.9rem;
-        color: #666;
-        margin-top: 30px;
-    }
-
-    /* Links Columns (Middle & Right) */
-    .footer-col h3 {
-        font-size: 1.2rem;
-        font-weight: 800;
-        margin-bottom: 25px;
-        color: #000;
-    }
-
-    .footer-links {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-
-    .footer-links li {
-        margin-bottom: 12px;
-    }
-
-    .footer-links a {
-        text-decoration: none;
-        color: #333;
-        font-size: 1rem;
-        transition: color 0.2s;
-        font-weight: 400;
-    }
-
-    .footer-links a:hover {
-        color: #2F80ED;
-        text-decoration: underline;
-    }
-</style>
-
-<footer class="main-footer">
-    <div class="footer-container">
+<footer class="bg-white py-[60px] mt-[50px] font-sans">
+    <div class="max-w-[1200px] mx-auto px-5 flex flex-wrap justify-between items-start gap-10">
         
-        <div class="footer-col footer-brand">
-            <img src="/assets/img/homepage/logo.svg" alt="Haarlem Festival Logo" class="footer-logo">
+        <div class="flex-1 min-w-[200px] flex flex-col gap-5 max-w-[300px]">
+            <img src="/assets/img/homepage/logo.svg" alt="Haarlem Festival Logo" class="w-[60px]">
             
-            <div class="social-icons">
-                <a href="#"><img src="/assets/img/headerfooter/facebook.svg" alt="Facebook" class="social-icon"></a>
-                <a href="#"><img src="/assets/img/headerfooter/yt.svg" alt="YouTube" class="social-icon"></a>
-                <a href="#"><img src="/assets/img/headerfooter/insta.svg" alt="Instagram" class="social-icon"></a>
+            <div class="flex gap-[15px]">
+                <a href="#">
+                    <img src="/assets/img/headerfooter/facebook.svg" alt="Facebook" class="w-6 h-6 opacity-60 hover:opacity-100 transition-opacity duration-200">
+                </a>
+                <a href="#">
+                    <img src="/assets/img/headerfooter/yt.svg" alt="YouTube" class="w-6 h-6 opacity-60 hover:opacity-100 transition-opacity duration-200">
+                </a>
+                <a href="#">
+                    <img src="/assets/img/headerfooter/insta.svg" alt="Instagram" class="w-6 h-6 opacity-60 hover:opacity-100 transition-opacity duration-200">
+                </a>
             </div>
 
-            <p class="copyright">@2025 Haarlem Festival</p>
+            <p class="text-[0.9rem] text-gray-500 mt-[30px]">@2025 Haarlem Festival</p>
         </div>
 
-        <div class="footer-col">
-            <h3>Support</h3>
-            <ul class="footer-links">
-                <li><a href="/contact">Contact Us</a></li>
-                <li><a href="/contact#refund">Tickets Refund</a></li>
-                <li><a href="/terms">Terms &amp; Conditions</a></li>
-                <li><a href="/privacy">Privacy Policy</a></li>
+        <div class="flex-1 min-w-[200px]">
+            <h3 class="text-[1.2rem] font-extrabold mb-[25px] text-black">Support</h3>
+            <ul class="list-none p-0 m-0">
+                <li class="mb-3"><a href="#" class="no-underline text-gray-800 text-base font-normal transition-colors duration-200 hover:text-[#2F80ED] hover:underline">Contact Us</a></li>
+                <li class="mb-3"><a href="#" class="no-underline text-gray-800 text-base font-normal transition-colors duration-200 hover:text-[#2F80ED] hover:underline">Tickets Refund</a></li>
+                <li class="mb-3"><a href="#" class="no-underline text-gray-800 text-base font-normal transition-colors duration-200 hover:text-[#2F80ED] hover:underline">Terms & Conditions</a></li>
+                <li class="mb-3"><a href="#" class="no-underline text-gray-800 text-base font-normal transition-colors duration-200 hover:text-[#2F80ED] hover:underline">Privacy Policy</a></li>
             </ul>
         </div>
 
-        <div class="footer-col">
-            <h3>Quick Menu</h3>
-            <ul class="footer-links">
-                <li><a href="/">Home</a></li>
-                <li><a href="/dance">Dance!</a></li>
-                <li><a href="/jazz">Haarlem Jazz</a></li>
-                <li><a href="/yummy">Yummy!</a></li>
-                <li><a href="/stories">Stories in Haarlem</a></li>
-                <li><a href="/history">A Stroll through History</a></li>
+        <div class="flex-1 min-w-[200px]">
+            <h3 class="text-[1.2rem] font-extrabold mb-[25px] text-black">Quick Menu</h3>
+            <ul class="list-none p-0 m-0">
+                <li class="mb-3"><a href="#" class="no-underline text-gray-800 text-base font-normal transition-colors duration-200 hover:text-[#2F80ED] hover:underline">Home</a></li>
+                <li class="mb-3"><a href="#" class="no-underline text-gray-800 text-base font-normal transition-colors duration-200 hover:text-[#2F80ED] hover:underline">Dance!</a></li>
+                <li class="mb-3"><a href="#" class="no-underline text-gray-800 text-base font-normal transition-colors duration-200 hover:text-[#2F80ED] hover:underline">Haarlem Jazz</a></li>
+                <li class="mb-3"><a href="#" class="no-underline text-gray-800 text-base font-normal transition-colors duration-200 hover:text-[#2F80ED] hover:underline">Yummy!</a></li>
+                <li class="mb-3"><a href="#" class="no-underline text-gray-800 text-base font-normal transition-colors duration-200 hover:text-[#2F80ED] hover:underline">Stories in Haarlem</a></li>
+                <li class="mb-3"><a href="#" class="no-underline text-gray-800 text-base font-normal transition-colors duration-200 hover:text-[#2F80ED] hover:underline">A Stroll through History</a></li>
             </ul>
         </div>
 

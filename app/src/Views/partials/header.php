@@ -1,122 +1,110 @@
-<style>
-    .main-header {
-        background-color: #fff;
-        border-bottom: 1px solid #f0f0f0;
-        padding: 15px 0;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+<?php
+use \App\Utils\Session;
+use \App\Utils\AuthSessionData;
+use App\Models\Order;
+use App\Repositories\OrderRepository;
+use App\Services\EventModelBuilderService;
+use App\Services\OrderService;
+
+Session::ensureStarted();
+$authPayload = AuthSessionData::read();
+
+$headerIsLoggedIn = isset($isLoggedIn) ? (bool) $isLoggedIn : ($authPayload !== null);
+$headerProfilePicturePath = (string) ($profilePicturePath ?? ($authPayload['profilePicturePath'] ?? '/assets/img/default-user.png'));
+$headerIsAdmin = strtolower((string) ($authPayload['userRole'] ?? '')) === 'admin';
+
+// order count logic
+$headerCartOrder = null;
+$headerCartCount = 0;
+$headerCartOrder = null;
+if ($headerIsLoggedIn && isset($authPayload['userId'])) {
+    try {
+        $orderService = new OrderService(new OrderRepository(), new EventModelBuilderService());
+        $headerCartOrder = $orderService->getPendingOrderForUser((int) $authPayload['userId']);
+    } catch (\Throwable $e) {
+        $headerCartOrder = null;
+    }
+}
+
+if (!($headerCartOrder instanceof Order)) {
+    $headerCartOrder = null;
+}
+
+$headerCartCount = $headerCartOrder ? $headerCartOrder->getItemCount() : 0;
+$headerCartTotal = $headerCartOrder ? $headerCartOrder->getTotalPrice() : 0.0;
+$currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+
+function getNavClass($path, $currentPath)
+{
+    $baseClasses = 'no-underline font-bold text-base py-2.5 px-[18px] transition-all duration-200 rounded-[25px]';
+
+    if ($currentPath === $path) {
+        return $baseClasses . ' bg-[#2F80ED] text-white shadow-[0_4px_10px_rgba(47,128,237,0.3)]';
     }
 
-    .header-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 0 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
+    return $baseClasses . ' text-black hover:bg-[#f5f5f5]';
+}
+?>
 
-    .header-logo img {
-        height: 40px; /* Adjust based on your actual logo size */
-        display: block;
-    }
-
-    .main-nav {
-        display: flex;
-        align-items: center;
-        gap: 15px; /* Spacing between links */
-    }
-
-    .nav-link {
-        text-decoration: none;
-        color: #000;
-        font-weight: 700;
-        font-size: 1rem;
-        padding: 10px 18px;
-        transition: all 0.2s;
-        border-radius: 25px; /* Pill shape for hover effects */
-    }
-
-    .nav-link:hover {
-        background-color: #f5f5f5;
-    }
-
-    .nav-link.nav-active {
-        background-color: #2F80ED; /* Bright Blue */
-        color: white;
-        box-shadow: 0 4px 10px rgba(47, 128, 237, 0.3);
-    }
-
-    .nav-link.nav-active:hover {
-        background-color: #1c6ddb;
-    }
-
-    .cart-link {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .cart-icon-wrapper {
-        position: relative;
-        display: flex;
-        align-items: center;
-    }
-
-    .cart-icon {
-        width: 24px;
-        height: 24px;
-    }
-
-    .cart-badge {
-        position: absolute;
-        top: -8px;
-        right: -8px;
-        background-color: #E63946;
-        color: white;
-        font-size: 0.7rem;
-        font-weight: bold;
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 2px solid #fff;
-    }
-</style>
-
-<header class="main-header">
-    <div class="header-container">
-        <a href="/" class="header-logo">
-            <img src="/assets/img/homepage/logo.svg" alt="Haarlem Festival">
+<header class="bg-white border-b border-[#f0f0f0] py-[15px] font-sans">
+    <div class="mx-auto flex max-w-[1200px] items-center justify-between px-5">
+        <a href="/" class="block">
+            <img src="/assets/img/homepage/logo.svg" alt="Haarlem Festival" class="block h-10">
         </a>
 
-        <nav class="main-nav">
-            <?php $currentPage = $currentPage ?? 'home'; ?>
-            <a href="/" class="nav-link <?= $currentPage === 'home' ? 'nav-active' : '' ?>">Home</a>
-            <a href="/dance" class="nav-link <?= $currentPage === 'dance' ? 'nav-active' : '' ?>">Dance</a>
-            <a href="/jazz" class="nav-link <?= $currentPage === 'jazz' ? 'nav-active' : '' ?>">Jazz</a>
-            <a href="/yummy" class="nav-link <?= $currentPage === 'yummy' ? 'nav-active' : '' ?>">Yummy</a>
-            <a href="/stories" class="nav-link <?= $currentPage === 'stories' ? 'nav-active' : '' ?>">Stories</a>
-            <a href="/history" class="nav-link <?= $currentPage === 'history' ? 'nav-active' : '' ?>">History</a>
-            <?php if (!empty($isLoggedIn)): ?>
-                <a class="topbar-link" href="/account/manage" title="Manage account" aria-label="Manage account">
+        <nav class="flex items-center gap-[15px]">
+            <a href="/" class="<?= getNavClass('/', $currentPath) ?>">Home</a>
+            <a href="/dance" class="<?= getNavClass('/dance', $currentPath) ?>">Dance</a>
+            <a href="/jazz" class="<?= getNavClass('/jazz', $currentPath) ?>">Jazz</a>
+            <a href="/yummy" class="<?= getNavClass('/yummy', $currentPath) ?>">Yummy</a>
+            <a href="/stories" class="<?= getNavClass('/stories', $currentPath) ?>">Stories</a>
+            <a href="/history" class="<?= getNavClass('/history', $currentPath) ?>">History</a>
+
+            <button
+                type="button"
+                id="cartToggleBtn"
+                class="<?= getNavClass('/cart', $currentPath) ?> flex items-center gap-2 border-0 bg-transparent cursor-pointer"
+                aria-haspopup="dialog"
+                aria-controls="cartOverlay"
+                aria-expanded="false"
+            >
+                Program
+                <span class="relative flex items-center">
+                    <img src="/assets/img/headerfooter/cart.svg" alt="Cart" class="block h-5 w-5 min-w-[20px] flex-none object-contain">
+                    <span
+                        id="cartBadge"
+                        class="absolute -top-2 -right-2 flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 border-white bg-[#E63946] text-[0.7rem] font-bold text-white"
+                    >
+                        <?= (int) $headerCartCount ?>
+                    </span>
+                </span>
+            </button>
+
+            <?php if ($headerIsLoggedIn): ?>
+                <a
+                    class="inline-flex items-center gap-2 no-underline text-black font-bold text-[0.95rem] py-2 px-3 rounded-[25px] transition-all duration-200 hover:bg-[#f5f5f5]"
+                    href="/account/manage"
+                    title="Manage account"
+                    aria-label="Manage account"
+                >
                     <img
-                        class="topbar-avatar"
-                        src="<?php echo htmlspecialchars($profilePicturePath ?: '/assets/img/default-user.png'); ?>"
-                        alt="Account">
+                        class="block h-8 w-8 min-w-[32px] rounded-full object-cover"
+                        src="<?= htmlspecialchars($headerProfilePicturePath) ?>"
+                        onerror="this.onerror=null;this.src='/assets/img/default-user.png';"
+                        alt="Account"
+                    >
                     <span>Account</span>
                 </a>
+                <a href="/logout" class="<?= getNavClass('/logout', $currentPath) ?>">Logout</a>
             <?php else: ?>
-                <a class="topbar-link" href="/login">Login</a>
+                <a href="/login" class="<?= getNavClass('/login', $currentPath) ?>">Login</a>
             <?php endif; ?>
-            <a href="/program" class="nav-link cart-link <?= $currentPage === 'program' ? 'nav-active' : '' ?>">
-                Program
-                <div class="cart-icon-wrapper">
-                    <img src="/assets/img/headerfooter/cart.svg" alt="Cart" class="cart-icon">
-                    <span class="cart-badge"><?= (int)($cartCount ?? 0) ?></span>
-                </div>
-            </a>
+
+            <?php if ($headerIsAdmin): ?>
+                <a href="/cms" class="<?= getNavClass('/cms', $currentPath) ?>">CMS</a>
+            <?php endif; ?>
         </nav>
     </div>
 </header>
+
+<?php require __DIR__ . '/cart.php'; ?>

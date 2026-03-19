@@ -2,16 +2,15 @@
 
 namespace App\Models;
 
-class JazzEvent
+class JazzEvent extends Event
 {
-    public int $event_id;
-    public string $title;
-    public string $event_type;
-
     public string $start_date;
     public string $end_date;
 
     public string $location;
+    public ?int $venue_id;
+    public string $venue_name;
+    public ?int $artist_id;
     public string $artist_name;
 
     public ?string $img_background;
@@ -22,14 +21,20 @@ class JazzEvent
     /** Build from the associative array returned by PDO::FETCH_ASSOC */
     public function __construct(array $row)
     {
-        $this->event_id = (int)($row['event_id'] ?? 0);
-        $this->title = (string)($row['title'] ?? '');
-        $this->event_type = (string)($row['event_type'] ?? 'jazz');
+        parent::__construct($row);
+        if ($this->event_type === '') {
+            $this->event_type = 'jazz';
+        }
 
         $this->start_date = (string)($row['start_date'] ?? '');
         $this->end_date = (string)($row['end_date'] ?? '');
 
-        $this->location = (string)($row['location'] ?? '');
+        $this->venue_id = isset($row['venue_id']) ? (int)$row['venue_id'] : null;
+        $this->venue_name = (string)($row['venue_name'] ?? '');
+        $this->location = $this->venue_name !== ''
+            ? $this->venue_name
+            : (string)($row['location'] ?? '');
+        $this->artist_id = isset($row['artist_id']) ? (int)$row['artist_id'] : null;
         $this->artist_name = (string)($row['artist_name'] ?? '');
 
         $this->img_background = isset($row['img_background']) ? (string)$row['img_background'] : null;

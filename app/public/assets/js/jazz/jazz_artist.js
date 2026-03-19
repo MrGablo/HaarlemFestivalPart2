@@ -5,8 +5,27 @@
   if (tabs.length === 0 || panels.length === 0) return;
 
   function setActive(tabKey, pushUrl = true) {
-    tabs.forEach(t => t.classList.toggle('is-active', t.dataset.artistTab === tabKey));
-    panels.forEach(p => p.classList.toggle('is-hidden', p.dataset.artistPanel !== tabKey));
+    tabs.forEach((t) => {
+      const isActive = t.dataset.artistTab === tabKey;
+      const activeClass = t.dataset.activeClass || '';
+      const inactiveClass = t.dataset.inactiveClass || '';
+
+      if (activeClass) {
+        t.classList.remove(...activeClass.split(' '));
+      }
+      if (inactiveClass) {
+        t.classList.remove(...inactiveClass.split(' '));
+      }
+
+      if (isActive && activeClass) {
+        t.classList.add(...activeClass.split(' '));
+      }
+      if (!isActive && inactiveClass) {
+        t.classList.add(...inactiveClass.split(' '));
+      }
+    });
+
+    panels.forEach(p => p.classList.toggle('hidden', p.dataset.artistPanel !== tabKey));
 
     if (pushUrl) {
       const url = new URL(window.location.href);

@@ -8,10 +8,12 @@ use App\Repositories\UserRepository;
 class UserService
 {
     private UserRepository $users; //change name to user repository 
+    private EmailService $emails;
 
     public function __construct()
     {
         $this->users = new UserRepository();
+        $this->emails = new EmailService();
     }
 
     public function getAccountById(int $userId): ?UserModel
@@ -30,6 +32,7 @@ class UserService
         $lastName = trim((string)($data['lastName'] ?? ''));
         $email = trim((string)($data['email'] ?? ''));
         $newPassword = (string)($data['password'] ?? '');
+        $hasPasswordReset = $newPassword !== '';
 
         if ($firstName === '' || $lastName === '' || $email === '') {
             throw new \Exception('firstName, lastName and email are required.');
@@ -52,7 +55,7 @@ class UserService
         $existingUser->lastName = $lastName;
         $existingUser->email = $email;
 
-        if ($newPassword !== '') {
+        if ($hasPasswordReset) {
             $existingUser->password_hash = password_hash($newPassword, PASSWORD_DEFAULT);
         }
 
@@ -64,7 +67,18 @@ class UserService
 
         $this->users->updateUser($userId, $existingUser);
 
-        $this->sendAccountUpdateEmail($existingUser->email, $existingUser->firstName);
+        if ($hasPasswordReset) {
+            $sent = $this->emails->sendPasswordResetConfirmation($existingUser->email, $existingUser->firstName);
+            if (!$sent) {
+                error_log('Password reset confirmation email not sent for user id ' . $userId . ' (' . $existingUser->email . ')');
+            }
+            return;
+        }
+
+        $sent = $this->emails->sendAccountUpdateConfirmation($existingUser->email, $existingUser->firstName);
+        if (!$sent) {
+            error_log('Account update confirmation email not sent for user id ' . $userId . ' (' . $existingUser->email . ')');
+        }
     }
 
     public function deleteAccount(int $userId, array $data): void
@@ -143,16 +157,5 @@ class UserService
 
         // 4) Otherwise keep current
         return $currentPath;
-    }
-
-
-
-    private function sendAccountUpdateEmail(string $email, string $firstName): void
-    {
-        $subject = 'Account updated';
-        $message = "Hi {$firstName},\n\nYour account details were updated successfully.";
-        $headers = 'From: no-reply@haarlemfestival.local';
-
-        @mail($email, $subject, $message, $headers);
     }
 }

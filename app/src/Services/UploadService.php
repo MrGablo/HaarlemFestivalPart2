@@ -8,18 +8,18 @@ final class UploadService
 {
     /**
      * Store an uploaded image into /public/assets/img/<section>/<folder>/
-     * Returns relative path: assets/img/<section>/<folder>/<file>.<ext>
+     * Returns relative path: assets/img/<section>/<folder>/<random>.<ext>
      *
-     * @param array $file The $_FILES['file'] array
-     * @param string $section e.g. 'jazz', 'history', 'dance'
-     * @param string $folder e.g. 'album', 'detail', 'events', 'uploads'
-     * @param string|null $desiredName Form-controlled base name (without extension)
+     * If $oldPathToDelete is provided, it will be deleted after successful upload
+     * (only if it points inside the same section/folder).
      */
     public function storeImage(
         array $file,
         string $section = 'global',
         string $folder = 'uploads',
-        ?string $desiredName = null
+        ?string $desiredName = null,              // kept for compatibility, ignored by default now
+        bool $failIfExists = false,               // kept for compatibility, ignored by default now
+        ?string $oldPathToDelete = null           // repurposed: delete old image after upload
     ): string {
         if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
             throw new \Exception('Upload error.');
@@ -46,48 +46,70 @@ final class UploadService
             throw new \Exception('Unable to create upload directory.');
         }
 
-        // Decide filename
-        $base = $this->slug((string)$desiredName);
-        if ($base === '') {
-            // fallback: original filename without extension
-            $base = $this->slug(pathinfo($originalName, PATHINFO_FILENAME));
-        }
-        if ($base === '') {
-            // final fallback
-            $base = 'image';
-        }
-
-        // Ensure unique filename (image.webp, image-2.webp, image-3.webp...)
-        $fileName = $this->uniqueFileName($targetDir, $base, $extension);
-
+        //  Always generate a unique random name
+        $fileName = $this->randomName() . '.' . $extension;
         $targetPath = $targetDir . '/' . $fileName;
+
+        // Extremely unlikely, but just in case
+        $tries = 0;
+        while (file_exists($targetPath)) {
+            $tries++;
+            if ($tries > 5) {
+                throw new \Exception('Unable to choose a unique filename.');
+            }
+            $fileName = $this->randomName() . '.' . $extension;
+            $targetPath = $targetDir . '/' . $fileName;
+        }
 
         if (!move_uploaded_file($tmpName, $targetPath)) {
             throw new \Exception('Failed to move uploaded file.');
         }
 
-        return 'assets/img/' . $section . '/' . $folder . '/' . $fileName;
+        $relative = 'assets/img/' . $section . '/' . $folder . '/' . $fileName;
+
+        // ✅ Delete previous image if provided (only if it is in the same section/folder)
+        if ($oldPathToDelete) {
+            $oldRel = ltrim($oldPathToDelete, '/');
+            $prefix = 'assets/img/' . $section . '/' . $folder . '/';
+
+            if (str_starts_with($oldRel, $prefix)) {
+                $oldAbs = $targetDir . '/' . basename($oldRel);
+
+                // Do not delete the new one by mistake
+                if ($oldAbs !== $targetPath && file_exists($oldAbs)) {
+                    @unlink($oldAbs);
+                }
+            }
+        }
+
+        return $relative;
     }
 
-    private function uniqueFileName(string $dir, string $base, string $ext): string
+    public function deleteImage(?string $path, string $section = 'global', string $folder = 'uploads'): void
     {
-        $candidate = $base . '.' . $ext;
-        if (!file_exists($dir . '/' . $candidate)) {
-            return $candidate;
+        if ($path === null || trim($path) === '') {
+            return;
         }
 
-        $i = 2;
-        while (true) {
-            $candidate = $base . '-' . $i . '.' . $ext;
-            if (!file_exists($dir . '/' . $candidate)) {
-                return $candidate;
-            }
-            $i++;
-            if ($i > 9999) {
-                // extremely unlikely unless dir is full of collisions
-                throw new \Exception('Unable to choose a unique filename.');
-            }
+        $section = $this->slug($section) ?: 'global';
+        $folder = $this->slug($folder) ?: 'uploads';
+        $relative = ltrim($path, '/');
+        $prefix = 'assets/img/' . $section . '/' . $folder . '/';
+
+        if (!str_starts_with($relative, $prefix)) {
+            return;
         }
+
+        $absolute = __DIR__ . '/../../public/' . $relative;
+        if (is_file($absolute)) {
+            @unlink($absolute);
+        }
+    }
+
+    private function randomName(): string
+    {
+        // 16 bytes => 32 hex chars (good enough)
+        return bin2hex(random_bytes(16));
     }
 
     private function slug(string $s): string

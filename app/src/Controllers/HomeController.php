@@ -3,32 +3,48 @@
 namespace App\Controllers;
 
 use App\Config;
-use App\Repositories\Interfaces\IHomeRepository;
-use App\Repositories\HomeRepository;
+use App\Repositories\PageRepository;
+use App\Services\HomeService;
 use App\Utils\AuthSessionData;
+use App\Utils\Session;
 
 class HomeController
 {
-    private IHomeRepository $homeRepository;
+    private HomeService $homeService;
 
     public function __construct()
     {
-        $this->homeRepository = new HomeRepository();
+        $this->homeService = new HomeService(new PageRepository());
     }
 
-    public function home()
+    public function home(): void
     {
-        \App\Utils\Session::ensureStarted();
+        Session::ensureStarted();
 
-        // Get data from Azure
-        $content = $this->homeRepository->getHomePageContent();
-        $auth = AuthSessionData::read();
-        $isLoggedIn = $auth !== null;
-        $profilePicturePath = $auth['profilePicturePath'] ?? Config::DEFAULT_USER_PROFILE_IMAGE_PATH;
-        $currentPage = 'home';
-        $cartCount = 0; // TODO: from cart/session when implemented
+        try {
+            // get viewmodel 
+            $vm = $this->homeService->getHomePageViewModel();
 
-        // 2. Load the file from the public folder
-        require __DIR__ . '/../Views/pages/home.php';
+            // extract data for the view
+            $content = $vm->content;
+            $categories = $vm->categories;
+
+            // auth  
+            $auth = AuthSessionData::read();
+            $isLoggedIn = $auth !== null;
+            $profilePicturePath = $auth['profilePicturePath'] ?? Config::DEFAULT_USER_PROFILE_IMAGE_PATH;
+
+            // Load the view
+            require __DIR__ . '/../Views/pages/home.php';
+
+        } catch (\Throwable $e) {
+            $errors = ['general' => $e->getMessage()];
+            $content = [];
+            $categories = [];
+            $isLoggedIn = false;
+            $profilePicturePath = Config::DEFAULT_USER_PROFILE_IMAGE_PATH;
+
+            require __DIR__ . '/../Views/pages/home.php';
+        }
     }
 }

@@ -18,15 +18,20 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
                 e.event_id,
                 e.title,
                 e.event_type,
+                e.availability,
                 j.start_date,
                 j.end_date,
-                j.location,
-                j.artist_name,
+                j.venue_id,
+                v.name AS venue_name,
+                j.artist_id,
+                a.name AS artist_name,
                 j.img_background,
                 j.price,
                 j.page_id
             FROM Event e
             JOIN JazzEvent j ON j.event_id = e.event_id
+            LEFT JOIN Artist a ON a.artist_id = j.artist_id
+            LEFT JOIN Venue v ON v.venue_id = j.venue_id
             WHERE e.event_type = 'jazz'
             ORDER BY j.start_date ASC
         ";
@@ -44,15 +49,20 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
                 e.event_id,
                 e.title,
                 e.event_type,
+                e.availability,
                 j.start_date,
                 j.end_date,
-                j.location,
-                j.artist_name,
+                j.venue_id,
+                v.name AS venue_name,
+                j.artist_id,
+                a.name AS artist_name,
                 j.img_background,
                 j.price,
                 j.page_id
             FROM Event e
             JOIN JazzEvent j ON j.event_id = e.event_id
+            LEFT JOIN Artist a ON a.artist_id = j.artist_id
+            LEFT JOIN Venue v ON v.venue_id = j.venue_id
             WHERE e.event_id = :id AND e.event_type = 'jazz'
             LIMIT 1
         ");
@@ -62,56 +72,106 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
         return $row ? new JazzEvent($row) : null;
     }
 
+    public function createJazzEvent(JazzEvent $event): int
+    {
+        $pdo = $this->getConnection();
+        $pdo->beginTransaction();
+
+        try {
+            $stmtEvent = $pdo->prepare("\n                INSERT INTO Event (title, event_type, availability)\n                VALUES (:title, 'jazz', :availability)\n            ");
+            $stmtEvent->execute([
+                ':title' => $event->title,
+                ':availability' => $event->availability,
+            ]);
+
+            $eventId = (int)$pdo->lastInsertId();
+            if ($eventId <= 0) {
+                throw new \RuntimeException('Unable to create parent event.');
+            }
+
+            $stmtJazz = $pdo->prepare("
+                INSERT INTO JazzEvent (
+                    event_id, start_date, end_date,
+                    venue_id, artist_id,
+                    img_background, price, page_id
+                ) VALUES (
+                    :event_id, :start_date, :end_date,
+                    :venue_id, :artist_id,
+                    :img_background, :price, :page_id
+                )
+            ");
+
+            $stmtJazz->execute([
+                ':event_id'       => $eventId,
+                ':start_date'     => $event->start_date,
+                ':end_date'       => $event->end_date,
+                ':venue_id'       => $event->venue_id,
+                ':artist_id'      => $event->artist_id,
+                ':img_background' => $event->img_background,
+                ':price'          => $event->price,
+                ':page_id'        => $event->page_id,
+            ]);
+
+            $pdo->commit();
+            return $eventId;
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
+    }
+
     public function updateJazzEvent(JazzEvent $event): void
     {
         $pdo = $this->getConnection();
         $pdo->beginTransaction();
 
         try {
-            // Update Event table (title)
+            //  1) Ensure the parent event exists and is jazz (MATCH check, not AFFECTED rows)
+            $check = $pdo->prepare("
+            SELECT 1
+            FROM Event
+            WHERE event_id = :id AND event_type = 'jazz'
+            LIMIT 1
+        ");
+            $check->execute([':id' => $event->event_id]);
+
+            if (!$check->fetchColumn()) {
+                throw new \RuntimeException('Event not found or not a jazz event.');
+            }
+
+            //  2) Update Event (no rowCount guard)
             $stmt1 = $pdo->prepare("
-                UPDATE Event
-                SET title = :title
-                WHERE event_id = :id AND event_type = 'jazz'
-            ");
+            UPDATE Event
+            SET title = :title
+            WHERE event_id = :id
+        ");
             $stmt1->execute([
                 ':title' => $event->title,
                 ':id' => $event->event_id,
             ]);
 
-            // Optional guard: ensure row exists and is jazz
-            if ($stmt1->rowCount() === 0) {
-                throw new \RuntimeException('Event not found or not a jazz event.');
-            }
-
-            // Update JazzEvent table (details)
+            //  3) Update JazzEvent (no rowCount guard; 0 rows can mean “no changes”)
             $stmt2 = $pdo->prepare("
-                UPDATE JazzEvent
-                SET start_date = :start_date,
-                    end_date = :end_date,
-                    location = :location,
-                    artist_name = :artist_name,
-                    img_background = :img_background,
-                    price = :price,
-                    page_id = :page_id
-                WHERE event_id = :id
-            ");
+            UPDATE JazzEvent
+            SET start_date = :start_date,
+                end_date = :end_date,
+                venue_id = :venue_id,
+                artist_id = :artist_id,
+                img_background = :img_background,
+                price = :price,
+                page_id = :page_id
+            WHERE event_id = :id
+        ");
             $stmt2->execute([
-                ':start_date' => $event->start_date,
-                ':end_date' => $event->end_date,
-                ':location' => $event->location,
-                ':artist_name' => $event->artist_name,
-                ':img_background' => $event->img_background, // null ok
-                ':price' => $event->price,
-                ':page_id' => $event->page_id,               // null ok
-                ':id' => $event->event_id,
+                ':start_date'     => $event->start_date,
+                ':end_date'       => $event->end_date,
+                ':venue_id'       => $event->venue_id,
+                ':artist_id'      => $event->artist_id,
+                ':img_background' => $event->img_background,
+                ':price'          => $event->price,
+                ':page_id'        => $event->page_id,
+                ':id'             => $event->event_id,
             ]);
-
-            if ($stmt2->rowCount() === 0) {
-                // If you want to allow "no changes", remove this check.
-                // Keeping it helps catch missing JazzEvent row.
-                // throw new \RuntimeException('JazzEvent row not found for this event_id.');
-            }
 
             $pdo->commit();
         } catch (\Throwable $e) {
@@ -134,15 +194,20 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
             e.event_id,
             e.title,
             e.event_type,
+            e.availability,
             j.start_date,
             j.end_date,
-            j.location,
-            j.artist_name,
+            j.venue_id,
+            v.name AS venue_name,
+            j.artist_id,
+            a.name AS artist_name,
             j.img_background,
             j.price,
             j.page_id
         FROM Event e
         JOIN JazzEvent j ON j.event_id = e.event_id
+        LEFT JOIN Artist a ON a.artist_id = j.artist_id
+        LEFT JOIN Venue v ON v.venue_id = j.venue_id
         WHERE e.event_type = 'jazz'
           AND e.event_id IN ($placeholders)
         ORDER BY j.start_date ASC
@@ -153,5 +218,71 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
 
         $rows = $stmt->fetchAll() ?: [];
         return array_map(fn(array $r) => new \App\Models\JazzEvent($r), $rows);
+    }
+
+    public function getJazzEventsByPageId(int $pageId): array
+    {
+        if ($pageId <= 0) {
+            return [];
+        }
+
+        $pdo = $this->getConnection();
+
+        $stmt = $pdo->prepare("
+            SELECT
+                e.event_id,
+                e.title,
+                e.event_type,
+                e.availability,
+                j.start_date,
+                j.end_date,
+                j.venue_id,
+                v.name AS venue_name,
+                j.artist_id,
+                a.name AS artist_name,
+                j.img_background,
+                j.price,
+                j.page_id
+            FROM Event e
+            JOIN JazzEvent j ON j.event_id = e.event_id
+            LEFT JOIN Artist a ON a.artist_id = j.artist_id
+            LEFT JOIN Venue v ON v.venue_id = j.venue_id
+            WHERE e.event_type = 'jazz'
+              AND j.page_id = :page_id
+            ORDER BY j.start_date ASC
+        ");
+
+        $stmt->execute([':page_id' => $pageId]);
+
+        $rows = $stmt->fetchAll() ?: [];
+        return array_map(fn(array $r) => new JazzEvent($r), $rows);
+    }
+
+    public function deleteJazzEventById(int $eventId): bool
+    {
+        $pdo = $this->getConnection();
+        $pdo->beginTransaction();
+
+        try {
+            $check = $pdo->prepare("\n                SELECT 1\n                FROM Event\n                WHERE event_id = :id AND event_type = 'jazz'\n                LIMIT 1\n            ");
+            $check->execute([':id' => $eventId]);
+
+            if (!$check->fetchColumn()) {
+                $pdo->rollBack();
+                return false;
+            }
+
+            $stmtJazz = $pdo->prepare("DELETE FROM JazzEvent WHERE event_id = :id");
+            $stmtJazz->execute([':id' => $eventId]);
+
+            $stmtEvent = $pdo->prepare("DELETE FROM Event WHERE event_id = :id AND event_type = 'jazz'");
+            $stmtEvent->execute([':id' => $eventId]);
+
+            $pdo->commit();
+            return true;
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
     }
 }

@@ -9,6 +9,7 @@
 </head>
 
 <body class="min-h-screen bg-slate-100 antialiased">
+  <?php include __DIR__ . '/../partials/header.php'; ?>
   <main class="min-h-screen flex items-center justify-center p-4">
     <section class="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl ring-1 ring-slate-200">
       <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Sign in</h1>
@@ -30,6 +31,9 @@
           <input name="password" type="password"
             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             autocomplete="current-password" required>
+          <div class="mt-2 text-right">
+            <a href="/forgot-password" class="text-sm font-medium text-blue-600 hover:text-blue-700">Forgot password?</a>
+          </div>
         </div>
 
         <button type="submit"
@@ -44,6 +48,7 @@
       </div>
     </section>
   </main>
+  <?php include __DIR__ . '/../partials/footer.php'; ?>
 </body>
 
 </html>
