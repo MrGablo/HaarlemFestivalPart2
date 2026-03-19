@@ -93,6 +93,9 @@
     if (!grid) return;
 
     const cards = Array.from(grid.querySelectorAll('.event-card'));
+    cards.forEach((card, index) => {
+        card.dataset.originalIndex = String(index);
+    });
     const hallBtns = Array.from(document.querySelectorAll('.hall-chip'));
     const dayBtns = Array.from(document.querySelectorAll('.day-chip'));
 
@@ -145,6 +148,16 @@
         return hallOk && dayOk;
     }
 
+    function cardStartTs(card) {
+        const value = Number(card.dataset.startTs || 0);
+        return Number.isFinite(value) ? value : 0;
+    }
+
+    function cardOriginalIndex(card) {
+        const value = Number(card.dataset.originalIndex || 0);
+        return Number.isFinite(value) ? value : 0;
+    }
+
     function apply() {
         const visible = [];
 
@@ -155,16 +168,32 @@
             if (ok) visible.push(c);
         });
 
-        // 2) collapse/expand
-        if (!expanded && visible.length > COLLAPSE_LIMIT) {
-            visible.forEach((c, i) => c.classList.toggle('hidden', i >= COLLAPSE_LIMIT));
+        // 2) order visible cards
+        const ordered = visible.slice().sort((a, b) => {
+            if (activeHall === 'By date') {
+                const tsDiff = cardStartTs(a) - cardStartTs(b);
+                if (tsDiff !== 0) {
+                    return tsDiff;
+                }
+            }
+
+            return cardOriginalIndex(a) - cardOriginalIndex(b);
+        });
+
+        ordered.forEach((card) => {
+            grid.appendChild(card);
+        });
+
+        // 3) collapse/expand
+        if (!expanded && ordered.length > COLLAPSE_LIMIT) {
+            ordered.forEach((c, i) => c.classList.toggle('hidden', i >= COLLAPSE_LIMIT));
             if (toggleMoreBtn) {
                 toggleMoreBtn.classList.remove('hidden');
                 toggleMoreBtn.textContent = 'Show more';
             }
         } else {
             if (toggleMoreBtn) {
-                if (visible.length > COLLAPSE_LIMIT) {
+                if (ordered.length > COLLAPSE_LIMIT) {
                     toggleMoreBtn.classList.remove('hidden');
                     toggleMoreBtn.textContent = expanded ? 'Show less' : 'Show more';
                 } else {

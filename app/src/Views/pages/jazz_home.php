@@ -53,7 +53,8 @@ declare(strict_types=1);
             <?php foreach ($vm->events as $ev): ?>
                 <article class="event-card"
                     data-hall="<?= htmlspecialchars((string)($ev['hall'] ?? '')) ?>"
-                    data-day="<?= htmlspecialchars((string)($ev['day_key'] ?? '')) ?>">
+                    data-day="<?= htmlspecialchars((string)($ev['day_key'] ?? '')) ?>"
+                    data-start-ts="<?= (int)($ev['start_ts'] ?? 0) ?>">
 
                     <a class="relative block overflow-hidden rounded-2xl text-white no-underline"
                         href="<?= !empty($ev['page_id'])
@@ -69,6 +70,9 @@ declare(strict_types=1);
                             <div class="opacity-90">
                                 <?= htmlspecialchars((string)($ev['display_date'] ?? '')) ?>
                                 <?= htmlspecialchars((string)($ev['display_time'] ?? '')) ?>
+                            </div>
+                            <div class="text-sm font-semibold opacity-95">
+                                <?= htmlspecialchars((string)($ev['location'] ?? '')) ?>
                             </div>
                         </div>
                     </a>
