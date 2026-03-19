@@ -89,7 +89,7 @@ $intro = $vm->intro;
             <span class="min-w-0 flex-1 text-xl font-bold uppercase leading-tight text-dance-on-dark md:text-2xl"><?= htmlspecialchars((string) ($aa['label'] ?? '')) ?></span>
             <span class="shrink-0 text-base font-bold uppercase text-dance-on-dark"><?= htmlspecialchars((string) ($aa['note'] ?? '')) ?></span>
             <span class="w-dance-slot-price shrink-0 text-right text-xl font-bold text-dance-on-dark"><?= htmlspecialchars((string) ($aa['priceLabel'] ?? '')) ?></span>
-            <?php $eventId = $aa['eventId']; $orderItemAddPath = $vm->orderItemAddPath; include __DIR__ . '/dance_ticket_button.php'; ?>
+            <?php $eventId = $aa['eventId']; include __DIR__ . '/dance_ticket_button.php'; ?>
           </div>
         </div>
       <?php endif; ?>
@@ -100,7 +100,7 @@ $intro = $vm->intro;
           <div class="mb-3 flex min-h-dance-row items-center gap-4 rounded bg-dance-accent px-4 py-2">
             <span class="min-w-0 flex-1 text-lg font-bold uppercase leading-tight text-dance-on-dark md:text-2xl"><?= htmlspecialchars($day['passLabel']) ?></span>
             <span class="w-dance-slot-price shrink-0 text-right text-xl font-bold text-dance-on-dark"><?= htmlspecialchars($day['passPriceLabel']) ?></span>
-            <?php $eventId = $day['passEventId']; $orderItemAddPath = $vm->orderItemAddPath; include __DIR__ . '/dance_ticket_button.php'; ?>
+            <?php $eventId = $day['passEventId']; include __DIR__ . '/dance_ticket_button.php'; ?>
           </div>
           <?php foreach ($day['sessions'] as $sess): ?>
             <div class="mb-3">
@@ -117,7 +117,7 @@ $intro = $vm->intro;
                 <span class="w-full shrink-0 text-left text-xl font-bold leading-snug text-dance-on-dark md:w-dance-slot-time"><?= htmlspecialchars((string) ($sess['timeRange'] ?? '')) ?></span>
                 <span class="w-full shrink-0 truncate text-base font-bold leading-normal text-dance-text-strong underline md:w-dance-slot-venue"><?= htmlspecialchars((string) ($sess['venueName'] ?? '')) ?></span>
                 <span class="w-full shrink-0 text-right text-xl font-bold leading-snug text-dance-on-dark md:w-dance-slot-price"><?= htmlspecialchars((string) ($sess['priceLabel'] ?? '')) ?></span>
-                <?php $eventId = $sess['eventId']; $orderItemAddPath = $vm->orderItemAddPath; include __DIR__ . '/dance_ticket_button.php'; ?>
+                <?php $eventId = $sess['eventId']; include __DIR__ . '/dance_ticket_button.php'; ?>
               </div>
             </div>
           <?php endforeach; ?>

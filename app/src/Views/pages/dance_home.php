@@ -13,7 +13,7 @@ declare(strict_types=1);
     <title><?= htmlspecialchars((string) $vm->pageTitle) ?> – Haarlem Festival</title>
     <?php /* Tailwind CDN must load first — then theme (otherwise tailwind is undefined and design breaks). */ ?>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="<?= htmlspecialchars(\App\Config::publicAssetUrl('assets/js/dance/tailwind.config.js')) ?>"></script>
+    <script src="/assets/js/dance/tailwind.config.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&family=Quattrocento:wght@400;700&display=swap" rel="stylesheet">
@@ -23,10 +23,7 @@ declare(strict_types=1);
     </style>
 </head>
 
-<body
-    class="min-h-screen bg-dance-bg text-dance-text text-sm font-['Montserrat',sans-serif]"
-    data-order-item-add-path="<?= htmlspecialchars((string) $vm->orderItemAddPath) ?>"
->
+<body class="min-h-screen bg-dance-bg text-dance-text text-sm font-['Montserrat',sans-serif]">
     <?php include __DIR__ . '/../partials/header.php'; ?>
     <?php require __DIR__ . '/../partials/dance_home_content.php'; ?>
 
@@ -40,7 +37,7 @@ declare(strict_types=1);
         <span class="block text-xs text-dance-toast-subtle">Click to open shopping cart</span>
     </button>
 
-    <script src="<?= htmlspecialchars(\App\Config::publicAssetUrl('assets/js/dance/dance_home.js')) ?>"></script>
+    <script src="/assets/js/dance/dance_home.js"></script>
     <?php $danceFooter = true; include __DIR__ . '/../partials/footer.php'; ?>
 </body>
 

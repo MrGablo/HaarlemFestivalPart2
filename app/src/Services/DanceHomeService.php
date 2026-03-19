@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Config;
 use App\Repositories\DanceHomeRepository;
 use App\Repositories\Interfaces\IPageRepository;
 use App\Utils\Media;
@@ -52,8 +51,6 @@ final class DanceHomeService
     public function buildViewModel(): DanceHomePageViewModel
     {
         $content = $this->pageRepo->getPageContentByType('Dance_Homepage');
-        $danceBase = Config::getDanceBasePath();
-        $orderAdd = Config::getOrderItemAddPath();
 
         $hero = $content['hero'] ?? [];
         $intro = $content['intro'] ?? [];
@@ -104,23 +101,21 @@ final class DanceHomeService
         [$allAccess, $days] = $this->buildTimetableFromRows($rows, $timetableCms);
 
         $pageTitle = (string) ($hero['title'] ?? 'Dance');
-        $heroBgUrl = Config::publicAssetUrl($heroBg);
-        $introImgUrl = Config::publicAssetUrl($introImg);
-        $timetableBgUrl = Config::publicAssetUrl('assets/img/dance-assets/dance-timetable-texture.png');
+        $heroBgUrl = self::webPath($heroBg);
+        $introImgUrl = self::webPath($introImg);
+        $timetableBgUrl = self::webPath('assets/img/dance-assets/dance-timetable-texture.png');
 
         $lineupWithUrls = [];
         foreach ($lineupArtists as $a) {
             $lineupWithUrls[] = [
                 'name' => $a['name'],
-                'imageUrl' => Config::publicAssetUrl($a['imageSrc']),
+                'imageUrl' => self::webPath($a['imageSrc']),
                 'alt' => $a['alt'],
             ];
         }
 
         return new DanceHomePageViewModel(
             $pageTitle,
-            $danceBase,
-            $orderAdd,
             [
                 'titleLine1' => $parts[0],
                 'titleLine2' => $parts[1],
@@ -249,6 +244,12 @@ final class DanceHomeService
     private function formatEuro(float $amount): string
     {
         return '€' . number_format($amount, 2, '.', '');
+    }
+
+    /** Same as Jazz: static files under public/ → URL /assets/... */
+    private static function webPath(string $path): string
+    {
+        return '/' . ltrim(str_replace('\\', '/', $path), '/');
     }
 
     private function normaliseAsset(string $path, string $fallback): string

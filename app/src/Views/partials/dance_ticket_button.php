@@ -2,12 +2,11 @@
 
 declare(strict_types=1);
 
-/** @var string $orderItemAddPath */
 /** @var int $eventId */
 
 ?>
 <?php if ($eventId > 0): ?>
-  <form method="POST" action="<?= htmlspecialchars($orderItemAddPath) ?>" class="ticket-form shrink-0">
+  <form method="POST" action="/order/item/add" class="ticket-form shrink-0">
     <input type="hidden" name="event_id" value="<?= $eventId ?>">
     <button
       type="submit"
