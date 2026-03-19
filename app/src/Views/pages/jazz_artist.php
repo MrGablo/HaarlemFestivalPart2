@@ -18,6 +18,7 @@ use App\Utils\Wysiwyg;
 </head>
 
 <body class="m-0 bg-jazz-dark bg-[#0b0b0b] font-[system-ui,Arial] text-white">
+    <?php include __DIR__ . '/../partials/header.php'; ?>
 
     <div class="mx-auto w-full max-w-jazz-container max-w-[1200px] px-5">
         <?php require __DIR__ . '/../partials/flash_success.php'; ?>
@@ -115,11 +116,16 @@ use App\Utils\Wysiwyg;
                                 <div class="mt-[6px] font-extrabold opacity-90"><?= htmlspecialchars((string)($ev['location'] ?? '')) ?></div>
                             </div>
 
-                            <div class="flex justify-end max-[1200px]:justify-start">
-                                <button class="min-w-40 cursor-pointer rounded-xl border-0 bg-jazz-accent bg-[#f7c600] px-[22px] py-3 font-black text-jazz-accent-text text-[#111]" type="button">
-                                    <?= htmlspecialchars($vm->ticketButtonLabel) ?>
+                            <form method="POST" action="/order/item/add" class="ticket-form flex justify-end max-[1200px]:justify-start">
+                                <input type="hidden" name="event_id" value="<?= (int)($ev['event_id'] ?? 0) ?>">
+                                <button class="min-w-40 cursor-pointer rounded-xl border-0 bg-jazz-accent bg-[#f7c600] px-[22px] py-3 font-black text-jazz-accent-text text-[#111]" type="submit">
+                                    <?php if (isset($ev['price']) && is_numeric($ev['price'])): ?>
+                                        Ticket: <?= htmlspecialchars((string)$ev['price']) ?> p.p
+                                    <?php else: ?>
+                                        <?= htmlspecialchars($vm->ticketButtonLabel) ?>
+                                    <?php endif; ?>
                                 </button>
-                            </div>
+                            </form>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -200,7 +206,18 @@ use App\Utils\Wysiwyg;
 
     </section>
 
+    <button
+        id="cartToast"
+        type="button"
+        class="hidden fixed bottom-6 right-6 z-[1200] rounded-xl bg-zinc-900 px-4 py-3 text-left text-sm text-white shadow-xl ring-1 ring-white/15 transition hover:bg-zinc-800"
+        aria-live="polite"
+    >
+        <span class="block font-semibold">Ticket added to cart</span>
+        <span class="block text-xs text-zinc-300">Click to open shopping cart</span>
+    </button>
+
     <script src="/assets/js/jazz/jazz_artist.js"></script>
+    <?php include __DIR__ . '/../partials/footer.php'; ?>
 </body>
 
 </html>
