@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-/**
- * Event extension for dance tickets: price, venue_id → display name from {@see Venue}.
- */
+/** Dance ticket: price, venue id, location name. */
 final class DanceEvent extends Event
 {
     public ?int $venue_id;

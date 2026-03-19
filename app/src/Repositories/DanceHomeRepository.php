@@ -7,16 +7,9 @@ namespace App\Repositories;
 use App\Framework\Repository;
 use App\Support\VenueSchemaHelper;
 
-/**
- * Dance homepage: timetable and lineup from {@see DanceEvent}, {@see Event}, {@see Venue}.
- */
 final class DanceHomeRepository extends Repository
 {
-    /**
-     * All dance timetable rows for the home page (sessions, day passes, all-access).
-     *
-     * @return list<array<string, mixed>>
-     */
+    /** @return list<array<string, mixed>> */
     public function findDanceTimetableRows(): array
     {
         $pdo = $this->getConnection();
@@ -52,11 +45,7 @@ final class DanceHomeRepository extends Repository
         return is_array($rows) ? $rows : [];
     }
 
-    /**
-     * Headline acts for the lineup grid: distinct session titles from DB (Event.title), by timetable order.
-     *
-     * @return list<array{title: string, sort_order: int}>
-     */
+    /** @return list<array{title: string, sort_order: int}> */
     public function findDanceLineupHeadlines(int $limit = 6): array
     {
         $limit = max(1, min(12, $limit));

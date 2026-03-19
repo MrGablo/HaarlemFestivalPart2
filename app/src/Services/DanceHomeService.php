@@ -9,10 +9,7 @@ use App\Repositories\Interfaces\IPageRepository;
 use App\Utils\Media;
 use App\ViewModels\DanceHomePageViewModel;
 
-/**
- * Builds the Dance homepage ViewModel: timetable, lineup headlines, stats and date range
- * from {@see DanceHomeRepository} (DanceEvent + Event + Venue); hero/intro copy from CMS Page JSON.
- */
+/** Dance home page data: DB timetable/lineup + CMS hero/intro text. */
 final class DanceHomeService
 {
     private const ALLOWED_DANCE_ASSETS = [
@@ -263,12 +260,7 @@ final class DanceHomeService
         return in_array($base, self::ALLOWED_DANCE_ASSETS, true) ? $path : $fallback;
     }
 
-    /**
-     * Lineup names from {@see DanceHomeRepository::findDanceLineupHeadlines} (Event titles of session rows).
-     * Falls back to CMS artists, then static defaults.
-     *
-     * @return list<array{name: string, imageSrc: string, alt: string}>
-     */
+    /** @return list<array{name: string, imageSrc: string, alt: string}> */
     private function buildLineupArtistsFromDatabase(array $lineup): array
     {
         $dbHeadlines = $this->danceRepo->findDanceLineupHeadlines(6);
