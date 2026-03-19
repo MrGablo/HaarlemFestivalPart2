@@ -48,6 +48,9 @@
             <div id="reader" class="mb-4 overflow-hidden outline-none"></div>
 
             <form id="scanForm" method="POST" action="/scanner/process">
+                <?php if (isset($csrfToken)): ?>
+                    <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                <?php endif; ?>
                 <input type="hidden" name="qr_hash" id="qrInput">
             </form>
 
