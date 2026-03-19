@@ -4,6 +4,9 @@ namespace App\ViewModels;
 
 class JazzHomePageViewModel
 {
+    /**
+     * @param array<int, array{value: string, label: string}> $dayTabs
+     */
     public function __construct(
         public string $pageTitle,
         public array $hero,

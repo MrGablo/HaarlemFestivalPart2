@@ -13,10 +13,11 @@
     const allEventsBtn = document.getElementById('allEventsBtn');
 
     const COLLAPSE_LIMIT = 4;
+    const byDateValue = hallBtns[0]?.dataset.hall || 'By date';
 
     // Default: "By date" (first hall tab) + "All Days"
-    let activeHall = hallBtns[0]?.dataset.hall || 'By date';
-    let activeDay = dayBtns.find(b => b.dataset.day === 'All Days')?.dataset.day || 'All Days';
+    let activeHall = byDateValue;
+    let activeDay = dayBtns.find(b => b.dataset.day === 'all')?.dataset.day || dayBtns[0]?.dataset.day || 'all';
     let expanded = false;
 
     function setActive(btns, clicked) {
@@ -49,11 +50,13 @@
     function matches(card) {
         const hall = card.dataset.hall;
         const day = card.dataset.day;
+        const dayName = card.dataset.dayName;
 
         // "By date" means ALL halls (no hall filter)
-        const hallOk = (activeHall === 'By date') ? true : (hall === activeHall);
+        const hallOk = (activeHall === byDateValue) ? true : (hall === activeHall);
 
-        const dayOk = (activeDay === 'All Days') ? true : (day === activeDay);
+        // Match by exact date value, with day-name fallback for legacy content.
+        const dayOk = (activeDay === 'all') ? true : (day === activeDay || dayName === activeDay);
 
         return hallOk && dayOk;
     }
@@ -80,7 +83,7 @@
 
         // 2) order visible cards
         const ordered = visible.slice().sort((a, b) => {
-            if (activeHall === 'By date') {
+            if (activeHall === byDateValue) {
                 const tsDiff = cardStartTs(a) - cardStartTs(b);
                 if (tsDiff !== 0) {
                     return tsDiff;
@@ -142,25 +145,25 @@
     // All Events: reset to By date + All Days + expanded
     allEventsBtn?.addEventListener('click', () => {
         const alreadyFull =
-            (activeHall === 'By date') &&
-            (activeDay === 'All Days');
+            (activeHall === byDateValue) &&
+            (activeDay === 'all');
 
         if (!alreadyFull) {
             // Reset filters to full schedule
-            const byDateBtn = getBtnByData(hallBtns, 'hall', 'By date') || hallBtns[0];
+            const byDateBtn = getBtnByData(hallBtns, 'hall', byDateValue) || hallBtns[0];
             if (byDateBtn) {
                 activeHall = byDateBtn.dataset.hall;
                 setActive(hallBtns, byDateBtn);
             } else {
-                activeHall = 'By date';
+                activeHall = byDateValue;
             }
 
-            const allDaysBtn = getBtnByData(dayBtns, 'day', 'All Days') || dayBtns[0];
+            const allDaysBtn = getBtnByData(dayBtns, 'day', 'all') || dayBtns[0];
             if (allDaysBtn) {
                 activeDay = allDaysBtn.dataset.day;
                 setActive(dayBtns, allDaysBtn);
             } else {
-                activeDay = 'All Days';
+                activeDay = 'all';
             }
         }
 

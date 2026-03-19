@@ -39,11 +39,15 @@ declare(strict_types=1);
 
             <div class="mt-2 flex flex-wrap items-center gap-[14px]">
                 <?php foreach ($vm->dayTabs as $i => $d): ?>
+                    <?php
+                        $dayValue = is_array($d) ? (string)($d['value'] ?? '') : (string)$d;
+                        $dayLabel = is_array($d) ? (string)($d['label'] ?? $dayValue) : (string)$d;
+                    ?>
                     <button type="button" class="day-chip cursor-pointer border-0 bg-transparent px-[6px] py-1 text-lg <?= $i === 0 ? 'opacity-100 underline underline-offset-[6px]' : 'opacity-75' ?>"
                         data-active-class="opacity-100 underline underline-offset-[6px]"
                         data-inactive-class="opacity-75"
-                        data-day="<?= htmlspecialchars((string)$d) ?>">
-                        <?= htmlspecialchars((string)$d) ?>
+                        data-day="<?= htmlspecialchars($dayValue) ?>">
+                        <?= htmlspecialchars($dayLabel) ?>
                     </button>
                 <?php endforeach; ?>
             </div>
@@ -53,7 +57,8 @@ declare(strict_types=1);
             <?php foreach ($vm->events as $ev): ?>
                 <article class="event-card"
                     data-hall="<?= htmlspecialchars((string)($ev['hall'] ?? '')) ?>"
-                    data-day="<?= htmlspecialchars((string)($ev['day_key'] ?? '')) ?>"
+                    data-day="<?= htmlspecialchars((string)($ev['event_date'] ?? $ev['day_key'] ?? '')) ?>"
+                    data-day-name="<?= htmlspecialchars((string)($ev['day_name'] ?? $ev['day_key'] ?? '')) ?>"
                     data-start-ts="<?= (int)($ev['start_ts'] ?? 0) ?>">
 
                     <a class="relative block overflow-hidden rounded-2xl text-white no-underline"
