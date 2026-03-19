@@ -75,10 +75,12 @@ $bg = Media::image($hero['background_image'] ?? null);
   <?php if (!empty($dayTicket['buttons']) && is_array($dayTicket['buttons'])): ?>
     <div class="my-3 flex flex-wrap justify-center gap-[10px]">
       <?php foreach ($dayTicket['buttons'] as $b): ?>
-        <button class="cursor-pointer rounded-[10px] border-0 bg-jazz-accent bg-[#f7c600] px-[18px] py-[10px] font-bold text-jazz-accent-text text-[#111]" type="button"
-            data-pass="<?= htmlspecialchars((string)($b['value'] ?? '')) ?>">
-          <?= htmlspecialchars((string)($b['label'] ?? '')) ?>
-        </button>
+        <form method="POST" action="/order/item/add" class="ticket-form">
+          <input type="hidden" name="event_id" value="<?= (int)($b['event_id'] ?? 0) ?>">
+          <button class="cursor-pointer rounded-[10px] border-0 bg-jazz-accent bg-[#f7c600] px-[18px] py-[10px] font-bold text-jazz-accent-text text-[#111]" type="submit">
+            <?= htmlspecialchars((string)($b['label'] ?? '')) ?>
+          </button>
+        </form>
       <?php endforeach; ?>
     </div>
   <?php endif; ?>
