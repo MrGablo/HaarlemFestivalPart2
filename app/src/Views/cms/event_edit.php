@@ -14,7 +14,10 @@
     <main class="mx-auto max-w-4xl p-4 py-8">
         <section class="rounded-2xl bg-white p-6 shadow-xl ring-1 ring-slate-200">
             <?php
-            $eventId = (int)($event['event_id'] ?? 0);
+            $eventId = (int)(is_object($event) ? ($event->event_id ?? 0) : ($event['event_id'] ?? 0));
+            $eventType = (string)(is_object($event) ? ($event->event_type ?? '') : ($event['event_type'] ?? ''));
+            $eventTitle = (string)(is_object($event) ? ($event->title ?? '') : ($event['title'] ?? ''));
+            $eventAvailability = (int)(is_object($event) ? ($event->availability ?? 0) : ($event['availability'] ?? 0));
             $returnSuffix = $selectedType !== null ? ('?type=' . urlencode($selectedType)) : '';
             ?>
 
@@ -23,7 +26,7 @@
                     <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Edit Event</h1>
                     <p class="mt-1 text-sm text-slate-600">
                         Event ID: <span class="font-medium text-slate-900"><?= $eventId ?></span>
-                        · Type: <span class="font-medium text-slate-900"><?= htmlspecialchars((string)($event['event_type'] ?? '')) ?></span>
+                        · Type: <span class="font-medium text-slate-900"><?= htmlspecialchars($eventType) ?></span>
                     </p>
                 </div>
                 <a href="/cms/events<?= $returnSuffix ?>" class="rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200">
@@ -44,7 +47,7 @@
                         name="title"
                         type="text"
                         required
-                        value="<?= htmlspecialchars((string)($event['title'] ?? '')) ?>"
+                        value="<?= htmlspecialchars($eventTitle) ?>"
                         class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200">
                 </div>
 
@@ -56,7 +59,7 @@
                         min="0"
                         step="1"
                         required
-                        value="<?= (int)($event['availability'] ?? 0) ?>"
+                        value="<?= $eventAvailability ?>"
                         class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200">
                     <p class="mt-1 text-xs text-slate-500">Total amount of available tickets/seats for this event.</p>
                 </div>
