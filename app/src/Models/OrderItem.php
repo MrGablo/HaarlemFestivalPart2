@@ -29,19 +29,23 @@ class OrderItem
 
     public function getUnitPrice(): float
     {
-        if ($this->event instanceof JazzEvent) {
-            return $this->event->price;
-        }
+        if (!$this->event instanceof Event) return 0.0;
 
-        return 0.0;
+        return match (strtolower($this->event->event_type)) {
+            'jazz' => $this->event instanceof JazzEvent ? $this->event->price : 0.0,
+            'dance' => $this->event instanceof DanceEvent ? $this->event->price : 0.0,
+            default => $this->event instanceof GenericEvent ? (float) ($this->event->price ?? 0.0) : 0.0,
+        };
     }
 
     public function getLocation(): string
     {
-        if ($this->event instanceof JazzEvent) {
-            return $this->event->location;
-        }
+        if (!$this->event instanceof Event) return '';
 
-        return '';
+        return match (strtolower($this->event->event_type)) {
+            'jazz' => $this->event instanceof JazzEvent ? $this->event->location : '',
+            'dance' => $this->event instanceof DanceEvent ? $this->event->location : '',
+            default => $this->event instanceof GenericEvent ? $this->event->location : '',
+        };
     }
 }

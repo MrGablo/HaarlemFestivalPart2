@@ -93,21 +93,38 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-slate-700">Location</label>
-                            <input
-                                name="location"
-                                type="text"
-                                value="<?= htmlspecialchars((string)($event->location ?? '')) ?>"
+                            <label class="block text-sm font-medium text-slate-700">Venue</label>
+                            <select
+                                name="venue_id"
+                                required
                                 class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200">
+                                <option value="">Select venue</option>
+                                <?php foreach (($venues ?? []) as $venue): ?>
+                                    <?php $isSelected = ((int)($event->venue_id ?? 0) === (int)$venue->venue_id) ? 'selected' : ''; ?>
+                                    <option value="<?= (int)$venue->venue_id ?>" <?= $isSelected ?>>
+                                        <?= htmlspecialchars((string)$venue->name) ?> (ID <?= (int)$venue->venue_id ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-slate-700">Artist name</label>
-                            <input
-                                name="artist_name"
-                                type="text"
-                                value="<?= htmlspecialchars((string)($event->artist_name ?? '')) ?>"
+                            <label class="block text-sm font-medium text-slate-700">Artist</label>
+                            <select
+                                name="artist_id"
+                                required
                                 class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200">
+                                <option value="">Select artist</option>
+                                <?php foreach (($artists ?? []) as $artist): ?>
+                                    <?php $isSelected = ((int)($event->artist_id ?? 0) === (int)$artist->artist_id) ? 'selected' : ''; ?>
+                                    <option value="<?= (int)$artist->artist_id ?>" <?= $isSelected ?>>
+                                        <?= htmlspecialchars((string)$artist->name) ?> (ID <?= (int)$artist->artist_id ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <?php if (!empty($event->artist_name)): ?>
+                                <p class="mt-1 text-xs text-slate-500">Current artist: <?= htmlspecialchars((string)$event->artist_name) ?></p>
+                            <?php endif; ?>
                         </div>
 
                         <div class="sm:col-span-2">
@@ -146,14 +163,23 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-slate-700">Page ID (optional)</label>
-                            <input
+                            <label class="block text-sm font-medium text-slate-700">Linked page (optional)</label>
+                            <select
                                 name="page_id"
-                                type="number"
-                                min="1"
-                                value="<?= htmlspecialchars((string)($event->page_id ?? '')) ?>"
                                 class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200">
-                            <p class="mt-1 text-xs text-slate-500">Leave empty if not linked.</p>
+                                <option value="">No linked page</option>
+                                <?php foreach (($pages ?? []) as $page): ?>
+                                    <?php
+                                    $pageId = (string)($page['Page_ID'] ?? '');
+                                    $isSelected = ((string)($event->page_id ?? '') === $pageId) ? 'selected' : '';
+                                    $label = (string)($page['Page_Title'] ?? 'Untitled');
+                                    $type = (string)($page['Page_Type'] ?? '');
+                                    ?>
+                                    <option value="<?= htmlspecialchars($pageId) ?>" <?= $isSelected ?>>
+                                        <?= htmlspecialchars($label) ?><?= $type !== '' ? ' (' . htmlspecialchars($type) . ')' : '' ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
                     </div>
                 </div>

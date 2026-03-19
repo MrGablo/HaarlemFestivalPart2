@@ -21,22 +21,15 @@ class OrderController
     public function addItem(): void
     {
         Session::ensureStarted();
-
         $userId = $this->currentUserId();
         if ($userId === null) {
             $message = 'Please log in to add tickets to your cart.';
             Flash::setErrors(['general' => $message]);
-
-            if ($this->isAjaxRequest()) {
-                $this->jsonResponse([
-                    'ok' => false,
-                    'message' => $message,
-                    'redirect' => '/login',
-                ], 401);
-            }
-
-            header('Location: /login', true, 302);
-            exit;
+            $this->jsonResponse([
+                'ok' => false,
+                'message' => $message,
+                'redirect' => '/login',
+            ], 401);
         }
 
         $eventId = isset($_POST['event_id']) ? (int)$_POST['event_id'] : 0;
@@ -44,27 +37,19 @@ class OrderController
         try {
             $order = $this->orderService->addEventToUserPendingOrder($userId, $eventId);
             Flash::setSuccess('Ticket added to cart.');
-
-            if ($this->isAjaxRequest()) {
-                $this->jsonResponse([
-                    'ok' => true,
-                    'message' => 'Ticket added to cart.',
-                    'cart' => $this->buildCartPayload($order),
-                ]);
-            }
+            $this->jsonResponse([
+                'ok' => true,
+                'message' => 'Ticket added to cart.',
+                'cart' => $this->buildCartPayload($order),
+            ]);
         } catch (\Throwable $e) {
             $message = $e->getMessage();
             Flash::setErrors(['general' => $message]);
-
-            if ($this->isAjaxRequest()) {
-                $this->jsonResponse([
-                    'ok' => false,
-                    'message' => $message,
-                ], 422);
-            }
+            $this->jsonResponse([
+                'ok' => false,
+                'message' => $message,
+            ], 422);
         }
-
-        $this->redirectBack('/jazz');
     }
 
     public function removeItem(): void

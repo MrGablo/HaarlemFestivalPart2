@@ -73,6 +73,8 @@ class UserRepository extends Repository implements IUserRepository
                 SET first_name = :first_name,
                     last_name = :last_name,
                     email = :email,
+                    phone_number = :phone_number,
+                    role = :role,
                     password_hash = :password_hash,
                     profile_picture_path = :profile_picture_path,
                     updated_at = CURRENT_TIMESTAMP
@@ -84,6 +86,8 @@ class UserRepository extends Repository implements IUserRepository
             ':first_name' => $user->firstName,
             ':last_name' => $user->lastName,
             ':email' => $user->email,
+            ':phone_number' => $user->phoneNumber,
+            ':role' => $user->role->value,
             ':password_hash' => $user->password_hash,
             ':profile_picture_path' => $user->profilePicturePath,
             ':id' => $id,
@@ -94,6 +98,23 @@ class UserRepository extends Repository implements IUserRepository
     {
         $stmt = $this->getConnection()->prepare("DELETE FROM User WHERE id = :id");
         return $stmt->execute([':id' => $id]);
+    }
+
+    public function updatePasswordHash(int $id, string $passwordHash): int
+    {
+        $sql = "UPDATE User
+                SET password_hash = :password_hash,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = :id";
+
+        $stmt = $this->getConnection()->prepare($sql);
+
+        $stmt->execute([
+            ':password_hash' => $passwordHash,
+            ':id' => $id,
+        ]);
+
+        return $stmt->rowCount();
     }
 
     private function mapRowToUser(array $row): UserModel
