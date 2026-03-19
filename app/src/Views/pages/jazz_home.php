@@ -113,7 +113,8 @@ declare(strict_types=1);
         <span class="block text-xs text-zinc-300">Click to open shopping cart</span>
     </button>
 
-    <script src="/assets/js/jazz/jazz_home.js"></script>
+    <?php $jazzHomeJsPath = __DIR__ . '/../../../public/assets/js/jazz/jazz_home.js'; ?>
+    <script src="/assets/js/jazz/jazz_home.js?v=<?= file_exists($jazzHomeJsPath) ? (string)filemtime($jazzHomeJsPath) : '1' ?>"></script>
     <?php include __DIR__ . '/../partials/footer.php'; ?>
 </body>
 

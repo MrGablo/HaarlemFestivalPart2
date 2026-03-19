@@ -15,9 +15,16 @@
     const COLLAPSE_LIMIT = 4;
     const byDateValue = hallBtns[0]?.dataset.hall || 'By date';
 
+    function normalizeDayValue(value) {
+        const normalized = String(value || '').trim().toLowerCase();
+        return (normalized === 'all' || normalized === 'all days') ? 'all' : String(value || '').trim();
+    }
+
     // Default: "By date" (first hall tab) + "All Days"
     let activeHall = byDateValue;
-    let activeDay = dayBtns.find(b => b.dataset.day === 'all')?.dataset.day || dayBtns[0]?.dataset.day || 'all';
+    let activeDay = normalizeDayValue(
+        dayBtns.find(b => normalizeDayValue(b.dataset.day) === 'all')?.dataset.day || dayBtns[0]?.dataset.day || 'all'
+    );
     let expanded = false;
 
     function setActive(btns, clicked) {
@@ -51,12 +58,13 @@
         const hall = card.dataset.hall;
         const day = card.dataset.day;
         const dayName = card.dataset.dayName;
+        const normalizedActiveDay = normalizeDayValue(activeDay);
 
         // "By date" means ALL halls (no hall filter)
         const hallOk = (activeHall === byDateValue) ? true : (hall === activeHall);
 
         // Match by exact date value, with day-name fallback for legacy content.
-        const dayOk = (activeDay === 'all') ? true : (day === activeDay || dayName === activeDay);
+        const dayOk = (normalizedActiveDay === 'all') ? true : (day === normalizedActiveDay || dayName === normalizedActiveDay);
 
         return hallOk && dayOk;
     }
@@ -129,7 +137,7 @@
     // day click
     dayBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            activeDay = btn.dataset.day;
+            activeDay = normalizeDayValue(btn.dataset.day);
             setActive(dayBtns, btn);
             expanded = false;
             apply();
@@ -146,7 +154,7 @@
     allEventsBtn?.addEventListener('click', () => {
         const alreadyFull =
             (activeHall === byDateValue) &&
-            (activeDay === 'all');
+            (normalizeDayValue(activeDay) === 'all');
 
         if (!alreadyFull) {
             // Reset filters to full schedule
@@ -158,9 +166,12 @@
                 activeHall = byDateValue;
             }
 
-            const allDaysBtn = getBtnByData(dayBtns, 'day', 'all') || dayBtns[0];
+            const allDaysBtn =
+                dayBtns.find((b) => normalizeDayValue(b.dataset.day) === 'all') ||
+                getBtnByData(dayBtns, 'day', 'all') ||
+                dayBtns[0];
             if (allDaysBtn) {
-                activeDay = allDaysBtn.dataset.day;
+                activeDay = normalizeDayValue(allDaysBtn.dataset.day);
                 setActive(dayBtns, allDaysBtn);
             } else {
                 activeDay = 'all';
