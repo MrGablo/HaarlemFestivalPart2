@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Cms\PageBuilder\Builders\DanceHomePageBuilder;
+use App\Cms\PageBuilder\Content\DanceHomePageContentViewModel;
 use App\Repositories\DanceHomeRepository;
 use App\Repositories\Interfaces\IPageRepository;
 use App\Utils\Media;
@@ -43,19 +45,20 @@ final class DanceHomeService
     public function __construct(
         private IPageRepository $pageRepo,
         private DanceHomeRepository $danceRepo,
+        private DanceHomePageBuilder $builder = new DanceHomePageBuilder(),
     ) {}
 
     public function buildViewModel(): DanceHomePageViewModel
     {
-        $content = $this->pageRepo->getPageContentByType('Dance_Homepage');
+        /** @var DanceHomePageContentViewModel $page */
+        $page = $this->builder->buildViewModel(
+            $this->pageRepo->getPageContentByType($this->builder->pageType())
+        );
 
-        $hero = $content['hero'] ?? [];
-        $intro = $content['intro'] ?? [];
-        if (!is_array($intro)) {
-            $intro = [];
-        }
-        $lineup = $content['lineup'] ?? [];
-        $timetableCms = $content['timetable'] ?? [];
+        $hero = $page->hero;
+        $intro = $page->intro;
+        $lineup = $page->lineup;
+        $timetableCms = $page->timetable;
 
         $heroBg = $this->normaliseAsset(
             Media::image($hero['background_image'] ?? null)['src'],

@@ -39,12 +39,18 @@ $tinyMceApiKey = trim((string)($_ENV['TINYMCE_API_KEY'] ?? $_SERVER['TINYMCE_API
             <?php require __DIR__ . '/../partials/error_general.php'; ?>
 
             <form method="POST" action="/cms/page/<?= (int)($page['Page_ID'] ?? 0) ?>/update" class="mt-6 space-y-4">
+                <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string)($csrfToken ?? '')) ?>">
+
                 <?php if ($content === []): ?>
                     <p class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">This page currently
                         has empty JSON content.</p>
                 <?php else: ?>
                     <div class="grid grid-cols-1 gap-3">
-                        <?php CmsForm::renderContent($content); ?>
+                        <?php if (!empty($usesSchemaEditor) && !empty($editorSchema)): ?>
+                            <?php CmsForm::renderSchema($editorSchema, $content); ?>
+                        <?php else: ?>
+                            <?php CmsForm::renderContent($content); ?>
+                        <?php endif; ?>
                     </div>
                 <?php endif; ?>
 
@@ -60,18 +66,66 @@ $tinyMceApiKey = trim((string)($_ENV['TINYMCE_API_KEY'] ?? $_SERVER['TINYMCE_API
     </main>
 
     <script>
-        if (window.tinymce) {
-            tinymce.init({
-                selector: 'textarea.js-wysiwyg',
-                menubar: false,
-                plugins: 'link lists code',
-                toolbar: 'undo redo | bold italic underline | bullist numlist | link | code',
-                height: 260,
-                branding: false,
-                promotion: false,
-                convert_urls: false
+        const tinyConfig = {
+            menubar: false,
+            plugins: 'link lists code',
+            toolbar: 'undo redo | bold italic underline | bullist numlist | link | code',
+            height: 260,
+            branding: false,
+            promotion: false,
+            convert_urls: false
+        };
+
+        function initTinyEditors(root = document) {
+            if (!window.tinymce) {
+                return;
+            }
+
+            root.querySelectorAll('textarea.js-wysiwyg').forEach((textarea) => {
+                if (textarea.dataset.wysiwygInitialized === '1') {
+                    return;
+                }
+
+                textarea.dataset.wysiwygInitialized = '1';
+                tinymce.init({
+                    ...tinyConfig,
+                    target: textarea
+                });
             });
         }
+
+        initTinyEditors();
+
+        document.querySelectorAll('[data-repeater]').forEach((repeater) => {
+            const items = repeater.querySelector('[data-repeater-items]');
+            const template = repeater.querySelector('template[data-repeater-template]');
+
+            repeater.addEventListener('click', (event) => {
+                const addButton = event.target.closest('[data-repeater-add]');
+                if (addButton) {
+                    const nextIndex = Number(repeater.dataset.nextIndex || '0');
+                    const html = template.innerHTML.replaceAll('__INDEX__', String(nextIndex));
+                    const wrapper = document.createElement('div');
+                    wrapper.innerHTML = html.trim();
+                    const item = wrapper.firstElementChild;
+
+                    if (item) {
+                        items.appendChild(item);
+                        repeater.dataset.nextIndex = String(nextIndex + 1);
+                        initTinyEditors(item);
+                    }
+                    return;
+                }
+
+                const removeButton = event.target.closest('[data-repeater-remove]');
+                if (removeButton) {
+                    const item = removeButton.closest('[data-repeater-item]');
+                    if (item) {
+                        item.remove();
+                    }
+                }
+            });
+        });
     </script>
 </body>
 

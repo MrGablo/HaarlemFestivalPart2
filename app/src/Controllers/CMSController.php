@@ -2,10 +2,13 @@
 
 namespace App\Controllers;
 
+use App\Cms\PageBuilder\Builders\GenericPageBuilder;
+use App\Cms\PageBuilder\PageBuilderRegistry;
 use App\Repositories\Interfaces\IPageRepository;
 use App\Repositories\PageRepository;
 use App\Services\CmsContentService;
 use App\Utils\AdminGuard;
+use App\Utils\Csrf;
 use App\Utils\Flash;
 use App\Utils\Session;
 
@@ -13,11 +16,13 @@ class CMSController
 {
     private IPageRepository $pages;
     private CmsContentService $contentService;
+    private PageBuilderRegistry $pageBuilders;
 
     public function __construct()
     {
         $this->pages = new PageRepository();
         $this->contentService = new CmsContentService();
+        $this->pageBuilders = new PageBuilderRegistry();
 
         Session::ensureStarted();
     }
@@ -55,9 +60,18 @@ class CMSController
             return;
         }
 
+        $pageType = (string)($page['Page_Type'] ?? '');
+        $builder = $this->pageBuilders->resolveForPageType($pageType);
         $content = $this->pages->getPageContentById($id);
+        $usesSchemaEditor = !$builder instanceof GenericPageBuilder;
+        if ($usesSchemaEditor) {
+            $content = $builder->normalizeInput($content);
+        }
+
+        $editorSchema = $builder->editorSchema();
         $errors = Flash::getErrors();
         $flashSuccess = Flash::getSuccess();
+        $csrfToken = Csrf::token();
 
         require __DIR__ . '/../Views/cms/edit.php';
     }
@@ -74,14 +88,23 @@ class CMSController
         }
 
         try {
-            $contentInput = $_POST['content'] ?? [];
-            $typeMap = $_POST['types'] ?? [];
+            Csrf::assertPost();
 
+            $contentInput = $_POST['content'] ?? [];
             if (!is_array($contentInput)) {
                 throw new \RuntimeException('Invalid content payload.');
             }
 
-            $normalized = $this->contentService->normalizeContent($contentInput, is_array($typeMap) ? $typeMap : []);
+            $pageType = (string)($page['Page_Type'] ?? '');
+            $builder = $this->pageBuilders->resolveForPageType($pageType);
+
+            if ($builder instanceof GenericPageBuilder) {
+                $typeMap = $_POST['types'] ?? [];
+                $normalized = $this->contentService->normalizeContent($contentInput, is_array($typeMap) ? $typeMap : []);
+            } else {
+                $normalized = $builder->normalizeInput($contentInput);
+            }
+
             $this->pages->savePageContentById($id, $normalized);
 
             Flash::setSuccess('Page content updated successfully.');
