@@ -17,21 +17,21 @@ declare(strict_types=1);
         href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
     <script>
-        tailwind = {
-            config: {
-                corePlugins: {
-                    preflight: false
-                },
-                theme: {
-                    extend: {
-                        fontFamily: {
-                            display: ['Cormorant Garamond', 'Times New Roman', 'serif'],
-                            body: ['Manrope', 'Segoe UI', 'sans-serif']
-                        }
+    tailwind = {
+        config: {
+            corePlugins: {
+                preflight: false
+            },
+            theme: {
+                extend: {
+                    fontFamily: {
+                        display: ['Cormorant Garamond', 'Times New Roman', 'serif'],
+                        body: ['Manrope', 'Segoe UI', 'sans-serif']
                     }
                 }
             }
-        };
+        }
+    };
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -54,70 +54,70 @@ declare(strict_types=1);
         </header>
 
         <?php if (!empty($vm->pageContent['gallery'])): ?>
-            <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
-                <?php foreach ($vm->pageContent['gallery'] as $image): ?>
-                    <div class="flex flex-col">
-                        <img src="<?= htmlspecialchars($image['src'] ?? '') ?>"
-                            alt="<?= htmlspecialchars($image['alt'] ?? '') ?>"
-                            class="w-full aspect-[4/3] object-cover rounded-3xl shadow-md">
-                        <p class="text-xs text-gray-400 text-center mt-3 px-4"><?= htmlspecialchars($image['caption'] ?? '') ?>
-                        </p>
-                    </div>
-                <?php endforeach; ?>
-            </section>
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
+            <?php foreach ($vm->pageContent['gallery'] as $image): ?>
+            <div class="flex flex-col">
+                <img src="<?= htmlspecialchars($image['src'] ?? '') ?>"
+                    alt="<?= htmlspecialchars($image['alt'] ?? '') ?>"
+                    class="w-full aspect-[4/3] object-cover rounded-3xl shadow-md">
+                <p class="text-xs text-gray-400 text-center mt-3 px-4"><?= htmlspecialchars($image['caption'] ?? '') ?>
+                </p>
+            </div>
+            <?php endforeach; ?>
+        </section>
         <?php endif; ?>
 
         <?php if (!empty($vm->pageContent['aboutSection'])): ?>
-            <section
-                class="max-w-3xl mx-auto text-center mb-24 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:mb-4 [&_p]:text-gray-600">
-                <?= $vm->pageContent['aboutSection'] ?>
-            </section>
+        <section
+            class="max-w-3xl mx-auto text-center mb-24 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:mb-4 [&_p]:text-gray-600">
+            <?= $vm->pageContent['aboutSection'] ?>
+        </section>
         <?php endif; ?>
 
         <?php if (!empty($vm->pageContent['amuse_bouche']['html'])): ?>
-            <section class="grid md:grid-cols-2 gap-12 items-center mb-24">
-                <div
-                    class="max-w-md [&_h3]:text-3xl [&_h3]:font-bold [&_h3]:mb-6 [&_em]:italic [&_em]:font-medium [&_p]:text-gray-600 [&_p]:text-sm [&_p]:leading-relaxed">
-                    <?= $vm->pageContent['amuse_bouche']['html'] ?>
+        <section class="grid md:grid-cols-2 gap-12 items-center mb-24">
+            <div
+                class="max-w-md [&_h3]:text-3xl [&_h3]:font-bold [&_h3]:mb-6 [&_em]:italic [&_em]:font-medium [&_p]:text-gray-600 [&_p]:text-sm [&_p]:leading-relaxed">
+                <?= $vm->pageContent['amuse_bouche']['html'] ?>
+            </div>
+            <div class="w-full max-w-md mx-auto md:ml-auto">
+                <div class="flex gap-4 items-start">
+                    <img src="<?= htmlspecialchars((string)($vm->pageContent['amuse_bouche']['images'][0] ?? '')) ?>"
+                        class="w-1/2 aspect-[4/5] object-cover rounded-3xl shadow-lg mt-12">
+                    <img src="<?= htmlspecialchars((string)($vm->pageContent['amuse_bouche']['images'][1] ?? $vm->pageContent['amuse_bouche']['images'][0] ?? '')) ?>"
+                        class="w-1/2 aspect-[4/5] object-cover rounded-3xl shadow-lg mb-12">
                 </div>
-                <div class="w-full max-w-md mx-auto md:ml-auto">
-                    <div class="grid grid-cols-12 grid-rows-12 gap-0 w-full aspect-square">
-                        <img src="<?= htmlspecialchars((string)($vm->pageContent['amuse_bouche']['images'][1] ?? $vm->pageContent['amuse_bouche']['images'][0] ?? '')) ?>"
-                            class="col-start-5 col-end-13 row-start-1 row-end-9 w-full h-full object-cover rounded-[2rem] shadow-lg z-0">
-                        <img src="<?= htmlspecialchars((string)($vm->pageContent['amuse_bouche']['images'][0] ?? '')) ?>"
-                            class="col-start-1 col-end-9 row-start-5 row-end-13 w-full h-full object-cover rounded-[2rem] shadow-2xl border-8 border-white z-10">
-                    </div>
-                    <p class="text-xs text-gray-400 mt-4 text-right pr-6">
-                        <?= htmlspecialchars((string)($vm->pageContent['amuse_bouche']['caption'] ?? '')) ?></p>
-                </div>
-            </section>
+                <p class="text-xs text-gray-400 mt-6 text-right">
+                    <?= htmlspecialchars((string)($vm->pageContent['amuse_bouche']['caption'] ?? '')) ?></p>
+            </div>
+        </section>
         <?php endif; ?>
 
         <?php if (!empty($vm->pageContent['chef'])): ?>
-            <section class="grid md:grid-cols-2 gap-12 items-center mb-24">
-                <div class="flex flex-col items-center">
-                    <img src="<?= htmlspecialchars((string)($vm->pageContent['chef']['image'] ?? '')) ?>" alt="Chef"
-                        class="w-64 h-64 rounded-full object-cover shadow-xl mb-4">
-                    <p class="text-xs text-gray-400">Head chef</p>
-                </div>
-                <div
-                    class="max-w-md [&_h3]:text-3xl [&_h3]:font-bold [&_h3]:mb-6 [&_p]:text-gray-600 [&_p]:text-sm [&_p]:leading-relaxed">
-                    <?= $vm->pageContent['chef']['html'] ?>
-                </div>
-            </section>
+        <section class="grid md:grid-cols-2 gap-12 items-center mb-24">
+            <div class="flex flex-col items-center">
+                <img src="<?= htmlspecialchars((string)($vm->pageContent['chef']['image'] ?? '')) ?>" alt="Chef"
+                    class="w-64 h-64 rounded-full object-cover shadow-xl mb-4">
+                <p class="text-xs text-gray-400">Head chef</p>
+            </div>
+            <div
+                class="max-w-md [&_h3]:text-3xl [&_h3]:font-bold [&_h3]:mb-6 [&_p]:text-gray-600 [&_p]:text-sm [&_p]:leading-relaxed">
+                <?= $vm->pageContent['chef']['html'] ?>
+            </div>
+        </section>
         <?php endif; ?>
 
         <?php if (!empty($vm->pageContent['menu']['html'])): ?>
-            <section class="grid md:grid-cols-2 gap-12 items-center mb-24">
-                <div class="w-full max-w-md mx-auto md:mr-auto order-last md:order-first">
-                    <img src="<?= htmlspecialchars((string)($vm->pageContent['menu']['image'] ?? '')) ?>"
-                        class="w-full aspect-square object-cover rounded-[2rem] shadow-lg">
-                </div>
-                <div
-                    class="max-w-md [&_h3]:text-3xl [&_h3]:font-bold [&_h3]:mb-6 [&_p]:text-gray-600 [&_p]:text-sm [&_p]:leading-relaxed order-first md:order-last">
-                    <?= $vm->pageContent['menu']['html'] ?>
-                </div>
-            </section>
+        <section class="grid md:grid-cols-2 gap-12 items-center mb-24">
+            <div class="w-full max-w-md mx-auto md:mr-auto order-last md:order-first">
+                <img src="<?= htmlspecialchars((string)($vm->pageContent['menu']['image'] ?? '')) ?>"
+                    class="w-full aspect-square object-cover rounded-[2rem] shadow-lg">
+            </div>
+            <div
+                class="max-w-md [&_h3]:text-3xl [&_h3]:font-bold [&_h3]:mb-6 [&_p]:text-gray-600 [&_p]:text-sm [&_p]:leading-relaxed order-first md:order-last">
+                <?= $vm->pageContent['menu']['html'] ?>
+            </div>
+        </section>
         <?php endif; ?>
 
         <section class="bg-[#FDF3D8] rounded-[3rem] p-10 mt-12 shadow-sm relative">
@@ -166,14 +166,14 @@ declare(strict_types=1);
 
                                     $isActive = (int)$session['event_id'] === $vm->event->event_id;
                                 ?>
-                                    <a href="/yummy/restaurant?id=<?= $session['event_id'] ?>"
-                                        class="w-full p-3 rounded-xl text-left text-sm flex justify-between items-center no-underline transition-colors block
+                                <a href="/yummy/restaurant?id=<?= $session['event_id'] ?>"
+                                    class="w-full p-3 rounded-xl text-left text-sm flex justify-between items-center no-underline transition-colors block
                                        <?= $isActive ? 'bg-yellow-100 border-2 border-yellow-400 text-black font-semibold' : 'bg-white hover:bg-gray-50 text-gray-800' ?>">
-                                        <span><?= htmlspecialchars($time) ?></span>
-                                        <span
-                                            class="text-xs <?= $isActive ? 'text-black' : 'text-gray-400' ?>"><?= $session['capacity'] ?>
-                                            seats left</span>
-                                    </a>
+                                    <span><?= htmlspecialchars($time) ?></span>
+                                    <span
+                                        class="text-xs <?= $isActive ? 'text-black' : 'text-gray-400' ?>"><?= $session['capacity'] ?>
+                                        seats left</span>
+                                </a>
                                 <?php endforeach; ?>
                             </div>
                             <button type="submit"

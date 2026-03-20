@@ -149,20 +149,24 @@ declare(strict_types=1);
                     </div>
 
                     <div class="ml-5 w-6/12 max-md:ml-0 max-md:w-full">
-                        <div class="flex flex-col w-full text-sm leading-none max-md:mt-10 max-md:max-w-full">
+                        <div class="flex flex-col w-full max-w-[400px] mx-auto text-sm leading-none max-md:mt-10">
                             <div
-                                class="flex relative flex-col items-end px-16 pt-72 pb-2 w-full text-black rounded-2xl shadow-sm min-h-80 overflow-hidden max-md:pt-24 max-md:pl-5 max-md:max-w-full">
+                                class="flex relative flex-col items-end w-full text-black rounded-2xl shadow-sm aspect-[4/3] overflow-hidden">
                                 <?php if ($vm->mapImage !== ''): ?>
                                     <img src="<?= htmlspecialchars($vm->mapImage) ?>"
                                         class="object-cover absolute inset-0 size-full"
                                         alt="Interactive map with event pinpoints">
                                 <?php endif; ?>
+
                                 <?php if ($vm->mapImageCaption !== ''): ?>
-                                    <p class="relative">
-                                        <?= htmlspecialchars($vm->mapImageCaption) ?>
-                                    </p>
+                                    <div class="absolute bottom-0 w-full p-3 bg-gradient-to-t from-black/50 to-transparent">
+                                        <p class="relative text-white font-medium text-right mb-0">
+                                            <?= htmlspecialchars($vm->mapImageCaption) ?>
+                                        </p>
+                                    </div>
                                 <?php endif; ?>
                             </div>
+
                             <div
                                 class="self-center mt-5 [&_a]:flex [&_a]:max-w-full [&_a]:items-center [&_a]:justify-center [&_a]:gap-0 [&_a]:rounded-2xl [&_a]:bg-amber-400 [&_a]:p-2.5 [&_a]:font-semibold [&_a]:text-white [&_a]:no-underline [&_a]:w-[131px] [&_.btn-primary]:flex [&_.btn-primary]:max-w-full [&_.btn-primary]:items-center [&_.btn-primary]:justify-center [&_.btn-primary]:gap-0 [&_.btn-primary]:rounded-2xl [&_.btn-primary]:bg-amber-400 [&_.btn-primary]:p-2.5 [&_.btn-primary]:font-semibold [&_.btn-primary]:text-white [&_.btn-primary]:no-underline [&_.btn-primary]:w-[131px]">
                                 <a href="/map" class="btn-primary">go to map &rarr;</a>
