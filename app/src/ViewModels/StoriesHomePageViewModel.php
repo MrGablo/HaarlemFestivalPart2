@@ -5,11 +5,11 @@ namespace App\ViewModels;
 class StoriesHomePageViewModel
 {
     public array $pageContent;
-    public array $events;
+    public array $days;
 
-    public function __construct(array $pageContent, array $events)
+    public function __construct(array $pageContent, array $days)
     {
         $this->pageContent = $pageContent;
-        $this->events = $events;
+        $this->days = $days;
     }
 }

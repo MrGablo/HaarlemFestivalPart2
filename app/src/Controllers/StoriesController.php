@@ -12,8 +12,6 @@ class StoriesController
 
     public function __construct()
     {
-        // This is where you instantiate the service manually 
-        // just like the JazzController does.
         $this->service = new StoriesService(
             new StoriesRepository(),
             new PageRepository()
@@ -24,13 +22,14 @@ class StoriesController
     {
         \App\Utils\Session::ensureStarted();
 
-        // Get the ViewModel from the service
-        $viewModel = $this->service->getStoriesPageData();
+        try {
+            $viewModel = $this->service->getStoriesPageData();
 
-        // You can extract these like Jazz does if your view uses $content/$events
-        $content = $viewModel->pageContent;
-        $events  = $viewModel->events;
+            require __DIR__ . '/../Views/pages/stories_home.php';
 
-        require __DIR__ . '/../Views/pages/stories_home.php';
+        } catch (\Exception $e) {
+            echo "Something went wrong loading the stories page.";
+            
+        }
     }
 }
