@@ -38,7 +38,7 @@ $tinyMceApiKey = trim((string)($_ENV['TINYMCE_API_KEY'] ?? $_SERVER['TINYMCE_API
             <?php require __DIR__ . '/../partials/flash_success.php'; ?>
             <?php require __DIR__ . '/../partials/error_general.php'; ?>
 
-            <form method="POST" action="/cms/page/<?= (int)($page['Page_ID'] ?? 0) ?>/update" class="mt-6 space-y-4">
+            <form method="POST" enctype="multipart/form-data" action="/cms/page/<?= (int)($page['Page_ID'] ?? 0) ?>/update" class="mt-6 space-y-4">
                 <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string)($csrfToken ?? '')) ?>">
 
                 <?php if ($content === []): ?>

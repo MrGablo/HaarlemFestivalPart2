@@ -38,6 +38,7 @@ abstract class AbstractPageViewModelBuilder implements PageViewModelBuilderInter
         $type = (string)($field['type'] ?? 'text');
 
         return match ($type) {
+            'image' => $this->normalizeImage($field, $value),
             'object' => $this->normalizeObject($field, $value),
             'repeater' => $this->normalizeRepeater($field, $value),
             'textarea' => $this->normalizeString($value, true, (string)($field['default'] ?? '')),
@@ -83,6 +84,15 @@ abstract class AbstractPageViewModelBuilder implements PageViewModelBuilderInter
         foreach ($items as $item) {
             if ($itemType === 'text') {
                 $itemField = is_array($field['itemField'] ?? null) ? $field['itemField'] : ['type' => 'text', 'default' => ''];
+                $normalizedItem = $this->normalizeField($itemField, $item);
+                if (!$this->isEmptyValue($normalizedItem)) {
+                    $normalized[] = $normalizedItem;
+                }
+                continue;
+            }
+
+            if ($itemType === 'image') {
+                $itemField = is_array($field['itemField'] ?? null) ? $field['itemField'] : ['type' => 'image', 'storage' => 'string'];
                 $normalizedItem = $this->normalizeField($itemField, $item);
                 if (!$this->isEmptyValue($normalizedItem)) {
                     $normalized[] = $normalizedItem;
@@ -138,6 +148,45 @@ abstract class AbstractPageViewModelBuilder implements PageViewModelBuilderInter
         }
 
         return (string)($field['default'] ?? '');
+    }
+
+    /** @param array<string, mixed> $field */
+    private function normalizeImage(array $field, mixed $value): mixed
+    {
+        $storage = (string)($field['storage'] ?? 'object');
+
+        if ($storage === 'string') {
+            if (is_array($value)) {
+                $value = $value['src'] ?? '';
+            }
+
+            return $this->normalizeString($value, true, (string)($field['default'] ?? ''));
+        }
+
+        $valueArray = [];
+        if (is_scalar($value)) {
+            $stringValue = trim((string)$value);
+            if ($stringValue !== '') {
+                $valueArray['src'] = $stringValue;
+            }
+        } elseif (is_array($value)) {
+            $valueArray = $value;
+        }
+
+        $normalized = [
+            'src' => $this->normalizeString($valueArray['src'] ?? null, true, (string)($field['default'] ?? '')),
+        ];
+
+        foreach (($field['fields'] ?? []) as $childField) {
+            if (!is_array($childField) || !isset($childField['key'])) {
+                continue;
+            }
+
+            $childKey = (string)$childField['key'];
+            $normalized[$childKey] = $this->normalizeField($childField, $valueArray[$childKey] ?? null);
+        }
+
+        return $normalized;
     }
 
     protected function normalizeString(mixed $value, bool $trim, string $default = ''): string

@@ -7,7 +7,9 @@ use App\Cms\PageBuilder\PageBuilderRegistry;
 use App\Repositories\Interfaces\IPageRepository;
 use App\Repositories\PageRepository;
 use App\Services\CmsContentService;
+use App\Services\UploadService;
 use App\Utils\AdminGuard;
+use App\Utils\CmsForm;
 use App\Utils\Csrf;
 use App\Utils\Flash;
 use App\Utils\Session;
@@ -17,12 +19,14 @@ class CMSController
     private IPageRepository $pages;
     private CmsContentService $contentService;
     private PageBuilderRegistry $pageBuilders;
+    private UploadService $uploads;
 
     public function __construct()
     {
         $this->pages = new PageRepository();
         $this->contentService = new CmsContentService();
         $this->pageBuilders = new PageBuilderRegistry();
+        $this->uploads = new UploadService();
 
         Session::ensureStarted();
     }
@@ -102,6 +106,7 @@ class CMSController
                 $typeMap = $_POST['types'] ?? [];
                 $normalized = $this->contentService->normalizeContent($contentInput, is_array($typeMap) ? $typeMap : []);
             } else {
+                $contentInput = $this->applySchemaUploads($builder->editorSchema(), $contentInput, $pageType);
                 $normalized = $builder->normalizeInput($contentInput);
             }
 
@@ -114,5 +119,115 @@ class CMSController
 
         header('Location: /cms/page/' . $id, true, 302);
         exit;
+    }
+
+    /** @param array<int, array<string, mixed>> $schema */
+    private function applySchemaUploads(array $schema, array $contentInput, string $pageType): array
+    {
+        foreach ($schema as $section) {
+            foreach (($section['fields'] ?? []) as $field) {
+                if (!is_array($field) || !isset($field['key'])) {
+                    continue;
+                }
+
+                $key = (string)$field['key'];
+                $contentInput[$key] = $this->applyFieldUploads($field, $contentInput[$key] ?? null, [$key], $pageType);
+            }
+        }
+
+        return $contentInput;
+    }
+
+    private function applyFieldUploads(array $field, mixed $value, array $path, string $pageType): mixed
+    {
+        $type = (string)($field['type'] ?? 'text');
+
+        if ($type === 'image') {
+            return $this->applyImageUpload($field, $value, $path, $pageType);
+        }
+
+        if ($type === 'object') {
+            $value = is_array($value) ? $value : [];
+            foreach (($field['fields'] ?? []) as $childField) {
+                if (!is_array($childField) || !isset($childField['key'])) {
+                    continue;
+                }
+
+                $childKey = (string)$childField['key'];
+                $value[$childKey] = $this->applyFieldUploads($childField, $value[$childKey] ?? null, [...$path, $childKey], $pageType);
+            }
+            return $value;
+        }
+
+        if ($type === 'repeater') {
+            $items = is_array($value) ? array_values($value) : [];
+            $itemType = (string)($field['itemType'] ?? 'object');
+
+            foreach ($items as $index => $item) {
+                $itemPath = [...$path, (string)$index];
+
+                if ($itemType === 'image') {
+                    $itemField = is_array($field['itemField'] ?? null) ? $field['itemField'] : ['type' => 'image', 'storage' => 'string'];
+                    $items[$index] = $this->applyFieldUploads($itemField, $item, $itemPath, $pageType);
+                    continue;
+                }
+
+                if ($itemType === 'text') {
+                    continue;
+                }
+
+                $itemArray = is_array($item) ? $item : [];
+                foreach (($field['fields'] ?? []) as $childField) {
+                    if (!is_array($childField) || !isset($childField['key'])) {
+                        continue;
+                    }
+
+                    $childKey = (string)$childField['key'];
+                    $itemArray[$childKey] = $this->applyFieldUploads($childField, $itemArray[$childKey] ?? null, [...$itemPath, $childKey], $pageType);
+                }
+                $items[$index] = $itemArray;
+            }
+
+            return $items;
+        }
+
+        return $value;
+    }
+
+    private function applyImageUpload(array $field, mixed $value, array $path, string $pageType): mixed
+    {
+        $storage = (string)($field['storage'] ?? 'object');
+        $currentPath = '';
+        $meta = [];
+
+        if ($storage === 'string') {
+            $currentPath = is_scalar($value) ? trim((string)$value) : '';
+        } elseif (is_array($value)) {
+            $meta = $value;
+            $currentPath = trim((string)($value['src'] ?? ''));
+        } elseif (is_scalar($value)) {
+            $currentPath = trim((string)$value);
+        }
+
+        $uploadField = CmsForm::uploadFieldName($path);
+        if (isset($_FILES[$uploadField]) && is_array($_FILES[$uploadField]) && (int)($_FILES[$uploadField]['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+            $folder = $this->slug($pageType);
+            $storedPath = $this->uploads->storeImage($_FILES[$uploadField], 'page', $folder, null, false, $currentPath);
+            $currentPath = $storedPath;
+        }
+
+        if ($storage === 'string') {
+            return $currentPath;
+        }
+
+        $meta['src'] = $currentPath;
+        return $meta;
+    }
+
+    private function slug(string $value): string
+    {
+        $value = strtolower(trim($value));
+        $value = preg_replace('~[^a-z0-9_-]+~', '-', $value) ?? $value;
+        return trim($value, '-') ?: 'page';
     }
 }

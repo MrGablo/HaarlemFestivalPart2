@@ -41,11 +41,10 @@ final class JazzHomePageBuilder extends AbstractPageViewModelBuilder
                             ['key' => 'title', 'type' => 'text', 'label' => 'Title'],
                             [
                                 'key' => 'background_image',
-                                'type' => 'object',
+                                'type' => 'image',
+                                'storage' => 'object',
                                 'label' => 'Background Image',
-                                'coerceStringKey' => 'src',
                                 'fields' => [
-                                    ['key' => 'src', 'type' => 'text', 'label' => 'Image Path'],
                                     ['key' => 'alt', 'type' => 'text', 'label' => 'Alt Text'],
                                 ],
                             ],

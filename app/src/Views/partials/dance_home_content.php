@@ -24,12 +24,8 @@ $intro = $vm->intro;
         <?= htmlspecialchars((string) ($h['titleLine1'] ?? '')) ?>
       <?php endif; ?>
     </h1>
-    <?php if ($h['subtitleMode'] === 'html'): ?>
+    <?php if (($h['subtitleHtml'] ?? '') !== ''): ?>
       <div class="wysiwyg mb-7 max-w-dance-hero-sub text-2xl font-bold leading-snug text-dance-on-dark whitespace-pre-line"><?= Wysiwyg::render($h['subtitleHtml']) ?></div>
-    <?php elseif ($h['subtitleMode'] === 'lines'): ?>
-      <div class="mb-7 max-w-dance-hero-sub text-2xl font-bold leading-snug text-dance-on-dark"><?php foreach ($h['subtitleLines'] as $subIdx => $line): ?><?= $subIdx > 0 ? '<br>' : '' ?><?= htmlspecialchars((string) $line) ?><?php endforeach; ?></div>
-    <?php else: ?>
-      <div class="mb-7 max-w-dance-hero-sub text-2xl font-bold leading-snug text-dance-on-dark"><?php foreach ($h['defaultSubtitleLines'] as $subIdx => $line): ?><?= $subIdx > 0 ? '<br>' : '' ?><?= htmlspecialchars((string) $line) ?><?php endforeach; ?></div>
     <?php endif; ?>
     <a href="#dance-timetable" class="inline-block rounded-lg bg-dance-hero-cta-bg px-6 py-2.5 text-xl font-bold text-dance-on-dark shadow-dance-cta transition hover:bg-dance-on-dark hover:text-dance-bg"><?= htmlspecialchars((string) ($h['primaryButtonLabel'] ?? '')) ?></a>
   </div>
@@ -40,14 +36,8 @@ $intro = $vm->intro;
 <section class="mx-auto grid max-w-dance-container grid-cols-1 gap-10 px-6 py-16 md:grid-cols-2 md:gap-12 md:py-20">
   <div>
     <h2 class="mb-4 text-2xl font-semibold tracking-wide text-dance-text md:text-3xl"><?= htmlspecialchars((string) ($intro['kicker'] ?? '')) ?></h2>
-    <?php if (($intro['bodyMode'] ?? '') === 'html'): ?>
+    <?php if (($intro['bodyHtml'] ?? '') !== ''): ?>
       <div class="wysiwyg text-dance-text [&_p]:mb-4"><?= Wysiwyg::render((string) ($intro['bodyHtml'] ?? '')) ?></div>
-    <?php else: ?>
-      <div class="text-dance-text [&_p]:mb-4">
-        <?php foreach ($intro['paragraphs'] ?? [] as $p): ?>
-          <p><?= htmlspecialchars((string) $p) ?></p>
-        <?php endforeach; ?>
-      </div>
     <?php endif; ?>
   </div>
   <div class="flex flex-col items-start">
@@ -83,6 +73,7 @@ $intro = $vm->intro;
       <p class="text-dance-muted">Timetable will be published soon.</p>
     <?php else: ?>
       <?php if ($vm->allAccess !== null): ?>
+        <?php /** @var array{label: string, note: string, priceLabel: string, eventId: int} $aa */ ?>
         <?php $aa = $vm->allAccess; ?>
         <div class="mb-12">
           <div class="mb-3 flex min-h-dance-row items-center gap-4 rounded px-4 py-2 bg-dance-row-glass">
@@ -95,6 +86,7 @@ $intro = $vm->intro;
       <?php endif; ?>
 
       <?php foreach ($vm->timetableDays as $day): ?>
+        <?php /** @var array{dayLabel: string, passLabel: string, passPriceLabel: string, passEventId: int, sessions: list<array{title: string, tag: string, tagSpecial: bool, timeRange: string, venueName: string, priceLabel: string, eventId: int}>} $day */ ?>
         <div class="mb-14">
           <div class="mb-3 pl-5 text-xs font-normal leading-normal text-dance-text"><?= htmlspecialchars($day['dayLabel']) ?></div>
           <div class="mb-3 flex min-h-dance-row items-center gap-4 rounded bg-dance-accent px-4 py-2">

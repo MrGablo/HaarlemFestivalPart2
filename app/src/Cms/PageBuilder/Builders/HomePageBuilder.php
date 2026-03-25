@@ -41,8 +41,8 @@ final class HomePageBuilder extends AbstractPageViewModelBuilder
                                 'key' => 'images',
                                 'type' => 'repeater',
                                 'label' => 'Hero Images',
-                                'itemType' => 'text',
-                                'itemField' => ['type' => 'text', 'label' => 'Image Path'],
+                                'itemType' => 'image',
+                                'itemField' => ['type' => 'image', 'storage' => 'string', 'label' => 'Image'],
                                 'addLabel' => 'Add image',
                             ],
                         ],
@@ -86,7 +86,7 @@ final class HomePageBuilder extends AbstractPageViewModelBuilder
                             ['key' => 'title', 'type' => 'text', 'label' => 'Title'],
                             ['key' => 'date', 'type' => 'text', 'label' => 'Date'],
                             ['key' => 'location', 'type' => 'text', 'label' => 'Location'],
-                            ['key' => 'image', 'type' => 'text', 'label' => 'Image Path'],
+                            ['key' => 'image', 'type' => 'image', 'storage' => 'string', 'label' => 'Image'],
                         ],
                     ],
                 ],
@@ -102,7 +102,7 @@ final class HomePageBuilder extends AbstractPageViewModelBuilder
                         'addLabel' => 'Add category',
                         'fields' => [
                             ['key' => 'name', 'type' => 'text', 'label' => 'Name'],
-                            ['key' => 'image', 'type' => 'text', 'label' => 'Image Path'],
+                            ['key' => 'image', 'type' => 'image', 'storage' => 'string', 'label' => 'Image'],
                         ],
                     ],
                 ],
@@ -115,7 +115,7 @@ final class HomePageBuilder extends AbstractPageViewModelBuilder
                         'key' => 'newsletter',
                         'type' => 'object',
                         'fields' => [
-                            ['key' => 'logo', 'type' => 'text', 'label' => 'Logo Path'],
+                            ['key' => 'logo', 'type' => 'image', 'storage' => 'string', 'label' => 'Logo'],
                             ['key' => 'description_html', 'type' => 'wysiwyg', 'label' => 'Description'],
                             [
                                 'key' => 'preferences',

@@ -11,7 +11,7 @@ final class JazzArtistPageBuilder extends AbstractPageViewModelBuilder
 {
     public function pageType(): string
     {
-        return 'Jazz_Artist';
+        return 'Jazz_Detail_Page';
     }
 
     public function buildViewModel(array $content): object
@@ -41,7 +41,7 @@ final class JazzArtistPageBuilder extends AbstractPageViewModelBuilder
                         'type' => 'object',
                         'fields' => [
                             ['key' => 'name', 'type' => 'text', 'label' => 'Artist Name'],
-                            ['key' => 'cover_image', 'type' => 'text', 'label' => 'Cover Image Path'],
+                            ['key' => 'cover_image', 'type' => 'image', 'storage' => 'string', 'label' => 'Cover Image'],
                             [
                                 'key' => 'breadcrumb',
                                 'type' => 'object',
@@ -62,7 +62,7 @@ final class JazzArtistPageBuilder extends AbstractPageViewModelBuilder
                                         'key' => 'main',
                                         'type' => 'object',
                                         'fields' => [
-                                            ['key' => 'image', 'type' => 'text', 'label' => 'Main Image'],
+                                            ['key' => 'image', 'type' => 'image', 'storage' => 'string', 'label' => 'Main Image'],
                                         ],
                                     ],
                                     [
@@ -71,7 +71,7 @@ final class JazzArtistPageBuilder extends AbstractPageViewModelBuilder
                                         'label' => 'Secondary Media',
                                         'addLabel' => 'Add secondary media',
                                         'fields' => [
-                                            ['key' => 'image', 'type' => 'text', 'label' => 'Image'],
+                                            ['key' => 'image', 'type' => 'image', 'storage' => 'string', 'label' => 'Image'],
                                             ['key' => 'caption', 'type' => 'text', 'label' => 'Caption'],
                                         ],
                                     ],
@@ -172,10 +172,9 @@ final class JazzArtistPageBuilder extends AbstractPageViewModelBuilder
                             ['key' => 'description_html', 'type' => 'wysiwyg', 'label' => 'Rich Description'],
                             [
                                 'key' => 'image',
-                                'type' => 'object',
-                                'coerceStringKey' => 'src',
+                                'type' => 'image',
+                                'storage' => 'object',
                                 'fields' => [
-                                    ['key' => 'src', 'type' => 'text', 'label' => 'Image Path'],
                                     ['key' => 'alt', 'type' => 'text', 'label' => 'Alt Text'],
                                     ['key' => 'caption', 'type' => 'text', 'label' => 'Caption'],
                                 ],

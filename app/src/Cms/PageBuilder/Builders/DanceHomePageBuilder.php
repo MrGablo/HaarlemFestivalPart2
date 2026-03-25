@@ -40,10 +40,9 @@ final class DanceHomePageBuilder extends AbstractPageViewModelBuilder
                             ['key' => 'title', 'type' => 'text', 'label' => 'Title'],
                             [
                                 'key' => 'background_image',
-                                'type' => 'object',
-                                'coerceStringKey' => 'src',
+                                'type' => 'image',
+                                'storage' => 'object',
                                 'fields' => [
-                                    ['key' => 'src', 'type' => 'text', 'label' => 'Background Image Path'],
                                     ['key' => 'alt', 'type' => 'text', 'label' => 'Background Alt Text'],
                                 ],
                             ],
@@ -72,10 +71,9 @@ final class DanceHomePageBuilder extends AbstractPageViewModelBuilder
                             ['key' => 'body_html', 'type' => 'wysiwyg', 'label' => 'Body'],
                             [
                                 'key' => 'side_image',
-                                'type' => 'object',
-                                'coerceStringKey' => 'src',
+                                'type' => 'image',
+                                'storage' => 'object',
                                 'fields' => [
-                                    ['key' => 'src', 'type' => 'text', 'label' => 'Side Image Path'],
                                     ['key' => 'alt', 'type' => 'text', 'label' => 'Side Image Alt Text'],
                                 ],
                             ],
@@ -109,10 +107,9 @@ final class DanceHomePageBuilder extends AbstractPageViewModelBuilder
                                     ['key' => 'name', 'type' => 'text', 'label' => 'Artist Name'],
                                     [
                                         'key' => 'image',
-                                        'type' => 'object',
-                                        'coerceStringKey' => 'src',
+                                        'type' => 'image',
+                                        'storage' => 'object',
                                         'fields' => [
-                                            ['key' => 'src', 'type' => 'text', 'label' => 'Image Path'],
                                             ['key' => 'alt', 'type' => 'text', 'label' => 'Alt Text'],
                                         ],
                                     ],

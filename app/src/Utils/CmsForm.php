@@ -11,6 +11,11 @@ final class CmsForm
         return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
     }
 
+    public static function uploadFieldName(array $path): string
+    {
+        return 'upload_' . self::inputId($path);
+    }
+
     /** @param array<int, array<string, mixed>> $sections */
     public static function renderSchema(array $sections, array $content): void
     {
@@ -152,6 +157,11 @@ final class CmsForm
             return;
         }
 
+        if ($type === 'image') {
+            self::renderSchemaImage($field, $value, $path);
+            return;
+        }
+
         self::renderSchemaScalar($field, $value, $path);
     }
 
@@ -232,6 +242,13 @@ final class CmsForm
             return;
         }
 
+        if ($itemType === 'image') {
+            $itemField = is_array($field['itemField'] ?? null) ? $field['itemField'] : ['type' => 'image', 'storage' => 'string', 'label' => 'Image'];
+            self::renderSchemaImage($itemField, $item, $itemPath);
+            echo '</div>';
+            return;
+        }
+
         $itemArray = is_array($item) ? $item : [];
         echo '<div class="grid grid-cols-1 gap-4">';
         foreach (($field['fields'] ?? []) as $childField) {
@@ -293,6 +310,62 @@ final class CmsForm
     }
 
     /** @param array<string, mixed> $field */
+    private static function renderSchemaImage(array $field, mixed $value, array $path): void
+    {
+        $storage = (string)($field['storage'] ?? 'object');
+        $label = (string)($field['label'] ?? self::label((string)end($path)));
+        $currentSrc = '';
+        $meta = [];
+
+        if ($storage === 'string') {
+            $currentSrc = is_scalar($value) ? trim((string)$value) : '';
+        } elseif (is_array($value)) {
+            $currentSrc = trim((string)($value['src'] ?? ''));
+            $meta = $value;
+        } elseif (is_scalar($value)) {
+            $currentSrc = trim((string)$value);
+        }
+
+        $previewSrc = self::previewSrc($currentSrc);
+        $uploadFieldName = self::uploadFieldName($path);
+        $hiddenName = $storage === 'string'
+            ? self::inputName('content', $path)
+            : self::inputName('content', [...$path, 'src']);
+
+        echo '<div class="rounded-lg border border-slate-200 p-3">';
+        echo '<label class="mb-1 block text-sm font-medium text-slate-700">' . self::h($label) . '</label>';
+        self::renderFieldHelp($field);
+
+        echo '<input type="hidden" name="' . self::h($hiddenName) . '" value="' . self::h($currentSrc) . '">';
+
+        if ($previewSrc !== '') {
+            echo '<div class="mb-3 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">';
+            echo '<img src="' . self::h($previewSrc) . '" alt="' . self::h($label) . '" class="h-48 w-full object-cover">';
+            echo '</div>';
+        } else {
+            echo '<div class="mb-3 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-500">No image uploaded yet.</div>';
+        }
+
+        echo '<input name="' . self::h($uploadFieldName) . '" type="file" accept=".jpg,.jpeg,.png,.webp,.gif" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700">';
+        echo '<p class="mt-1 text-xs text-slate-500">Upload a new image to replace the current one.</p>';
+
+        if ($storage === 'object') {
+            echo '<div class="mt-4 grid grid-cols-1 gap-4">';
+            foreach (($field['fields'] ?? []) as $childField) {
+                if (!is_array($childField) || !isset($childField['key'])) {
+                    continue;
+                }
+
+                $childKey = (string)$childField['key'];
+                self::renderSchemaField($childField, $meta[$childKey] ?? null, [...$path, $childKey]);
+            }
+            echo '</div>';
+        }
+
+        echo '</div>';
+    }
+
+    /** @param array<string, mixed> $field */
     private static function renderFieldHelp(array $field): void
     {
         if (empty($field['help'])) {
@@ -305,11 +378,28 @@ final class CmsForm
     private static function inputId(array $path): string
     {
         $parts = array_map(static function (mixed $part): string {
+            if ((string)$part === '__INDEX__') {
+                return '__INDEX__';
+            }
             $part = strtolower((string)$part);
             return preg_replace('/[^a-z0-9_]+/', '_', $part) ?? 'field';
         }, $path);
 
         return 'content_' . implode('_', $parts);
+    }
+
+    private static function previewSrc(string $path): string
+    {
+        $path = trim($path);
+        if ($path === '') {
+            return '';
+        }
+
+        if (preg_match('~^https?://~i', $path) === 1 || str_starts_with($path, '/')) {
+            return $path;
+        }
+
+        return '/' . ltrim($path, '/');
     }
 
     private static function capture(callable $callback): string
