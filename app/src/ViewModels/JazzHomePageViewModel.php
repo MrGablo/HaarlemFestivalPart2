@@ -4,12 +4,20 @@ namespace App\ViewModels;
 
 class JazzHomePageViewModel
 {
-    public array $content;
-    public array $events;
-
-    public function __construct(array $content, array $events)
-    {
-        $this->content = $content;
-        $this->events = $events;
-    }
+    /**
+     * @param array<int, array{value: string, label: string}> $dayTabs
+     */
+    public function __construct(
+        public string $pageTitle,
+        public array $hero,
+        public array $intro,
+        public array $dayTicketPass,
+        public string $scheduleTitle,
+        public string $scheduleVenueTitle,
+        public array $hallTabs,
+        public array $dayTabs,
+        public bool $showAllEventsButton,
+        public string $allEventsButtonLabel,
+        public array $events
+    ) {}
 }

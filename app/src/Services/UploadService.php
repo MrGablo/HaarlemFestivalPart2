@@ -85,6 +85,27 @@ final class UploadService
         return $relative;
     }
 
+    public function deleteImage(?string $path, string $section = 'global', string $folder = 'uploads'): void
+    {
+        if ($path === null || trim($path) === '') {
+            return;
+        }
+
+        $section = $this->slug($section) ?: 'global';
+        $folder = $this->slug($folder) ?: 'uploads';
+        $relative = ltrim($path, '/');
+        $prefix = 'assets/img/' . $section . '/' . $folder . '/';
+
+        if (!str_starts_with($relative, $prefix)) {
+            return;
+        }
+
+        $absolute = __DIR__ . '/../../public/' . $relative;
+        if (is_file($absolute)) {
+            @unlink($absolute);
+        }
+    }
+
     private function randomName(): string
     {
         // 16 bytes => 32 hex chars (good enough)

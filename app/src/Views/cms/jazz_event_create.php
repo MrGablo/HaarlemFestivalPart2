@@ -86,14 +86,19 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-slate-700">Location</label>
-                            <input
-                                name="location"
-                                type="text"
-                                maxlength="160"
+                            <label class="block text-sm font-medium text-slate-700">Venue</label>
+                            <select
+                                name="venue_id"
                                 required
-                                value="<?= $v('location') ?>"
                                 class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
+                                <option value="">Select venue</option>
+                                <?php foreach (($venues ?? []) as $venue): ?>
+                                    <?php $isSelected = ((string)($old['venue_id'] ?? '') === (string)$venue->venue_id) ? 'selected' : ''; ?>
+                                    <option value="<?= (int)$venue->venue_id ?>" <?= $isSelected ?>>
+                                        <?= htmlspecialchars((string)$venue->name) ?> (ID <?= (int)$venue->venue_id ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
 
                         <div>
