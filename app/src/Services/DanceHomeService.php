@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Cms\PageBuilder\Builders\DanceHomePageBuilder;
+use App\Cms\PageBuilder\Content\DanceHomePageContentViewModel;
 use App\Repositories\DanceHomeRepository;
 use App\Repositories\Interfaces\IPageRepository;
 use App\Utils\Media;
@@ -27,35 +29,23 @@ final class DanceHomeService
         ['name' => 'NICKY ROMERO', 'image' => 'assets/img/dance-assets/dj-nicky-romero.png'],
     ];
 
-    private const DEFAULT_HERO_SUBTITLE_LINES = [
-        'Discover Haarlem\'s vibrant nightlife',
-        'Experience top international DJs',
-        'Celebrate dance culture in the heart of the city',
-    ];
-
-    private const DEFAULT_INTRO_PARAS = [
-        'The Dance Event is where Haarlem truly comes alive. As the sun goes down, the city switches into a completely different mode — neon lights, deep bass, and a crowd that\'s ready to move. World-class DJs, immersive light shows, and the city\'s vibrant nightlife all come together to create nights that feel electric.',
-        'Here, it doesn\'t matter if you\'re a die-hard rave lover or someone who\'s just curious about the scene. Maybe you come for the heavy drops, maybe for the atmosphere, or maybe you just want to dance with friends until your legs can\'t keep up — either way, you\'ll fit right in.',
-        'Across the festival\'s 3 days, Haarlem transforms into a playground for rhythmic energy: back-to-back DJ sets, intimate experimental sessions, and massive stages that pull you in with sound you can feel straight in your chest.',
-        'So dive into the lights, join the crowd, and let yourself get carried by the rhythm. This is Dance — where excitement, connection, and pure nightlife energy meet.',
-    ];
-
     public function __construct(
         private IPageRepository $pageRepo,
         private DanceHomeRepository $danceRepo,
+        private DanceHomePageBuilder $builder = new DanceHomePageBuilder(),
     ) {}
 
     public function buildViewModel(): DanceHomePageViewModel
     {
-        $content = $this->pageRepo->getPageContentByType('Dance_Homepage');
+        /** @var DanceHomePageContentViewModel $page */
+        $page = $this->builder->buildViewModel(
+            $this->pageRepo->getPageContentByType($this->builder->pageType())
+        );
 
-        $hero = $content['hero'] ?? [];
-        $intro = $content['intro'] ?? [];
-        if (!is_array($intro)) {
-            $intro = [];
-        }
-        $lineup = $content['lineup'] ?? [];
-        $timetableCms = $content['timetable'] ?? [];
+        $hero = $page->hero;
+        $intro = $page->intro;
+        $lineup = $page->lineup;
+        $timetableCms = $page->timetable;
 
         $heroBg = $this->normaliseAsset(
             Media::image($hero['background_image'] ?? null)['src'],
@@ -69,25 +59,10 @@ final class DanceHomeService
         $heroTitle = (string) ($hero['title'] ?? 'HAARLEM DANCE EVENT');
         $parts = preg_match('/^(.+?)\s+(.+)$/', $heroTitle, $m) ? [$m[1], $m[2]] : [$heroTitle, ''];
 
-        $subtitleHtml = $hero['subtitle_html'] ?? null;
-        $subtitleLines = $hero['subtitle'] ?? null;
-        $subtitleMode = 'default';
-        if (is_string($subtitleHtml) && $subtitleHtml !== '') {
-            $subtitleMode = 'html';
-        } elseif (is_array($subtitleLines) && $subtitleLines !== []) {
-            $subtitleMode = 'lines';
-        }
+        $subtitleHtml = is_string($hero['subtitle_html'] ?? null) ? $hero['subtitle_html'] : '';
+        $bodyHtml = is_string($intro['body_html'] ?? null) ? $intro['body_html'] : '';
 
-        $bodyHtml = $intro['body_html'] ?? null;
-        $paras = $intro['paragraphs'] ?? null;
-        $introBodyMode = 'default';
-        if (is_string($bodyHtml) && $bodyHtml !== '') {
-            $introBodyMode = 'html';
-        } elseif (is_array($paras) && $paras !== []) {
-            $introBodyMode = 'paragraphs';
-        }
-
-        $stats = $intro['stats'] ?? $hero['stats'] ?? ['3 days', '6 DJs', '2490 min'];
+        $stats = $intro['stats'] ?? [];
         $stats = is_array($stats) ? $stats : [];
 
         $rows = $this->danceRepo->findDanceTimetableRows();
@@ -116,18 +91,13 @@ final class DanceHomeService
             [
                 'titleLine1' => $parts[0],
                 'titleLine2' => $parts[1],
-                'subtitleMode' => $subtitleMode,
-                'subtitleHtml' => is_string($subtitleHtml) ? $subtitleHtml : '',
-                'subtitleLines' => is_array($subtitleLines) ? array_map('strval', $subtitleLines) : [],
-                'defaultSubtitleLines' => self::DEFAULT_HERO_SUBTITLE_LINES,
+                'subtitleHtml' => $subtitleHtml,
                 'primaryButtonLabel' => (string) ($hero['primary_button']['label'] ?? 'Buy ticket'),
                 'stripText' => (string) ($hero['strip_text'] ?? 'HAARLEM FESTIVAL DANCE'),
             ],
             [
                 'kicker' => (string) ($intro['kicker'] ?? 'Let Haarlem\'s music welcome you in'),
-                'bodyMode' => $introBodyMode,
-                'bodyHtml' => is_string($bodyHtml) ? $bodyHtml : '',
-                'paragraphs' => is_array($paras) ? array_map('strval', $paras) : self::DEFAULT_INTRO_PARAS,
+                'bodyHtml' => $bodyHtml,
                 'sideImageAlt' => (string) (Media::image($intro['side_image'] ?? null)['alt'] ?: 'Dance event'),
                 'statsLine' => $statsLine,
             ],
@@ -263,7 +233,15 @@ final class DanceHomeService
     private function normaliseAsset(string $path, string $fallback): string
     {
         $path = trim($path);
-        if ($path === '' || strpos($path, 'assets/img/dance-assets/') !== 0) {
+        if ($path === '') {
+            return $fallback;
+        }
+
+        if (strpos($path, 'assets/img/page/') === 0) {
+            return $path;
+        }
+
+        if (strpos($path, 'assets/img/dance-assets/') !== 0) {
             return $fallback;
         }
         $base = basename($path);

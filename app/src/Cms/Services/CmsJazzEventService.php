@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services;
+namespace App\Cms\Services;
 
 use App\Models\JazzEvent;
 use App\Repositories\ArtistRepository;

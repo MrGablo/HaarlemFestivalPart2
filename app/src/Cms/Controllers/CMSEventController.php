@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Controllers;
+namespace App\Cms\Controllers;
 
-use App\Services\CmsEventService;
+use App\Cms\Services\CmsEventService;
 use App\Utils\AdminGuard;
 use App\Utils\Csrf;
 use App\Utils\Flash;
@@ -31,7 +31,7 @@ final class CMSEventController
         $errors = Flash::getErrors();
         $flashSuccess = Flash::getSuccess();
 
-        require __DIR__ . '/../Views/cms/events_index.php';
+        require __DIR__ . '/../../Views/cms/events_index.php';
     }
 
     public function edit(int $id): void
@@ -50,7 +50,7 @@ final class CMSEventController
         $flashSuccess = Flash::getSuccess();
         $csrfToken = Csrf::token();
 
-        require __DIR__ . '/../Views/cms/event_edit.php';
+        require __DIR__ . '/../../Views/cms/event_edit.php';
     }
 
     public function update(int $id): void

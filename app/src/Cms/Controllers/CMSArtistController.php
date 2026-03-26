@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Controllers;
+namespace App\Cms\Controllers;
 
 use App\Models\Artist;
-use App\Services\CmsArtistService;
+use App\Cms\Services\CmsArtistService;
 use App\Utils\AdminGuard;
 use App\Utils\Csrf;
 use App\Utils\Flash;
@@ -31,7 +31,7 @@ final class CMSArtistController
         $flashSuccess = Flash::getSuccess();
         $csrfToken = Csrf::token();
 
-        require __DIR__ . '/../Views/cms/artists_index.php';
+        require __DIR__ . '/../../Views/cms/artists_index.php';
     }
 
     public function createForm(): void
@@ -44,7 +44,7 @@ final class CMSArtistController
         $flashSuccess = Flash::getSuccess();
         $csrfToken = Csrf::token();
 
-        require __DIR__ . '/../Views/cms/artist_create.php';
+        require __DIR__ . '/../../Views/cms/artist_create.php';
     }
 
     public function create(): void
@@ -80,7 +80,7 @@ final class CMSArtistController
         $flashSuccess = Flash::getSuccess();
         $csrfToken = Csrf::token();
 
-        require __DIR__ . '/../Views/cms/artist_edit.php';
+        require __DIR__ . '/../../Views/cms/artist_edit.php';
     }
 
     public function update(int $id): void

@@ -6,6 +6,7 @@ use App\Models\DanceEvent;
 use App\Models\Event;
 use App\Models\GenericEvent;
 use App\Models\JazzEvent;
+use App\Models\YummyEvent;
 
 class EventModelBuilderService
 {
@@ -15,6 +16,7 @@ class EventModelBuilderService
 
         return match ($eventType) {
             'jazz' => $this->buildJazzEvent($row),
+            'yummy' => $this->buildYummyEvent($row),
             'dance' => $this->buildDanceEvent($row),
             default => $this->buildGenericEvent($row),
         };
@@ -25,9 +27,15 @@ class EventModelBuilderService
         return new JazzEvent($row);
     }
 
+
     private function buildDanceEvent(array $row): DanceEvent
     {
         return new DanceEvent($row);
+    }
+
+    private function buildYummyEvent(array $row): YummyEvent
+    {
+        return new YummyEvent($row);
     }
 
     private function buildGenericEvent(array $row): GenericEvent

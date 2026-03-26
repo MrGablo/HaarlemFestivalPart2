@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Controllers;
+namespace App\Cms\Controllers;
 
 use App\Models\UserModel;
 use App\Models\UserRole;
-use App\Services\CmsUserService;
+use App\Cms\Services\CmsUserService;
 use App\Utils\AdminGuard;
 use App\Utils\Csrf;
 use App\Utils\Flash;
@@ -37,7 +37,7 @@ final class CMSUserController
         $flashSuccess = Flash::getSuccess();
         $csrfToken = Csrf::token();
 
-        require __DIR__ . '/../Views/cms/users_index.php';
+        require __DIR__ . '/../../Views/cms/users_index.php';
     }
 
     public function createForm(): void
@@ -50,7 +50,7 @@ final class CMSUserController
         $flashSuccess = Flash::getSuccess();
         $csrfToken = Csrf::token();
 
-        require __DIR__ . '/../Views/cms/user_create.php';
+        require __DIR__ . '/../../Views/cms/user_create.php';
     }
 
     public function create(): void
@@ -91,7 +91,7 @@ final class CMSUserController
         $flashSuccess = Flash::getSuccess();
         $csrfToken = Csrf::token();
 
-        require __DIR__ . '/../Views/cms/user_edit.php';
+        require __DIR__ . '/../../Views/cms/user_edit.php';
     }
 
     public function update(int $id): void
