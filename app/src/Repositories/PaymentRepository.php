@@ -7,6 +7,7 @@ use App\Framework\Repository;
 /**
  * Simple repository for Stripe payment flow.
  * Creates and updates orders used by checkout fulfilment.
+ * Marks pending orders paid and creates tickets after successful checkout.
  */
 class PaymentRepository extends Repository
 {

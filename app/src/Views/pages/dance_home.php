@@ -23,7 +23,7 @@ declare(strict_types=1);
     </style>
 </head>
 
-<body class="min-h-screen bg-dance-bg text-dance-text text-sm font-['Montserrat',sans-serif]">
+<body class="dance-open-cart-on-add min-h-screen bg-dance-bg text-dance-text text-sm font-['Montserrat',sans-serif]">
     <?php include __DIR__ . '/../partials/header.php'; ?>
     <?php require __DIR__ . '/../partials/dance_home_content.php'; ?>
 
@@ -37,7 +37,6 @@ declare(strict_types=1);
         <span class="block text-xs text-dance-toast-subtle">Click to open shopping cart</span>
     </button>
 
-    <script src="/assets/js/dance/dance_home.js"></script>
     <?php $danceFooter = true; include __DIR__ . '/../partials/footer.php'; ?>
 </body>
 

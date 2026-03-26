@@ -20,65 +20,7 @@ class PaymentService
     }
 
     /**
-     * Create a Stripe Checkout Session for the given event.
-     * Returns the Stripe session ID so the frontend can redirect.
-     */
-    public function createCheckoutSession(int $userId, int $eventId, int $quantity): string
-    {
-        // Set Stripe secret key (TEST mode)
-        \Stripe\Stripe::setApiKey($this->getStripeSecretKey());
-
-        // Look up event + price in the database
-        $event = $this->repo->findEventById($eventId);
-        if ($event === null) {
-            throw new \RuntimeException('Event not found.');
-        }
-
-        $eventTitle   = $event['title'] ?? 'Event Ticket';
-        $priceInCents = (int) (($event['price'] ?? 0) * 100); // Stripe uses cents
-
-        if ($priceInCents <= 0) {
-            throw new \RuntimeException('Event has no valid price.');
-        }
-
-        // Build base URL for redirect pages
-        $scheme  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $host    = $_SERVER['HTTP_HOST'] ?? 'localhost';
-        $baseUrl = $scheme . '://' . $host;
-
-        // Create the Checkout Session
-        $session = \Stripe\Checkout\Session::create([
-            'payment_method_types' => ['card'],
-            'line_items' => [[
-                'price_data' => [
-                    'currency'     => 'eur',
-                    'product_data' => [
-                        'name' => $eventTitle,
-                    ],
-                    'unit_amount' => $priceInCents,
-                ],
-                'quantity' => $quantity,
-            ]],
-            'mode'        => 'payment',
-            'automatic_tax' => [
-                'enabled' => true,
-            ],
-            'success_url' => $baseUrl . '/payment/success?session_id={CHECKOUT_SESSION_ID}',
-            'cancel_url'  => $baseUrl . '/payment/cancel',
-            // Store our own data so the webhook knows what to create
-            'metadata' => [
-                'user_id'  => (string) $userId,
-                'event_id' => (string) $eventId,
-                'quantity'  => (string) $quantity,
-            ],
-        ]);
-
-        return $session->id;
-    }
-
-    /**
      * Create Stripe hosted checkout URL for the full pending cart.
-     * This follows Stripe sample flow: server creates session, client is redirected to session URL.
      */
     public function createCheckoutUrlForPendingCart(int $userId): string
     {
@@ -175,22 +117,15 @@ class PaymentService
      */
     public function handleCheckoutCompleted(object $session): void
     {
-        $userId         = (int) ($session->metadata->user_id          ?? 0);
-        $pendingOrderId = (int) ($session->metadata->pending_order_id ?? 0);
+        $userId           = (int) ($session->metadata->user_id ?? 0);
+        $pendingOrderId   = (int) ($session->metadata->pending_order_id ?? 0);
 
         if ($userId <= 0) {
             throw new \RuntimeException('Payment: invalid metadata - user_id=' . $userId);
         }
 
-        if ($pendingOrderId > 0) {
-            $this->fulfillPendingOrder($userId, $pendingOrderId);
-            return;
-        }
-
-        $eventId  = (int) ($session->metadata->event_id ?? 0);
-        $quantity = (int) ($session->metadata->quantity  ?? 1);
-        if ($eventId <= 0 || $quantity <= 0) {
-            throw new \RuntimeException('Payment: invalid fallback item metadata.');
+        if ($pendingOrderId <= 0) {
+            throw new \RuntimeException('Payment: missing pending_order_id in checkout session metadata.');
         }
 
         $orderId     = $this->repo->createPaidOrder($userId);

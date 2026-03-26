@@ -63,6 +63,9 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     // Personal Program (My Program) page
     $r->addRoute('GET', '/program', ['App\Controllers\ProgramController', 'show']);
     
+    //Yummy Festival routes
+    $r->addRoute('GET', '/yummy', ['App\Controllers\YummyController', 'home']);
+    $r->addRoute('GET', '/yummy/restaurant', ['App\Controllers\YummyController', 'gerRestaurant']);
 
     //user authorization
     $r->addRoute('GET',  '/login',    ['App\Controllers\AuthController', 'showLogin']);
@@ -95,7 +98,6 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
 
     // Payment routes (Stripe checkout)
     $r->addRoute('POST', '/payment/checkout', ['App\Controllers\PaymentController', 'checkoutRedirect']);
-    $r->addRoute('POST', '/api/payment/create-session', ['App\Controllers\PaymentController', 'createCheckoutSession']);
     $r->addRoute('POST', '/api/payment/webhook', ['App\Controllers\PaymentController', 'handleWebhook']);
     $r->addRoute('GET',  '/payment/success', ['App\Controllers\PaymentController', 'success']);
     $r->addRoute('GET',  '/payment/cancel', ['App\Controllers\PaymentController', 'cancel']);
@@ -105,49 +107,49 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     $r->addRoute('POST', '/scanner/process', ['App\Controllers\ScannerController', 'processScan']);
 
     // CMS routes (admin only)
-    $r->addRoute('GET', '/cms', ['App\Controllers\CMSController', 'generalIndex']);
-    $r->addRoute('GET', '/cms/pages', ['App\Controllers\CMSController', 'index']);
-    $r->addRoute('GET', '/cms/page/{id:\\d+}', ['App\Controllers\CMSController', 'edit']);
-    $r->addRoute('POST', '/cms/page/{id:\\d+}/update', ['App\Controllers\CMSController', 'update']);
-    $r->addRoute('GET',  '/cms/events', ['App\Controllers\CMSEventController', 'index']);
-    $r->addRoute('GET',  '/cms/events/{id:\\d+}', ['App\Controllers\CMSEventController', 'edit']);
-    $r->addRoute('POST', '/cms/events/{id:\\d+}', ['App\Controllers\CMSEventController', 'update']);
-    $r->addRoute('GET',  '/cms/artists', ['App\Controllers\CMSArtistController', 'index']);
-    $r->addRoute('GET',  '/cms/artists/create', ['App\Controllers\CMSArtistController', 'createForm']);
-    $r->addRoute('POST', '/cms/artists/create', ['App\Controllers\CMSArtistController', 'create']);
-    $r->addRoute('GET',  '/cms/artists/{id:\\d+}', ['App\Controllers\CMSArtistController', 'edit']);
-    $r->addRoute('POST', '/cms/artists/{id:\\d+}', ['App\Controllers\CMSArtistController', 'update']);
-    $r->addRoute('POST', '/cms/artists/{id:\\d+}/delete', ['App\Controllers\CMSArtistController', 'delete']);
+    $r->addRoute('GET', '/cms', ['App\Cms\Controllers\CMSController', 'generalIndex']);
+    $r->addRoute('GET', '/cms/pages', ['App\Cms\Controllers\CMSController', 'index']);
+    $r->addRoute('GET', '/cms/page/{id:\\d+}', ['App\Cms\Controllers\CMSController', 'edit']);
+    $r->addRoute('POST', '/cms/page/{id:\\d+}/update', ['App\Cms\Controllers\CMSController', 'update']);
+    $r->addRoute('GET',  '/cms/events', ['App\Cms\Controllers\CMSEventController', 'index']);
+    $r->addRoute('GET',  '/cms/events/{id:\\d+}', ['App\Cms\Controllers\CMSEventController', 'edit']);
+    $r->addRoute('POST', '/cms/events/{id:\\d+}', ['App\Cms\Controllers\CMSEventController', 'update']);
+    $r->addRoute('GET',  '/cms/artists', ['App\Cms\Controllers\CMSArtistController', 'index']);
+    $r->addRoute('GET',  '/cms/artists/create', ['App\Cms\Controllers\CMSArtistController', 'createForm']);
+    $r->addRoute('POST', '/cms/artists/create', ['App\Cms\Controllers\CMSArtistController', 'create']);
+    $r->addRoute('GET',  '/cms/artists/{id:\\d+}', ['App\Cms\Controllers\CMSArtistController', 'edit']);
+    $r->addRoute('POST', '/cms/artists/{id:\\d+}', ['App\Cms\Controllers\CMSArtistController', 'update']);
+    $r->addRoute('POST', '/cms/artists/{id:\\d+}/delete', ['App\Cms\Controllers\CMSArtistController', 'delete']);
     // CMS User Control routes (admin only)
-    $r->addRoute('GET',  '/cms/users', ['App\Controllers\CMSUserController', 'index']);
-    $r->addRoute('GET',  '/cms/users/create', ['App\Controllers\CMSUserController', 'createForm']);
-    $r->addRoute('POST', '/cms/users/create', ['App\Controllers\CMSUserController', 'create']);
-    $r->addRoute('GET',  '/cms/users/{id:\\d+}', ['App\Controllers\CMSUserController', 'edit']);
-    $r->addRoute('POST', '/cms/users/{id:\\d+}', ['App\Controllers\CMSUserController', 'update']);
-    $r->addRoute('POST', '/cms/users/{id:\\d+}/delete', ['App\Controllers\CMSUserController', 'delete']);
+    $r->addRoute('GET',  '/cms/users', ['App\Cms\Controllers\CMSUserController', 'index']);
+    $r->addRoute('GET',  '/cms/users/create', ['App\Cms\Controllers\CMSUserController', 'createForm']);
+    $r->addRoute('POST', '/cms/users/create', ['App\Cms\Controllers\CMSUserController', 'create']);
+    $r->addRoute('GET',  '/cms/users/{id:\\d+}', ['App\Cms\Controllers\CMSUserController', 'edit']);
+    $r->addRoute('POST', '/cms/users/{id:\\d+}', ['App\Cms\Controllers\CMSUserController', 'update']);
+    $r->addRoute('POST', '/cms/users/{id:\\d+}/delete', ['App\Cms\Controllers\CMSUserController', 'delete']);
 
     // CMS Order routes (admin only)
-    $r->addRoute('GET',  '/cms/orders', ['App\Controllers\CMSOrderController', 'index']);
-    $r->addRoute('GET',  '/cms/orders/export', ['App\Controllers\CMSOrderController', 'export']);
-    $r->addRoute('GET',  '/cms/orders/{id:\\d+}/export', ['App\Controllers\CMSOrderController', 'exportOptions']);
-    $r->addRoute('GET',  '/cms/orders/{id:\\d+}', ['App\Controllers\CMSOrderController', 'edit']);
-    $r->addRoute('POST', '/cms/orders/{id:\\d+}', ['App\Controllers\CMSOrderController', 'update']);
+    $r->addRoute('GET',  '/cms/orders', ['App\Cms\Controllers\CMSOrderController', 'index']);
+    $r->addRoute('GET',  '/cms/orders/export', ['App\Cms\Controllers\CMSOrderController', 'export']);
+    $r->addRoute('GET',  '/cms/orders/{id:\\d+}/export', ['App\Cms\Controllers\CMSOrderController', 'exportOptions']);
+    $r->addRoute('GET',  '/cms/orders/{id:\\d+}', ['App\Cms\Controllers\CMSOrderController', 'edit']);
+    $r->addRoute('POST', '/cms/orders/{id:\\d+}', ['App\Cms\Controllers\CMSOrderController', 'update']);
 
     // Jazz CMS routes (admin only)
-    $r->addRoute('GET',  '/cms/events/jazz', ['App\Controllers\CMSJazzController', 'index']);
-    $r->addRoute('GET',  '/cms/events/jazz/create', ['App\Controllers\CMSJazzController', 'createForm']);
-    $r->addRoute('POST', '/cms/events/jazz/create', ['App\Controllers\CMSJazzController', 'create']);
-    $r->addRoute('GET',  '/cms/events/jazz/{id:\\d+}', ['App\Controllers\CMSJazzController', 'edit']);
-    $r->addRoute('POST', '/cms/events/jazz/{id:\\d+}', ['App\Controllers\CMSJazzController', 'update']);
-    $r->addRoute('POST', '/cms/events/jazz/{id:\\d+}/delete', ['App\Controllers\CMSJazzController', 'delete']);
+    $r->addRoute('GET',  '/cms/events/jazz', ['App\Cms\Controllers\CMSJazzController', 'index']);
+    $r->addRoute('GET',  '/cms/events/jazz/create', ['App\Cms\Controllers\CMSJazzController', 'createForm']);
+    $r->addRoute('POST', '/cms/events/jazz/create', ['App\Cms\Controllers\CMSJazzController', 'create']);
+    $r->addRoute('GET',  '/cms/events/jazz/{id:\\d+}', ['App\Cms\Controllers\CMSJazzController', 'edit']);
+    $r->addRoute('POST', '/cms/events/jazz/{id:\\d+}', ['App\Cms\Controllers\CMSJazzController', 'update']);
+    $r->addRoute('POST', '/cms/events/jazz/{id:\\d+}/delete', ['App\Cms\Controllers\CMSJazzController', 'delete']);
 
     // Venue CMS routes (admin only)
-    $r->addRoute('GET',  '/cms/venues', ['App\Controllers\CMSVenueController', 'index']);
-    $r->addRoute('GET',  '/cms/venues/create', ['App\Controllers\CMSVenueController', 'createForm']);
-    $r->addRoute('POST', '/cms/venues/create', ['App\Controllers\CMSVenueController', 'create']);
-    $r->addRoute('GET',  '/cms/venues/{id:\\d+}', ['App\Controllers\CMSVenueController', 'edit']);
-    $r->addRoute('POST', '/cms/venues/{id:\\d+}', ['App\Controllers\CMSVenueController', 'update']);
-    $r->addRoute('POST', '/cms/venues/{id:\\d+}/delete', ['App\Controllers\CMSVenueController', 'delete']);
+    $r->addRoute('GET',  '/cms/venues', ['App\Cms\Controllers\CMSVenueController', 'index']);
+    $r->addRoute('GET',  '/cms/venues/create', ['App\Cms\Controllers\CMSVenueController', 'createForm']);
+    $r->addRoute('POST', '/cms/venues/create', ['App\Cms\Controllers\CMSVenueController', 'create']);
+    $r->addRoute('GET',  '/cms/venues/{id:\\d+}', ['App\Cms\Controllers\CMSVenueController', 'edit']);
+    $r->addRoute('POST', '/cms/venues/{id:\\d+}', ['App\Cms\Controllers\CMSVenueController', 'update']);
+    $r->addRoute('POST', '/cms/venues/{id:\\d+}/delete', ['App\Cms\Controllers\CMSVenueController', 'delete']);
 });
 
 
@@ -159,9 +161,6 @@ $uri = strtok($_SERVER['REQUEST_URI'], '?');
 $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
 Session::ensureStarted();
 
-/**
- * Switch on the dispatcher result and call the appropriate controller method if found.
- */
 /**
  * Switch on the dispatcher result and call the appropriate controller method if found.
  */
