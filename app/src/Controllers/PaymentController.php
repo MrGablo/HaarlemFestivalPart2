@@ -77,11 +77,36 @@ class PaymentController
         $sigHeader = $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '';
         $secret    = getenv('STRIPE_WEBHOOK_SECRET') ?: '';
 
-        try {
-            $event = \Stripe\Webhook::constructEvent($payload, $sigHeader, $secret);
-        } catch (\Exception $e) {
+        // Ensure we actually received a payload
+        if ($payload === false) {
+            error_log('Stripe webhook error: failed to read request body.');
             http_response_code(400);
-            echo 'Webhook signature verification failed: ' . $e->getMessage();
+            echo 'Invalid payload';
+            exit;
+        }
+
+        // Ensure the webhook secret is configured
+        if ($secret === '') {
+            error_log('Stripe webhook configuration error: STRIPE_WEBHOOK_SECRET is not set.');
+            http_response_code(500);
+            echo 'Webhook configuration error';
+            exit;
+        }
+
+        // Require a signature header
+        if ($sigHeader === '') {
+            error_log('Stripe webhook error: missing Stripe signature header.');
+            http_response_code(400);
+            echo 'Missing signature';
+            exit;
+        }
+
+        try {
+            $event = \Stripe\Webhook::constructEvent((string)$payload, $sigHeader, $secret);
+        } catch (\Exception $e) {
+            error_log('Webhook signature verification failed: ' . $e->getMessage());
+            http_response_code(400);
+            echo 'Invalid signature';
             exit;
         }
 
