@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Repositories\DanceHomeRepository;
+use App\Repositories\EventRepository;
 use App\Repositories\JazzEventRepository;
 use App\Models\PassEvent;
 use App\Repositories\PassRepository;
@@ -14,17 +15,20 @@ class TicketService
     private PassService $passService;
     private JazzEventRepository $jazzEventRepository;
     private DanceHomeRepository $danceHomeRepository;
+    private EventRepository $eventRepository;
 
     public function __construct(
         ?TicketRepository $ticketRepository = null,
         ?PassService $passService = null,
         ?JazzEventRepository $jazzEventRepository = null,
-        ?DanceHomeRepository $danceHomeRepository = null
+        ?DanceHomeRepository $danceHomeRepository = null,
+        ?EventRepository $eventRepository = null
     ) {
         $this->ticketRepository = $ticketRepository ?? new TicketRepository();
         $this->passService = $passService ?? new PassService(new PassRepository());
         $this->jazzEventRepository = $jazzEventRepository ?? new JazzEventRepository();
         $this->danceHomeRepository = $danceHomeRepository ?? new DanceHomeRepository();
+        $this->eventRepository = $eventRepository ?? new EventRepository();
     }
 
     public function createTicketsForOrderItem(int $orderItemId, int $userId, int $eventId, int $quantity, ?string $passDate): void
@@ -42,6 +46,12 @@ class TicketService
         for ($i = 0; $i < $quantity; $i++) {
             foreach ($coveredEventIds as $coveredEventId) {
                 try {
+                    $availabilityUpdated = $this->eventRepository->decrementAvailabilityByOne($coveredEventId);
+                    if (!$availabilityUpdated) {
+                        error_log('Ticket creation skipped: no availability for event_id=' . $coveredEventId);
+                        continue;
+                    }
+
                     $this->ticketRepository->createTicket(
                         $orderItemId,
                         $userId,
