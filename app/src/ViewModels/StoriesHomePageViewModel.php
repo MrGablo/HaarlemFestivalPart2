@@ -4,12 +4,14 @@ namespace App\ViewModels;
 
 class StoriesHomePageViewModel
 {
-    public array $pageContent;
+    public array $hero;
+    public array $introduction;
     public array $days;
 
-    public function __construct(array $pageContent, array $days)
+    public function __construct(array $hero, array $introduction, array $days)
     {
-        $this->pageContent = $pageContent;
+        $this->hero = $hero;
+        $this->introduction = $introduction;
         $this->days = $days;
     }
 }

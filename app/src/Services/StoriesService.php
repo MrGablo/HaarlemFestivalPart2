@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Cms\PageBuilder\Builders\StoriesHomePageBuilder;
+use App\Cms\PageBuilder\Content\StoriesHomePageContentViewModel;
 use App\Repositories\Interfaces\IStoriesRepository;
 use App\Repositories\Interfaces\IPageRepository;
 use App\ViewModels\StoriesHomePageViewModel;
@@ -12,16 +14,25 @@ class StoriesService
 {
     private IStoriesRepository $storiesRepo;
     private IPageRepository $pageRepo;
+    private StoriesHomePageBuilder $builder;
 
-    public function __construct(IStoriesRepository $storiesRepo, IPageRepository $pageRepo)
+    public function __construct(IStoriesRepository $storiesRepo, IPageRepository $pageRepo, ?StoriesHomePageBuilder $builder = null)
     {
         $this->storiesRepo = $storiesRepo;
         $this->pageRepo = $pageRepo;
+        $this->builder = $builder ?? new StoriesHomePageBuilder();
     }
 
     public function getStoriesPageData(): StoriesHomePageViewModel
     {
-        $content = $this->pageRepo->getPageContentByType('Stories_Homepage');
+        /** @var StoriesHomePageContentViewModel $page */
+        $page = $this->builder->buildViewModel(
+            $this->pageRepo->getPageContentByType($this->builder->pageType())
+        );
+
+        $hero = $page->hero;
+        $introduction = $page->introduction;
+
         $events = $this->storiesRepo->getAllStoriesEvents();
 
         foreach ($events as &$event) {
@@ -57,6 +68,6 @@ class StoriesService
             }
         }
 
-        return new StoriesHomePageViewModel($content, $days);
+        return new StoriesHomePageViewModel($hero, $introduction, $days);
     }
 }

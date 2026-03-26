@@ -1,6 +1,7 @@
 <?php
 /** @var \App\ViewModels\StoriesHomePageViewModel $viewModel */
-$content = $viewModel->pageContent;
+$hero = $viewModel->hero;
+$introduction = $viewModel->introduction;
 $days = $viewModel->days;
 ?>
 <!DOCTYPE html>
@@ -8,7 +9,7 @@ $days = $viewModel->days;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($content['hero']['title'] ?? 'Haarlem Stories') ?></title>
+    <title><?= htmlspecialchars($hero['title'] ?? 'Haarlem Stories') ?></title>
 
     <script>
         tailwind = {
@@ -26,16 +27,16 @@ $days = $viewModel->days;
 
 <!-- HERO -->
 <header class="relative flex min-h-[450px] w-full items-center overflow-hidden bg-black">
-    <img src="/<?= htmlspecialchars($content['hero']['image_path'] ?? '') ?>"
+    <img src="/<?= htmlspecialchars($hero['image_path'] ?? '') ?>"
          class="absolute inset-0 h-full w-full object-cover opacity-40" alt="Hero Background">
 
     <div class="relative z-10 px-10 md:px-24">
         <h1 class="text-6xl font-black uppercase tracking-tighter md:text-8xl">
-            <?= htmlspecialchars($content['hero']['title'] ?? 'STORIES') ?>
+            <?= htmlspecialchars($hero['title'] ?? 'STORIES') ?>
         </h1>
 
         <p class="mt-4 max-w-xl text-xl text-gray-200">
-            <?= htmlspecialchars($content['hero']['subtitle'] ?? '') ?>
+            <?= htmlspecialchars($hero['subtitle'] ?? '') ?>
         </p>
     </div>
 </header>
@@ -45,17 +46,17 @@ $days = $viewModel->days;
 
     <div class="flex-1">
         <h2 class="mb-8 text-4xl font-extrabold uppercase tracking-tight">
-            <?= htmlspecialchars($content['introduction']['title'] ?? '') ?>
+            <?= htmlspecialchars($introduction['title'] ?? '') ?>
         </h2>
 
         <div class="text-lg leading-relaxed text-gray-400">
-            <?= $content['introduction']['body_html'] ?? '' ?>
+            <?= $introduction['body_html'] ?? '' ?>
         </div>
     </div>
 
     <div class="flex-1">
         <div class="overflow-hidden rounded-2xl shadow-2xl">
-            <img src="/<?= htmlspecialchars($content['introduction']['image_path'] ?? '') ?>"
+            <img src="/<?= htmlspecialchars($introduction['image_path'] ?? '') ?>"
                  class="block w-full aspect-[16/9] object-contain bg-black"
                  alt="Introduction">
         </div>
