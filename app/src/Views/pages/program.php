@@ -1,6 +1,10 @@
 <?php
 declare(strict_types=1);
 
+use chillerlan\QRCode\QRCode;
+use chillerlan\QRCode\QROptions;
+use chillerlan\QRCode\Output\QRMarkupSVG;
+
 /** @var int $totalEvents */
 /** @var float $subtotal */
 $totalEvents = (int)($totalEvents ?? 0);
@@ -47,6 +51,29 @@ $subtotal = (float)($subtotal ?? 0);
                 <p class="mb-6 text-base text-neutral-600">These events are already paid. Your tickets are in your email / mobile wallet.</p>
 
                 <?php foreach ($paidEvents as $event): ?>
+                    <?php
+                    $ticketQr = trim((string)($event['ticketQr'] ?? ''));
+                    $ticketPanelBaseId = (int)($event['ticketId'] ?? 0);
+                    if ($ticketPanelBaseId <= 0) {
+                        $ticketPanelBaseId = (int)($event['orderItemId'] ?? 0);
+                    }
+                    $ticketPanelId = 'ticket-qr-' . $ticketPanelBaseId;
+                    $ticketHasQr = $ticketQr !== '';
+                    $qrSvg = '';
+
+                    if ($ticketHasQr) {
+                        try {
+                            $qrSvg = (new QRCode(new QROptions([
+                                'outputInterface' => QRMarkupSVG::class,
+                                'outputBase64' => false,
+                                'eccLevel' => 'M',
+                                'scale' => 6,
+                            ])))->render($ticketQr);
+                        } catch (\Throwable) {
+                            $ticketHasQr = false;
+                        }
+                    }
+                    ?>
                     <div class="mb-2.5 rounded-lg border border-neutral-200 px-4 py-3">
                         <div class="flex items-center justify-between gap-3">
                             <div class="min-w-0 flex-1">
@@ -55,13 +82,34 @@ $subtotal = (float)($subtotal ?? 0);
                                     <div class="text-sm text-neutral-600"><?= htmlspecialchars($event['location'], ENT_QUOTES, 'UTF-8') ?></div>
                                 <?php endif; ?>
                                 <div class="mt-1 text-sm text-neutral-700">
+                                    Ticket #<?= (int)($event['ticketId'] ?? 0) ?> ·
                                     Qty: <?= (int)$event['quantity'] ?> ·
                                     €<?= number_format($event['unitPrice'], 2, '.', '') ?> each ·
                                     Total €<?= number_format($event['totalPrice'], 2, '.', '') ?>
                                 </div>
                             </div>
-                            <span class="shrink-0 text-xs font-bold uppercase text-[#219653]">Paid</span>
+                            <div class="shrink-0 flex items-center gap-3">
+                                <span class="text-xs font-bold uppercase text-[#219653]">Paid</span>
+                                <?php if ($ticketHasQr): ?>
+                                    <button
+                                        type="button"
+                                        class="cursor-pointer rounded-md border border-[#2F80ED] px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-[#2F80ED] transition hover:bg-[#2F80ED] hover:text-white"
+                                        data-ticket-toggle="<?= htmlspecialchars($ticketPanelId, ENT_QUOTES, 'UTF-8') ?>"
+                                        aria-controls="<?= htmlspecialchars($ticketPanelId, ENT_QUOTES, 'UTF-8') ?>"
+                                        aria-expanded="false"
+                                    >
+                                        Show QR
+                                    </button>
+                                <?php endif; ?>
+                            </div>
                         </div>
+
+                        <?php if ($ticketHasQr): ?>
+                            <div id="<?= htmlspecialchars($ticketPanelId, ENT_QUOTES, 'UTF-8') ?>" class="mt-4 hidden rounded-lg border border-neutral-200 bg-neutral-50 p-4">
+                                <p class="mb-3 text-sm text-neutral-700">Present this QR code at the venue entrance.</p>
+                                <div class="inline-block rounded-md bg-white p-2 shadow-sm"><?= $qrSvg ?></div>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
             </section>
@@ -121,6 +169,26 @@ $subtotal = (float)($subtotal ?? 0);
     </main>
 
     <?php include __DIR__ . '/../partials/footer.php'; ?>
+
+    <script>
+        document.querySelectorAll('[data-ticket-toggle]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const panelId = button.getAttribute('data-ticket-toggle');
+                if (!panelId) {
+                    return;
+                }
+
+                const panel = document.getElementById(panelId);
+                if (!panel) {
+                    return;
+                }
+
+                const isHidden = panel.classList.toggle('hidden');
+                button.setAttribute('aria-expanded', isHidden ? 'false' : 'true');
+                button.textContent = isHidden ? 'Show QR' : 'Hide QR';
+            });
+        });
+    </script>
 </body>
 
 </html>

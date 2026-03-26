@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Config;
 use App\Repositories\OrderRepository;
+use App\Repositories\PaymentRepository;
 use App\Services\EventModelBuilderService;
 use App\Services\OrderService;
 use App\Utils\AuthSessionData;
@@ -58,46 +59,30 @@ class ProgramController
         $orderIds = array_map(static fn(array $row) => (int)($row['order_id'] ?? 0), $ordersRows);
         $orderIds = array_values(array_filter($orderIds, static fn(int $id) => $id > 0));
 
+        $paymentRepo = new PaymentRepository();
+
         $paidEvents = [];
         $totalEvents = 0;
 
         if ($orderIds !== []) {
-            $itemsRows = $orderRepo->getOrderItemsForOrders($orderIds);
+            $ticketRows = $paymentRepo->getPaidTicketsForUser($userId);
 
-            $statusByOrderId = [];
-            foreach ($ordersRows as $row) {
-                $oid = (int)($row['order_id'] ?? 0);
-                if ($oid > 0) {
-                    $statusByOrderId[$oid] = strtolower((string)($row['order_status'] ?? 'pending'));
-                }
-            }
+            foreach ($ticketRows as $row) {
+                $totalEvents += 1;
 
-            foreach ($itemsRows as $row) {
-                $oid = (int)($row['order_id'] ?? 0);
-                if ($oid <= 0) {
-                    continue;
-                }
-
-                $status = $statusByOrderId[$oid] ?? 'pending';
-                $qty = (int)($row['quantity'] ?? 0);
                 $price = (float)($row['price'] ?? 0);
-
-                $isPending = $status === 'pending';
-                if ($isPending) {
-                    continue;
-                }
-
-                $totalEvents += max(0, $qty);
-
                 $paidEvents[] = [
-                    'orderId' => $oid,
-                    'orderStatus' => $status,
+                    'orderId' => (int)($row['order_id'] ?? 0),
+                    'orderItemId' => (int)($row['order_item_id'] ?? 0),
+                    'orderStatus' => 'payed',
                     'title' => (string)($row['title'] ?? 'Event'),
                     'location' => (string)($row['location'] ?? ''),
-                    'quantity' => $qty,
+                    'quantity' => 1,
                     'unitPrice' => $price,
-                    'totalPrice' => $price * $qty,
+                    'totalPrice' => $price,
                     'eventId' => (int)($row['event_id'] ?? 0),
+                    'ticketQr' => (string)($row['qr'] ?? ''),
+                    'ticketId' => (int)($row['ticket_id'] ?? 0),
                 ];
             }
         }
