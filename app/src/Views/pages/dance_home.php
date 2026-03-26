@@ -37,7 +37,6 @@ declare(strict_types=1);
         <span class="block text-xs text-dance-toast-subtle">Click to open shopping cart</span>
     </button>
 
-    <script src="/assets/js/dance/dance_home.js"></script>
     <?php $danceFooter = true; include __DIR__ . '/../partials/footer.php'; ?>
 </body>
 

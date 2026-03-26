@@ -161,9 +161,6 @@ Session::ensureStarted();
 /**
  * Switch on the dispatcher result and call the appropriate controller method if found.
  */
-/**
- * Switch on the dispatcher result and call the appropriate controller method if found.
- */
 switch ($routeInfo[0]) {
     // Handle not found routes
     case FastRoute\Dispatcher::NOT_FOUND:
