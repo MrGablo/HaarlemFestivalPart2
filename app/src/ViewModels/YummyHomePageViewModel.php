@@ -20,21 +20,14 @@ class YummyHomePageViewModel
 
     public function __construct(array $content = [], array $yummyEvents = [])
     {
-        // Re-index the sections array using 'sectionType' as the key and 'data' as the value
-        $sections = $content['sections'] ?? [];
-        $sectionMap = array_combine(
-            array_column($sections, 'sectionType'),
-            array_column($sections, 'data')
-        ) ?: [];
-
         $this->pageTitle = (string)($content['pageTitle'] ?? '');
-        $this->hero = $sectionMap['hero'] ?? [];
+        $this->hero = is_array($content['hero'] ?? null) ? $content['hero'] : [];
         $this->heroTitleHtml = strip_tags((string)($this->hero['titleHtml'] ?? ''), '<br><span><strong><em><b><i>');
 
-        $this->intro = $sectionMap['intro'] ?? [];
-        $this->gallery = $sectionMap['gallery'] ?? [];
-        $this->map = $sectionMap['map'] ?? [];
-        $this->restaurants = $sectionMap['restaurants'] ?? [];
+        $this->intro = is_array($content['intro'] ?? null) ? $content['intro'] : [];
+        $this->gallery = is_array($content['gallery'] ?? null) ? $content['gallery'] : [];
+        $this->map = is_array($content['map'] ?? null) ? $content['map'] : [];
+        $this->restaurants = is_array($content['restaurants'] ?? null) ? $content['restaurants'] : [];
 
         $images = is_array($this->gallery['images'] ?? null) ? $this->gallery['images'] : [];
         $this->galleryImages = array_map([$this, 'normalizeAssetPath'], array_filter($images));
