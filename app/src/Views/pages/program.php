@@ -59,15 +59,16 @@ $subtotal = (float)($subtotal ?? 0);
                     }
                     $ticketPanelId = 'ticket-qr-' . $ticketPanelBaseId;
                     $ticketHasQr = $ticketQr !== '';
-                    $qrSvg = '';
+                    $qrImageSrc = '';
 
                     if ($ticketHasQr) {
                         try {
-                            $qrSvg = (new QRCode(new QROptions([
+                            $qrImageSrc = (new QRCode(new QROptions([
                                 'outputInterface' => QRMarkupSVG::class,
-                                'outputBase64' => false,
+                                'outputBase64' => true,
+                                'svgAddXmlHeader' => false,
                                 'eccLevel' => 'M',
-                                'scale' => 6,
+                                'addQuietzone' => true,
                             ])))->render($ticketQr);
                         } catch (\Throwable) {
                             $ticketHasQr = false;
@@ -107,7 +108,11 @@ $subtotal = (float)($subtotal ?? 0);
                         <?php if ($ticketHasQr): ?>
                             <div id="<?= htmlspecialchars($ticketPanelId, ENT_QUOTES, 'UTF-8') ?>" class="mt-4 hidden rounded-lg border border-neutral-200 bg-neutral-50 p-4">
                                 <p class="mb-3 text-sm text-neutral-700">Present this QR code at the venue entrance.</p>
-                                <div class="inline-block rounded-md bg-white p-2 shadow-sm"><?= $qrSvg ?></div>
+                                <img
+                                    src="<?= htmlspecialchars($qrImageSrc, ENT_QUOTES, 'UTF-8') ?>"
+                                    alt="Ticket QR code"
+                                    class="block h-[220px] w-[220px] rounded-md bg-white p-2 shadow-sm"
+                                >
                             </div>
                         <?php endif; ?>
                     </div>
