@@ -32,91 +32,107 @@ final class CMSOrderController
     {
         AdminGuard::requireAdmin(true);
 
-        $criteria = OrderSearchCriteria::fromArray($_GET);
+        try {
+            $criteria = OrderSearchCriteria::fromArray($_GET);
 
-        $search = $criteria->search;
-        $statusFilter = $criteria->statusFilter;
-        $sortColumn = $criteria->sortColumn;
-        $sortDirection = $criteria->sortDirection;
+            $search = $criteria->search;
+            $statusFilter = $criteria->statusFilter;
+            $sortColumn = $criteria->sortColumn;
+            $sortDirection = $criteria->sortDirection;
 
-        $orders = $this->service->searchOrders($search, $statusFilter, $sortColumn, $sortDirection);
-        $statuses = $this->service->getStatuses();
-        $exportScope = strtolower(trim((string)($_GET['scope'] ?? 'all')));
-        if (!in_array($exportScope, ['all', 'user'], true)) {
-            $exportScope = 'all';
+            $orders = $this->service->searchOrders($search, $statusFilter, $sortColumn, $sortDirection);
+            $statuses = $this->service->getStatuses();
+            $exportScope = strtolower(trim((string)($_GET['scope'] ?? 'all')));
+            if (!in_array($exportScope, ['all', 'user'], true)) {
+                $exportScope = 'all';
+            }
+            $exportUserId = isset($_GET['user_id']) ? max(0, (int)$_GET['user_id']) : 0;
+
+            $errors = Flash::getErrors();
+            $flashSuccess = Flash::getSuccess();
+            $csrfToken = Csrf::token();
+
+            require __DIR__ . '/../../Views/cms/orders_index.php';
+        } catch (\Throwable $e) {
+            Flash::setErrors(['general' => $e->getMessage()]);
+            header('Location: /cms/orders', true, 302);
+            exit;
         }
-        $exportUserId = isset($_GET['user_id']) ? max(0, (int)$_GET['user_id']) : 0;
-
-        $errors = Flash::getErrors();
-        $flashSuccess = Flash::getSuccess();
-        $csrfToken = Csrf::token();
-
-        require __DIR__ . '/../../Views/cms/orders_index.php';
     }
 
     public function edit(int $id): void
     {
         AdminGuard::requireAdmin(true);
 
-        $details = $this->getOrderDetailsOrRedirect($id);
-        $order = $details['order'];
-        $items = $details['items'];
-        $statuses = $this->service->getStatuses();
+        try {
+            $details = $this->getOrderDetailsOrRedirect($id);
+            $order = $details['order'];
+            $items = $details['items'];
+            $statuses = $this->service->getStatuses();
 
-        $errors = Flash::getErrors();
-        $flashSuccess = Flash::getSuccess();
-        $csrfToken = Csrf::token();
+            $errors = Flash::getErrors();
+            $flashSuccess = Flash::getSuccess();
+            $csrfToken = Csrf::token();
 
-        require __DIR__ . '/../../Views/cms/order_edit.php';
+            require __DIR__ . '/../../Views/cms/order_edit.php';
+        } catch (\Throwable $e) {
+            Flash::setErrors(['general' => $e->getMessage()]);
+            header('Location: /cms/orders', true, 302);
+            exit;
+        }
     }
 
     public function exportOptions(int $id): void
     {
         AdminGuard::requireAdmin(true);
 
-        $details = $this->getOrderDetailsOrRedirect($id);
-        $order = $details['order'];
-
         try {
+            $details = $this->getOrderDetailsOrRedirect($id);
+            $order = $details['order'];
             $availableColumns = $this->exportService->getAvailableExportColumnsForOrder($id);
+
+            $defaultSelectedColumns = array_keys($availableColumns);
+            $errors = Flash::getErrors();
+            $flashSuccess = Flash::getSuccess();
+
+            require __DIR__ . '/../../Views/cms/order_export.php';
         } catch (\Throwable $e) {
             Flash::setErrors(['general' => $e->getMessage()]);
             header('Location: /cms/orders/' . $id, true, 302);
             exit;
         }
-
-        $defaultSelectedColumns = array_keys($availableColumns);
-        $errors = Flash::getErrors();
-        $flashSuccess = Flash::getSuccess();
-
-        require __DIR__ . '/../../Views/cms/order_export.php';
     }
 
     public function exportOptionsScope(): void
     {
         AdminGuard::requireAdmin(true);
 
-        $request = OrderExportRequest::fromArray($_GET);
-        if (!in_array($request->scope, ['all', 'user'], true)) {
-            $request->scope = 'all';
+        try {
+            $request = OrderExportRequest::fromArray($_GET);
+            if (!in_array($request->scope, ['all', 'user'], true)) {
+                $request->scope = 'all';
+            }
+
+            $availableColumns = $this->exportService->getExportColumns();
+            $defaultSelectedColumns = array_keys($availableColumns);
+
+            $errors = Flash::getErrors();
+            $flashSuccess = Flash::getSuccess();
+
+            require __DIR__ . '/../../Views/cms/order_export_scope.php';
+        } catch (\Throwable $e) {
+            Flash::setErrors(['general' => $e->getMessage()]);
+            header('Location: /cms/orders', true, 302);
+            exit;
         }
-
-        $availableColumns = $this->exportService->getExportColumns();
-        $defaultSelectedColumns = array_keys($availableColumns);
-
-        $errors = Flash::getErrors();
-        $flashSuccess = Flash::getSuccess();
-
-        require __DIR__ . '/../../Views/cms/order_export_scope.php';
     }
 
     public function update(int $id): void
     {
         AdminGuard::requireAdmin(true);
 
-        $this->getOrderDetailsOrRedirect($id);
-
         try {
+            $this->getOrderDetailsOrRedirect($id);
             Csrf::assertPost();
 
             $status = (string)($_POST['order_status'] ?? '');
@@ -139,29 +155,32 @@ final class CMSOrderController
     {
         AdminGuard::requireAdmin(true);
 
-        $request = OrderExportRequest::fromArray($_GET);
-        $query = http_build_query($request->toRedirectQueryParams());
-
         try {
+            $request = OrderExportRequest::fromArray($_GET);
             $result = $this->exportService->prepareExport($request);
+
+            $this->exportResponder->stream($result);
         } catch (\Throwable $e) {
             Flash::setErrors(['general' => $e->getMessage()]);
-            header('Location: /cms/orders' . ($query !== '' ? ('?' . $query) : ''), true, 302);
+            header('Location: /cms/orders', true, 302);
             exit;
         }
-
-        $this->exportResponder->stream($result);
     }
 
     /** @return array<string, mixed> */
     private function getOrderDetailsOrRedirect(int $id): array
     {
-        $details = $this->service->findOrderDetails($id);
-        if ($details !== null) {
-            return $details;
+        try {
+            $details = $this->service->findOrderDetails($id);
+            if ($details !== null) {
+                return $details;
+            }
+
+            Flash::setErrors(['general' => 'Order not found.']);
+        } catch (\Throwable $e) {
+            Flash::setErrors(['general' => $e->getMessage()]);
         }
 
-        Flash::setErrors(['general' => 'Order not found.']);
         header('Location: /cms/orders', true, 302);
         exit;
     }
