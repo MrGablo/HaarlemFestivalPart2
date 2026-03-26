@@ -23,6 +23,8 @@
 
             <?php
             // CMS modules shown on the overview page
+
+            //update view
             $modules = [
                 [
                     'id' => 1,

@@ -57,7 +57,7 @@ function getNavClass($path, $currentPath, $matchPrefix = false)
 <header class="bg-white border-b border-[#f0f0f0] py-[15px] font-sans">
     <div class="mx-auto flex max-w-[1200px] items-center justify-between px-5">
         <a href="/" class="block">
-            <img src="/assets/img/homepage/logo.svg" alt="Haarlem Festival" class="block h-10">
+            <img src="/assets/svg/logo.svg" alt="Haarlem Festival" class="block h-10">
         </a>
 
         <nav class="flex items-center gap-[15px]">

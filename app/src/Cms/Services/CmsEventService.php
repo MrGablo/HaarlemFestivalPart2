@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services;
+namespace App\Cms\Services;
 
 use App\Repositories\EventRepository;
 enum EventTypes: string

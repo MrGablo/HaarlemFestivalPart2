@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Controllers;
+namespace App\Cms\Controllers;
 
-use App\Services\CmsOrderService;
+use App\Cms\Services\CmsOrderService;
 use App\Utils\AdminGuard;
 use App\Utils\Csrf;
 use App\Utils\Flash;
@@ -41,7 +41,7 @@ final class CMSOrderController
         $flashSuccess = Flash::getSuccess();
         $csrfToken = Csrf::token();
 
-        require __DIR__ . '/../Views/cms/orders_index.php';
+        require __DIR__ . '/../../Views/cms/orders_index.php';
     }
 
     public function edit(int $id): void
@@ -57,7 +57,7 @@ final class CMSOrderController
         $flashSuccess = Flash::getSuccess();
         $csrfToken = Csrf::token();
 
-        require __DIR__ . '/../Views/cms/order_edit.php';
+        require __DIR__ . '/../../Views/cms/order_edit.php';
     }
 
     public function exportOptions(int $id): void
@@ -79,7 +79,7 @@ final class CMSOrderController
         $errors = Flash::getErrors();
         $flashSuccess = Flash::getSuccess();
 
-        require __DIR__ . '/../Views/cms/order_export.php';
+        require __DIR__ . '/../../Views/cms/order_export.php';
     }
 
     public function update(int $id): void
@@ -109,8 +109,9 @@ final class CMSOrderController
 
     public function export(): void
     {
-        AdminGuard::requireAdmin(true);
-
+        AdminGuard::requireAdmin(true); //TODO changing this method to not have a true or false, just check in the method itself
+        //TODO move all the logic from this method into CmsOrderExportService and just call a single method here that returns a structured result with all the data needed for export, and then handle the actual output (CSV/Excel) in separate private methods here in the controller. This will make it easier to test the export logic without dealing with headers and output buffering.
+        //TODO make this into a model, and pass this into constroctor, then call order service wit the data of the model.
         $search = trim((string)($_GET['search'] ?? ''));
         $statusFilter = trim((string)($_GET['status'] ?? ''));
         $sortColumn = trim((string)($_GET['sort'] ?? 'created_at'));
@@ -134,7 +135,7 @@ final class CMSOrderController
                 if ($scope === 'user' && $userId > 0 && $summaryUserId !== $userId) {
                     continue;
                 }
-
+                //TODO:  filter through database not in the controller
                 $amount = (float)($summary['total_amount'] ?? 0.0);
                 $status = strtolower((string)($summary['status'] ?? 'pending'));
 
@@ -174,7 +175,7 @@ final class CMSOrderController
             header('Location: /cms/orders' . ($query !== '' ? ('?' . $query) : ''), true, 302);
             exit;
         }
-
+        //TODO single responsability, move them to their method don't handle them here.
         if ($scope === 'order' && $orderId > 0) {
             $availableForOrder = $this->service->getAvailableExportColumnsForOrder($orderId);
             $requestedColumns = $_GET['columns'] ?? [];
