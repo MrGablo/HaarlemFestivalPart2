@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Controllers;
+namespace App\Cms\Controllers;
 
 use App\Models\Venue;
-use App\Services\CmsVenueService;
+use App\Cms\Services\CmsVenueService;
 use App\Utils\AdminGuard;
 use App\Utils\Csrf;
 use App\Utils\Flash;
@@ -31,7 +31,7 @@ final class CMSVenueController
         $flashSuccess = Flash::getSuccess();
         $csrfToken = Csrf::token();
 
-        require __DIR__ . '/../Views/cms/venues_index.php';
+        require __DIR__ . '/../../Views/cms/venues_index.php';
     }
 
     public function createForm(): void
@@ -43,7 +43,7 @@ final class CMSVenueController
         $flashSuccess = Flash::getSuccess();
         $csrfToken = Csrf::token();
 
-        require __DIR__ . '/../Views/cms/venue_create.php';
+        require __DIR__ . '/../../Views/cms/venue_create.php';
     }
 
     public function create(): void
@@ -77,7 +77,7 @@ final class CMSVenueController
         $flashSuccess = Flash::getSuccess();
         $csrfToken = Csrf::token();
 
-        require __DIR__ . '/../Views/cms/venue_edit.php';
+        require __DIR__ . '/../../Views/cms/venue_edit.php';
     }
 
     public function update(int $id): void

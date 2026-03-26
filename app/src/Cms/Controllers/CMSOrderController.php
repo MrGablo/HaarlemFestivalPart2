@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Controllers;
+namespace App\Cms\Controllers;
 
-use App\Services\CmsOrderService;
+use App\Cms\Services\CmsOrderService;
 use App\Utils\AdminGuard;
 use App\Utils\Csrf;
 use App\Utils\Flash;
@@ -41,7 +41,7 @@ final class CMSOrderController
         $flashSuccess = Flash::getSuccess();
         $csrfToken = Csrf::token();
 
-        require __DIR__ . '/../Views/cms/orders_index.php';
+        require __DIR__ . '/../../Views/cms/orders_index.php';
     }
 
     public function edit(int $id): void
@@ -57,7 +57,7 @@ final class CMSOrderController
         $flashSuccess = Flash::getSuccess();
         $csrfToken = Csrf::token();
 
-        require __DIR__ . '/../Views/cms/order_edit.php';
+        require __DIR__ . '/../../Views/cms/order_edit.php';
     }
 
     public function exportOptions(int $id): void
@@ -79,7 +79,7 @@ final class CMSOrderController
         $errors = Flash::getErrors();
         $flashSuccess = Flash::getSuccess();
 
-        require __DIR__ . '/../Views/cms/order_export.php';
+        require __DIR__ . '/../../Views/cms/order_export.php';
     }
 
     public function update(int $id): void

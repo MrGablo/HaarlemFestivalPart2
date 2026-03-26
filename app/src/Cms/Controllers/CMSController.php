@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Controllers;
+namespace App\Cms\Controllers;
 
 use App\Cms\PageBuilder\Builders\GenericPageBuilder;
 use App\Cms\PageBuilder\PageBuilderRegistry;
 use App\Repositories\Interfaces\IPageRepository;
 use App\Repositories\PageRepository;
-use App\Services\CmsContentService;
+use App\Cms\Services\CmsContentService;
 use App\Services\UploadService;
 use App\Utils\AdminGuard;
 use App\Utils\CmsForm;
@@ -39,7 +39,7 @@ class CMSController
         $errors = Flash::getErrors();
         $flashSuccess = Flash::getSuccess();
 
-        require __DIR__ . '/../Views/cms/index.php';
+        require __DIR__ . '/../../Views/cms/index.php';
     }
 
     public function generalIndex(): void
@@ -48,7 +48,7 @@ class CMSController
         $errors = Flash::getErrors();
         $flashSuccess = Flash::getSuccess();
 
-        require __DIR__ . '/../Views/cms/generalIndex.php';
+        require __DIR__ . '/../../Views/cms/generalIndex.php';
     }
 
     // --- existing page edit/update ----
@@ -77,7 +77,7 @@ class CMSController
         $flashSuccess = Flash::getSuccess();
         $csrfToken = Csrf::token();
 
-        require __DIR__ . '/../Views/cms/edit.php';
+        require __DIR__ . '/../../Views/cms/edit.php';
     }
 
     public function update(int $id): void

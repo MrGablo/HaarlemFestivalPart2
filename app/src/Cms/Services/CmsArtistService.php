@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Cms\Services;
 
 use App\Models\Artist;
 use App\Repositories\ArtistRepository;

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Controllers;
+namespace App\Cms\Controllers;
 
 use App\Models\JazzEvent;
-use App\Services\CmsJazzEventService;
+use App\Cms\Services\CmsJazzEventService;
 use App\Services\UploadService;
 use App\Utils\AdminGuard;
 use App\Utils\Csrf;
@@ -34,7 +34,7 @@ final class CMSJazzController
         $flashSuccess = Flash::getSuccess();
         $csrfToken = Csrf::token();
 
-        require __DIR__ . '/../Views/cms/jazz_events_index.php';
+        require __DIR__ . '/../../Views/cms/jazz_events_index.php';
     }
 
     public function createForm(): void
@@ -49,7 +49,7 @@ final class CMSJazzController
         $flashSuccess = Flash::getSuccess();
         $csrfToken = Csrf::token();
 
-        require __DIR__ . '/../Views/cms/jazz_event_create.php';
+        require __DIR__ . '/../../Views/cms/jazz_event_create.php';
     }
 
     public function create(): void
@@ -92,7 +92,7 @@ final class CMSJazzController
         $flashSuccess = Flash::getSuccess();
         $csrfToken = Csrf::token();
 
-        require __DIR__ . '/../Views/cms/jazz_event_edit.php';
+        require __DIR__ . '/../../Views/cms/jazz_event_edit.php';
     }
 
     public function update(int $id): void
