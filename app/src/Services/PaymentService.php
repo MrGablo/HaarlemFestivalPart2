@@ -24,7 +24,7 @@ class PaymentService
     public function createCheckoutSession(int $userId, int $eventId, int $quantity): string
     {
         // Set Stripe secret key (TEST mode)
-        \Stripe\Stripe::setApiKey(getenv('STRIPE_SECRET_KEY'));
+        \Stripe\Stripe::setApiKey($this->getStripeSecretKey());
 
         // Look up event + price in the database
         $event = $this->repo->findEventById($eventId);
@@ -58,6 +58,9 @@ class PaymentService
                 'quantity' => $quantity,
             ]],
             'mode'        => 'payment',
+            'automatic_tax' => [
+                'enabled' => true,
+            ],
             'success_url' => $baseUrl . '/payment/success?session_id={CHECKOUT_SESSION_ID}',
             'cancel_url'  => $baseUrl . '/payment/cancel',
             // Store our own data so the webhook knows what to create
@@ -72,33 +75,148 @@ class PaymentService
     }
 
     /**
+     * Create Stripe hosted checkout URL for the full pending cart.
+     * This follows Stripe sample flow: server creates session, client is redirected to session URL.
+     */
+    public function createCheckoutUrlForPendingCart(int $userId): string
+    {
+        \Stripe\Stripe::setApiKey($this->getStripeSecretKey());
+
+        $pendingOrder = $this->repo->findPendingOrderByUserId($userId);
+        if ($pendingOrder === null) {
+            throw new \RuntimeException('No pending cart found.');
+        }
+        $pendingOrderId = (int)($pendingOrder['order_id'] ?? 0);
+        if ($pendingOrderId <= 0) {
+            throw new \RuntimeException('Invalid pending cart.');
+        }
+
+        $items = $this->repo->getPendingOrderItemsWithPricing($pendingOrderId);
+        if ($items === []) {
+            throw new \RuntimeException('Pending cart is empty.');
+        }
+
+        $lineItems = [];
+        foreach ($items as $item) {
+            $eventId = (int)($item['event_id'] ?? 0);
+            $quantity = (int)($item['quantity'] ?? 0);
+            $priceInCents = (int)(((float)($item['price'] ?? 0)) * 100);
+            $eventTitle = (string)($item['title'] ?? 'Event Ticket');
+            if ($eventId <= 0 || $quantity <= 0 || $priceInCents <= 0) {
+                throw new \RuntimeException('Invalid pending cart item data.');
+            }
+
+            $lineItems[] = [
+                'price_data' => [
+                    'currency'     => 'eur',
+                    'product_data' => [
+                        'name' => $eventTitle,
+                    ],
+                    'unit_amount' => $priceInCents,
+                ],
+                'quantity' => $quantity,
+            ];
+        }
+
+        $scheme  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host    = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        $baseUrl = $scheme . '://' . $host;
+
+        $session = \Stripe\Checkout\Session::create([
+            'line_items' => $lineItems,
+            'mode' => 'payment',
+            'automatic_tax' => [
+                'enabled' => true,
+            ],
+            'success_url' => $baseUrl . '/payment/success?session_id={CHECKOUT_SESSION_ID}',
+            'cancel_url' => $baseUrl . '/payment/cancel',
+            'metadata' => [
+                'user_id' => (string)$userId,
+                'pending_order_id' => (string)$pendingOrderId,
+            ],
+        ]);
+
+        return (string)$session->url;
+    }
+
+    /**
+     * Called from the success page using data stored in the PHP session.
+     * Marks the pending order as payed and creates Ticket rows.
+     */
+    public function fulfillPendingOrder(int $userId, int $orderId): void
+    {
+        if ($this->repo->isOrderPaid($orderId)) {
+            return;
+        }
+
+        $this->repo->markOrderAsPaid($orderId, $userId);
+
+        $items = $this->repo->getOrderItemsByOrderId($orderId);
+        foreach ($items as $item) {
+            $orderItemId = (int)($item['order_item_id'] ?? 0);
+            $quantity    = (int)($item['quantity'] ?? 0);
+            if ($orderItemId <= 0 || $quantity <= 0) {
+                continue;
+            }
+            for ($i = 0; $i < $quantity; $i++) {
+                try {
+                    $qr = 'TICKET_' . uniqid('', true);
+                    $this->repo->createTicket($orderItemId, $userId, $qr);
+                } catch (\Throwable $e) {
+                    error_log("Ticket creation failed: " . $e->getMessage());
+                }
+            }
+        }
+
+        error_log("Payment OK: order=$orderId user=$userId");
+    }
+
+    /**
      * Called by the webhook after Stripe confirms payment.
-     * Creates Order + OrderItem + Ticket(s) in the database.
      */
     public function handleCheckoutCompleted(object $session): void
     {
-        $userId   = (int) ($session->metadata->user_id  ?? 0);
+        $userId         = (int) ($session->metadata->user_id          ?? 0);
+        $pendingOrderId = (int) ($session->metadata->pending_order_id ?? 0);
+
+        if ($userId <= 0) {
+            throw new \RuntimeException('Payment: invalid metadata - user_id=' . $userId);
+        }
+
+        if ($pendingOrderId > 0) {
+            $this->fulfillPendingOrder($userId, $pendingOrderId);
+            return;
+        }
+
         $eventId  = (int) ($session->metadata->event_id ?? 0);
         $quantity = (int) ($session->metadata->quantity  ?? 1);
+        if ($eventId <= 0 || $quantity <= 0) {
+            throw new \RuntimeException('Payment: invalid fallback item metadata.');
+        }
 
-        if ($userId <= 0 || $eventId <= 0) {
+        $orderId     = $this->repo->createPaidOrder($userId);
+        $orderItemId = $this->repo->createOrderItem($orderId, $eventId, $quantity);
+        for ($i = 0; $i < $quantity; $i++) {
+            try {
+                $qr = 'TICKET_' . uniqid('', true);
+                $this->repo->createTicket($orderItemId, $userId, $qr);
+            } catch (\Throwable $e) {
+                error_log("Ticket creation failed: " . $e->getMessage());
+            }
+        }
+        error_log("Payment OK (fallback): order=$orderId user=$userId event=$eventId qty=$quantity");
+    }
+
+    private function getStripeSecretKey(): string
+    {
+        $key = (string)(getenv('STRIPE_SECRET_KEY') ?: ($_ENV['STRIPE_SECRET_KEY'] ?? ($_SERVER['STRIPE_SECRET_KEY'] ?? '')));
+        $key = trim($key);
+        if ($key === '') {
             throw new \RuntimeException(
-                'Payment webhook: invalid metadata - user_id=' . $userId . ', event_id=' . $eventId
+                'STRIPE_SECRET_KEY is missing in runtime env. Set it in container env (docker compose env_file) or make sure /app/.env contains it.'
             );
         }
 
-        // 1) Create Order with status 'paid'
-        $orderId = $this->repo->createPaidOrder($userId);
-
-        // 2) Create OrderItem
-        $orderItemId = $this->repo->createOrderItem($orderId, $eventId, $quantity);
-
-        // 3) Create one Ticket per quantity (simple QR string)
-        for ($i = 0; $i < $quantity; $i++) {
-            $qr = 'TICKET_' . uniqid('', true);
-            $this->repo->createTicket($orderItemId, $userId, $qr);
-        }
-
-        error_log("Payment OK: order=$orderId user=$userId event=$eventId qty=$quantity");
+        return $key;
     }
 }

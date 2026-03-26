@@ -68,6 +68,48 @@ class PaymentController
     }
 
     // ---------------------------------------------------------------
+    // POST /payment/checkout
+    // Server-side redirect to Stripe hosted Checkout prebuilt UI.
+    // ---------------------------------------------------------------
+    public function checkoutRedirect(): void
+    {
+        Session::ensureStarted();
+
+        $auth = AuthSessionData::read();
+        if (!is_array($auth)) {
+            header('Location: /login', true, 302);
+            exit;
+        }
+
+        $userId = (int)($auth['userId'] ?? 0);
+        if ($userId <= 0) {
+            header('Location: /program', true, 302);
+            exit;
+        }
+
+        try {
+            $repo = new PaymentRepository();
+            $pendingOrder = $repo->findPendingOrderByUserId($userId);
+            $pendingOrderId = (int)($pendingOrder['order_id'] ?? 0);
+
+            $checkoutUrl = $this->paymentService->createCheckoutUrlForPendingCart($userId);
+
+            $_SESSION['pending_payment'] = [
+                'user_id'  => $userId,
+                'order_id' => $pendingOrderId,
+            ];
+        } catch (\Throwable $e) {
+            error_log('Stripe checkout redirect failed: ' . $e->getMessage());
+            header('Location: /payment/cancel', true, 302);
+            exit;
+        }
+
+        header('HTTP/1.1 303 See Other');
+        header('Location: ' . $checkoutUrl);
+        exit;
+    }
+
+    // ---------------------------------------------------------------
     // POST /api/payment/webhook
     // Called by Stripe servers after payment succeeds.
     // Verifies signature, then creates Order + OrderItem + Ticket.
@@ -107,10 +149,29 @@ class PaymentController
 
     // ---------------------------------------------------------------
     // GET /payment/success
+    // Retrieves the Stripe session and fulfils the order directly
+    // (webhooks cannot reach localhost in dev).
     // ---------------------------------------------------------------
     public function success(): void
     {
         Session::ensureStarted();
+
+        $pendingPayment = $_SESSION['pending_payment'] ?? null;
+        if (is_array($pendingPayment)) {
+            unset($_SESSION['pending_payment']);
+
+            $userId  = (int)($pendingPayment['user_id']  ?? 0);
+            $orderId = (int)($pendingPayment['order_id'] ?? 0);
+
+            if ($userId > 0 && $orderId > 0) {
+                try {
+                    $this->paymentService->fulfillPendingOrder($userId, $orderId);
+                } catch (\Throwable $e) {
+                    error_log('Payment success fulfilment error: ' . $e->getMessage());
+                }
+            }
+        }
+
         require __DIR__ . '/../Views/pages/payment_success.php';
     }
 

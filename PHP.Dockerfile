@@ -23,7 +23,7 @@ RUN set -eux; \
     
 
 WORKDIR /app
-RUN echo "upload_max_filesize=20M\npost_max_size=20M" > /usr/local/etc/php/conf.d/uploads.ini
+RUN printf '%s\n' 'upload_max_filesize=20M' 'post_max_size=20M' > /usr/local/etc/php/conf.d/uploads.ini
 
 
 

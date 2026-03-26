@@ -16,6 +16,7 @@ services:
       dockerfile: PHP.Dockerfile
     volumes:
       - ./app:/app
+      - ./.env:/app/.env:ro
       - ./ca.pem:/etc/ssl/certs/aiven-ca.pem:ro
     env_file:
       - .env
