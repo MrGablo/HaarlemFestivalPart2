@@ -204,6 +204,40 @@ class PaymentRepository extends Repository
         return is_array($rows) ? $rows : [];
     }
 
+    public function getPaidTicketsForUser(int $userId): array
+    {
+        $stmt = $this->getConnection()->prepare(
+            'SELECT
+                t.ticket_id,
+                t.qr,
+                oi.order_item_id,
+                oi.order_id,
+                oi.event_id,
+                e.title,
+                COALESCE(j.price, d.price, p.base_price, 0) AS price,
+                     \'\' AS location
+             FROM `Ticket` t
+             INNER JOIN `order_items` oi ON oi.order_item_id = t.order_item_id
+             INNER JOIN `orders` o ON o.order_id = oi.order_id
+             INNER JOIN `Event` e ON e.event_id = oi.event_id
+             LEFT JOIN `JazzEvent` j ON j.event_id = e.event_id
+             LEFT JOIN `DanceEvent` d ON d.event_id = e.event_id
+             LEFT JOIN `PassEvent` p ON p.event_id = e.event_id
+             WHERE o.user_id = :user_id
+               AND LOWER(TRIM(o.order_status)) <> :pending_status
+             ORDER BY t.ticket_id DESC'
+        );
+
+        $stmt->execute([
+            ':user_id' => $userId,
+            ':pending_status' => 'pending',
+        ]);
+
+        $rows = $stmt->fetchAll();
+
+        return is_array($rows) ? $rows : [];
+    }
+
     public function removePendingOrderItemForUser(int $userId, int $orderItemId): void
     {
         $pdo = $this->getConnection();
