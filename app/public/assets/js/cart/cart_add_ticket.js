@@ -44,9 +44,9 @@
             return;
         }
 
-        var originalLabel = submitBtn.textContent;
+        var originalHtml = submitBtn.innerHTML;
         submitBtn.disabled = true;
-        submitBtn.textContent = 'Adding...';
+        submitBtn.innerHTML = 'Adding...';
 
         fetch(form.action, {
             method: 'POST',
@@ -85,13 +85,18 @@
                 }
 
                 showCartToast();
+
+                if (document.body && document.body.classList.contains('dance-open-cart-on-add')
+                    && window.HaarlemCart && typeof window.HaarlemCart.open === 'function') {
+                    window.HaarlemCart.open();
+                }
             })
             .catch(function () {
                 window.alert('Network error while adding ticket. Please try again.');
             })
             .finally(function () {
                 submitBtn.disabled = false;
-                submitBtn.textContent = originalLabel || 'Ticket';
+                submitBtn.innerHTML = originalHtml;
             });
     }
 
