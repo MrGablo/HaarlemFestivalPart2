@@ -11,12 +11,13 @@ declare(strict_types=1);
 <head>
     <meta charset="utf-8">
     <title><?= htmlspecialchars($vm->pageTitle) ?></title>
+    <script src="/assets/js/jazz/tailwind.config.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="m-0 bg-[#0b0b0b] font-[system-ui,Arial] text-white">
+<body class="m-0 bg-jazz-dark bg-[#0b0b0b] font-[system-ui,Arial] text-white">
     <?php include __DIR__ . '/../partials/header.php'; ?>
-    <div class="mx-auto w-full max-w-[1200px] px-5">
+    <div class="mx-auto w-full max-w-jazz-container max-w-[1200px] px-5">
         <?php require __DIR__ . '/../partials/flash_success.php'; ?>
     </div>
     <?php require __DIR__ . '/../partials/jazz_home_content.php'; ?>
@@ -38,11 +39,15 @@ declare(strict_types=1);
 
             <div class="mt-2 flex flex-wrap items-center gap-[14px]">
                 <?php foreach ($vm->dayTabs as $i => $d): ?>
+                    <?php
+                        $dayValue = is_array($d) ? (string)($d['value'] ?? '') : (string)$d;
+                        $dayLabel = is_array($d) ? (string)($d['label'] ?? $dayValue) : (string)$d;
+                    ?>
                     <button type="button" class="day-chip cursor-pointer border-0 bg-transparent px-[6px] py-1 text-lg <?= $i === 0 ? 'opacity-100 underline underline-offset-[6px]' : 'opacity-75' ?>"
                         data-active-class="opacity-100 underline underline-offset-[6px]"
                         data-inactive-class="opacity-75"
-                        data-day="<?= htmlspecialchars((string)$d) ?>">
-                        <?= htmlspecialchars((string)$d) ?>
+                        data-day="<?= htmlspecialchars($dayValue) ?>">
+                        <?= htmlspecialchars($dayLabel) ?>
                     </button>
                 <?php endforeach; ?>
             </div>
@@ -52,7 +57,9 @@ declare(strict_types=1);
             <?php foreach ($vm->events as $ev): ?>
                 <article class="event-card"
                     data-hall="<?= htmlspecialchars((string)($ev['hall'] ?? '')) ?>"
-                    data-day="<?= htmlspecialchars((string)($ev['day_key'] ?? '')) ?>">
+                    data-day="<?= htmlspecialchars((string)($ev['event_date'] ?? $ev['day_key'] ?? '')) ?>"
+                    data-day-name="<?= htmlspecialchars((string)($ev['day_name'] ?? $ev['day_key'] ?? '')) ?>"
+                    data-start-ts="<?= (int)($ev['start_ts'] ?? 0) ?>">
 
                     <a class="relative block overflow-hidden rounded-2xl text-white no-underline"
                         href="<?= !empty($ev['page_id'])
@@ -69,13 +76,17 @@ declare(strict_types=1);
                                 <?= htmlspecialchars((string)($ev['display_date'] ?? '')) ?>
                                 <?= htmlspecialchars((string)($ev['display_time'] ?? '')) ?>
                             </div>
+                            <div class="text-sm font-semibold opacity-95">
+                                <?= htmlspecialchars((string)($ev['location'] ?? '')) ?>
+                            </div>
                         </div>
                     </a>
 
                     <form method="POST" action="/order/item/add" class="ticket-form">
                         <input type="hidden" name="event_id" value="<?= (int)($ev['event_id'] ?? 0) ?>">
-                        <button class="mt-[10px] w-full cursor-pointer rounded-[10px] border-0 bg-[#f7c600] px-[14px] py-3 font-extrabold text-[#111]" type="submit">
-                            Ticket: <?= htmlspecialchars((string)($ev['price'] ?? '')) ?> p.p
+                        <button class="mt-[10px] w-full cursor-pointer rounded-[10px] border-0 bg-jazz-accent bg-[#f7c600] px-[14px] py-3 font-extrabold text-jazz-accent-text text-[#111]" type="submit">
+                            <?php $price = isset($ev['price']) ? (float)$ev['price'] : 0.0; ?>
+                            Ticket: <?= htmlspecialchars(rtrim(rtrim(number_format($price, 2, '.', ''), '0'), '.')) ?>€ p.p
                         </button>
                     </form>
                 </article>
@@ -83,10 +94,10 @@ declare(strict_types=1);
         </div>
 
         <div class="mt-5 flex items-center justify-center gap-[18px]">
-            <button id="toggleMoreBtn" class="cursor-pointer rounded-[10px] border-0 bg-[#f7c600] px-[18px] py-3 font-extrabold text-[#111]" type="button">Show more</button>
+            <button id="toggleMoreBtn" class="cursor-pointer rounded-[10px] border-0 bg-jazz-accent bg-[#f7c600] px-[18px] py-3 font-extrabold text-jazz-accent-text text-[#111]" type="button">Show more</button>
 
             <?php if ($vm->showAllEventsButton): ?>
-                <button id="allEventsBtn" class="cursor-pointer rounded-[10px] border-0 bg-[#f7c600] px-[18px] py-3 font-extrabold text-[#111]" type="button">
+                <button id="allEventsBtn" class="cursor-pointer rounded-[10px] border-0 bg-jazz-accent bg-[#f7c600] px-[18px] py-3 font-extrabold text-jazz-accent-text text-[#111]" type="button">
                     <?= htmlspecialchars($vm->allEventsButtonLabel) ?>
                 </button>
             <?php endif; ?>
@@ -103,7 +114,8 @@ declare(strict_types=1);
         <span class="block text-xs text-zinc-300">Click to open shopping cart</span>
     </button>
 
-    <script src="/assets/js/jazz/jazz_home.js"></script>
+    <?php $jazzHomeJsPath = __DIR__ . '/../../../public/assets/js/jazz/jazz_home.js'; ?>
+    <script src="/assets/js/jazz/jazz_home.js?v=<?= file_exists($jazzHomeJsPath) ? (string)filemtime($jazzHomeJsPath) : '1' ?>"></script>
     <?php include __DIR__ . '/../partials/footer.php'; ?>
 </body>
 

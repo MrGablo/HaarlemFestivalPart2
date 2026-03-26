@@ -100,6 +100,10 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     $r->addRoute('GET',  '/payment/success', ['App\Controllers\PaymentController', 'success']);
     $r->addRoute('GET',  '/payment/cancel', ['App\Controllers\PaymentController', 'cancel']);
 
+    // Scanner routes (admin and employee access)
+    $r->addRoute('GET', '/scanner', ['App\Controllers\ScannerController', 'index']);
+    $r->addRoute('POST', '/scanner/process', ['App\Controllers\ScannerController', 'processScan']);
+
     // CMS routes (admin only)
     $r->addRoute('GET', '/cms', ['App\Controllers\CMSController', 'generalIndex']);
     $r->addRoute('GET', '/cms/pages', ['App\Controllers\CMSController', 'index']);

@@ -3,8 +3,6 @@
 declare(strict_types=1);
 
 /** @var \App\ViewModels\JazzArtistPageViewModel $vm */
-/** @var string|null $flashSuccess */
-
 use App\Utils\Wysiwyg;
 ?>
 <!doctype html>
@@ -13,14 +11,12 @@ use App\Utils\Wysiwyg;
 <head>
     <meta charset="utf-8">
     <title><?= htmlspecialchars($vm->pageTitle) ?></title>
+    <script src="/assets/js/jazz/tailwind.config.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="m-0 bg-[#0b0b0b] font-[system-ui,Arial] text-white">
-
-    <div class="mx-auto w-full max-w-[1200px] px-5">
-        <?php require __DIR__ . '/../partials/flash_success.php'; ?>
-    </div>
+<body class="m-0 bg-jazz-dark bg-[#0b0b0b] font-[system-ui,Arial] text-white">
+    <?php include __DIR__ . '/../partials/header.php'; ?>
 
     <!-- HERO -->
     <section class="relative min-h-[62vh] bg-cover bg-center"
@@ -36,13 +32,13 @@ use App\Utils\Wysiwyg;
             <?php endif; ?>
         </div>
 
-        <div class="relative z-[1] max-w-[980px] px-20 pb-[10px] pt-20 max-[1200px]:px-6">
+        <div class="relative z-[1] max-w-jazz-hero max-w-[980px] px-20 pb-[10px] pt-20 max-[1200px]:px-6">
             <div class="tracking-[0.2em] opacity-75"><?= htmlspecialchars($vm->kicker) ?></div>
             <h1 class="mb-4 mt-2 text-[64px] leading-none max-[1200px]:text-[44px]"><?= htmlspecialchars($vm->heroTitle) ?></h1>
             <div class="mb-4 leading-[1.4] opacity-90"><?= htmlspecialchars($vm->heroSubtitle) ?></div>
         </div>
 
-        <div class="absolute right-[70px] top-[70px] z-[3] grid w-[360px] gap-[14px] max-[1200px]:static max-[1200px]:mt-[14px] max-[1200px]:w-full">
+        <div class="absolute right-[70px] top-[70px] z-[3] grid w-jazz-media w-[360px] gap-[14px] max-[1200px]:static max-[1200px]:mt-[14px] max-[1200px]:w-full">
             <?php if (is_array($vm->mainMedia) && !empty($vm->mainMedia['image'])): ?>
                 <div class="overflow-hidden rounded-[14px] bg-white/5 shadow-[0_10px_28px_rgba(0,0,0,.45)]">
                     <img class="block h-[170px] w-full object-cover max-[1200px]:h-[160px]" src="/<?= htmlspecialchars((string)$vm->mainMedia['image']) ?>" alt="">
@@ -95,12 +91,12 @@ use App\Utils\Wysiwyg;
 
         <!-- EVENTS -->
         <div class="<?= $vm->activeTab !== 'events' ? 'hidden' : '' ?> mt-[18px]" data-artist-panel="events">
-            <div class="mt-[14px] grid grid-cols-[26px_1fr] gap-[22px] max-[1200px]:grid-cols-[12px_1fr]">
-                <div class="rounded-xl bg-[linear-gradient(180deg,_#f7c600,_rgba(247,198,0,.35))] shadow-[0_10px_28px_rgba(0,0,0,.35)]"></div>
+            <div class="mt-[14px] grid grid-cols-jazz-events-rail grid-cols-[26px_1fr] gap-[22px] max-[1200px]:grid-cols-jazz-events-rail-sm max-[1200px]:grid-cols-[12px_1fr]">
+                <div class="rounded-xl bg-jazz-accent-rail bg-[linear-gradient(180deg,_#f7c600,_rgba(247,198,0,.35))] shadow-[0_10px_28px_rgba(0,0,0,.35)]"></div>
 
                 <div>
                     <?php foreach ($vm->events as $ev): ?>
-                        <div class="my-[22px] grid grid-cols-[360px_1fr_220px] items-center gap-7 max-[1200px]:grid-cols-1">
+                        <div class="my-[22px] grid grid-cols-jazz-event-row grid-cols-[360px_1fr_220px] items-center gap-7 max-[1200px]:grid-cols-1">
                             <div class="overflow-hidden rounded-2xl bg-white/5">
                                 <img class="block h-[170px] w-full object-cover" src="/<?= htmlspecialchars((string)($ev['img_background'] ?? '')) ?>"
                                     alt="<?= htmlspecialchars((string)($ev['title'] ?? '')) ?>"
@@ -114,11 +110,17 @@ use App\Utils\Wysiwyg;
                                 <div class="mt-[6px] font-extrabold opacity-90"><?= htmlspecialchars((string)($ev['location'] ?? '')) ?></div>
                             </div>
 
-                            <div class="flex justify-end max-[1200px]:justify-start">
-                                <button class="min-w-40 cursor-pointer rounded-xl border-0 bg-[#f7c600] px-[22px] py-3 font-black text-[#111]" type="button">
-                                    <?= htmlspecialchars($vm->ticketButtonLabel) ?>
+                            <form method="POST" action="/order/item/add" class="ticket-form flex justify-end max-[1200px]:justify-start">
+                                <input type="hidden" name="event_id" value="<?= (int)($ev['event_id'] ?? 0) ?>">
+                                <button class="min-w-40 cursor-pointer rounded-xl border-0 bg-jazz-accent bg-[#f7c600] px-[22px] py-3 font-black text-jazz-accent-text text-[#111]" type="submit">
+                                    <?php if (isset($ev['price']) && is_numeric($ev['price'])): ?>
+                                        <?php $price = (float)$ev['price']; ?>
+                                        Ticket: <?= htmlspecialchars(rtrim(rtrim(number_format($price, 2, '.', ''), '0'), '.')) ?>€ p.p
+                                    <?php else: ?>
+                                        <?= htmlspecialchars($vm->ticketButtonLabel) ?>
+                                    <?php endif; ?>
                                 </button>
-                            </div>
+                            </form>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -151,7 +153,7 @@ use App\Utils\Wysiwyg;
 
         <div class="<?= $vm->activeTab !== 'album' ? 'hidden' : '' ?> mt-[18px]" data-artist-panel="album">
             <?php foreach ($vm->albums as $alb): ?>
-                <div class="grid grid-cols-[560px_1fr] items-start gap-7 max-[1200px]:grid-cols-1">
+                <div class="grid grid-cols-jazz-album grid-cols-[560px_1fr] items-start gap-7 max-[1200px]:grid-cols-1">
                     <div class="overflow-hidden rounded-2xl">
                         <img class="block w-full" src="/<?= htmlspecialchars((string)$alb['image_src']) ?>"
                             alt="<?= htmlspecialchars((string)$alb['image_alt']) ?>">
@@ -167,9 +169,9 @@ use App\Utils\Wysiwyg;
                         <div class="mb-[10px] text-[28px] font-extrabold opacity-95"><?= htmlspecialchars((string)($alb['title'] ?? '')) ?></div>
 
                         <?php if (!empty($alb['description_html']) && is_string($alb['description_html'])): ?>
-                            <div class="max-w-[860px] leading-[1.6] opacity-90 wysiwyg"><?= Wysiwyg::render($alb['description_html']) ?></div>
+                            <div class="max-w-jazz-album-text max-w-[860px] leading-[1.6] opacity-90 wysiwyg"><?= Wysiwyg::render($alb['description_html']) ?></div>
                         <?php else: ?>
-                            <p class="max-w-[860px] leading-[1.6] opacity-90"><?= htmlspecialchars((string)($alb['description'] ?? '')) ?></p>
+                            <p class="max-w-jazz-album-text max-w-[860px] leading-[1.6] opacity-90"><?= htmlspecialchars((string)($alb['description'] ?? '')) ?></p>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -199,7 +201,18 @@ use App\Utils\Wysiwyg;
 
     </section>
 
+    <button
+        id="cartToast"
+        type="button"
+        class="hidden fixed bottom-6 right-6 z-[1200] rounded-xl bg-zinc-900 px-4 py-3 text-left text-sm text-white shadow-xl ring-1 ring-white/15 transition hover:bg-zinc-800"
+        aria-live="polite"
+    >
+        <span class="block font-semibold">Ticket added to cart</span>
+        <span class="block text-xs text-zinc-300">Click to open shopping cart</span>
+    </button>
+
     <script src="/assets/js/jazz/jazz_artist.js"></script>
+    <?php include __DIR__ . '/../partials/footer.php'; ?>
 </body>
 
 </html>

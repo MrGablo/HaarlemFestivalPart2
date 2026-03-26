@@ -5,13 +5,16 @@ namespace App\Services;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderStatus;
+use App\Models\PassEvent;
+use App\Repositories\PassRepository;
 use App\Repositories\Interfaces\IOrderRepository;
 
 class OrderService
 {
     public function __construct(
         private IOrderRepository $orderRepository,
-        private EventModelBuilderService $eventBuilder
+        private EventModelBuilderService $eventBuilder,
+        private ?PassService $passService = null
     ) {}
 
     public function getPendingOrderForUser(int $userId): ?Order
@@ -28,7 +31,7 @@ class OrderService
         return $this->buildOrderFromRow($orderRow);
     }
 
-    public function addEventToUserPendingOrder(int $userId, int $eventId): Order
+    public function addEventToUserPendingOrder(int $userId, int $eventId, ?string $passDate = null): Order
     {
         $this->assertPositiveId($userId, 'user id');
         $this->assertPositiveId($eventId, 'event id');
@@ -45,6 +48,31 @@ class OrderService
 
         // Validate event type can be mapped before storing the item.
         $this->eventBuilder->buildEventModel($eventRow);
+
+        $passDate = $this->normalizePassDate($passDate);
+        $effectivePassDate = null;
+
+        $passService = $this->passService ?? new PassService(new PassRepository());
+        $pass = $passService->findActivePassProductByEventId($eventId);
+
+        if ($pass instanceof PassEvent) {
+            $passScope = strtolower($pass->pass_scope);
+            $festivalType = strtolower($pass->festival_type);
+
+            if ($festivalType === 'jazz' && $passScope === 'day') {
+                if ($passDate === null) {
+                    throw new \RuntimeException('Please select a valid Jazz day for this pass.');
+                }
+
+                if (!$passService->isValidJazzPassDate($passDate)) {
+                    throw new \RuntimeException('Selected Jazz day is unavailable for this pass.');
+                }
+
+                $effectivePassDate = $passDate;
+            }
+        } elseif ($passDate !== null) {
+            throw new \RuntimeException('Pass date can only be used for pass products.');
+        }
 
         $orderRow = $this->orderRepository->findPendingOrderByUserId($userId);
         $existingOrderId = $orderRow !== null
@@ -63,7 +91,7 @@ class OrderService
             ? $existingOrderId
             : $createdOrderId;
 
-        $this->orderRepository->addOrIncrementOrderItem($orderId, $eventId);
+        $this->orderRepository->addOrIncrementOrderItem($orderId, $eventId, $effectivePassDate);
 
         $freshRow = $this->orderRepository->findPendingOrderByUserId($userId);
         if ($freshRow === null) {
@@ -160,6 +188,7 @@ class OrderService
                 $rowOrderId,
                 $eventId,
                 $quantity,
+                isset($row['pass_date']) ? (string)$row['pass_date'] : null,
                 isset($row['order_item_created_at']) ? (string)$row['order_item_created_at'] : null,
                 $event
             );
@@ -196,5 +225,20 @@ class OrderService
         }
 
         return $orderId;
+    }
+
+    private function normalizePassDate(?string $value): ?string
+    {
+        $value = $value !== null ? trim($value) : null;
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $dt = \DateTimeImmutable::createFromFormat('Y-m-d', $value);
+        if (!$dt instanceof \DateTimeImmutable || $dt->format('Y-m-d') !== $value) {
+            return null;
+        }
+
+        return $value;
     }
 }
