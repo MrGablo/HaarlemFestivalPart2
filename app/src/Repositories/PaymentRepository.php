@@ -6,7 +6,7 @@ use App\Framework\Repository;
 
 /**
  * Simple repository for Stripe payment flow.
- * Creates paid orders, order items, and tickets after successful checkout.
+ * Marks pending orders paid and creates tickets after successful checkout.
  */
 class PaymentRepository extends Repository
 {
@@ -50,26 +50,6 @@ class PaymentRepository extends Repository
         $rows = $stmt->fetchAll();
 
         return is_array($rows) ? $rows : [];
-    }
-
-    /**
-     * Find an event and its price by ID.
-     */
-    public function findEventById(int $eventId): ?array
-    {
-        $stmt = $this->getConnection()->prepare(
-            'SELECT e.event_id, e.title, e.event_type, COALESCE(j.price, d.price, 0) AS price
-               FROM Event e
-               LEFT JOIN JazzEvent j ON j.event_id = e.event_id
-               LEFT JOIN DanceEvent d ON d.event_id = e.event_id
-              WHERE e.event_id = :event_id
-              LIMIT 1'
-        );
-
-        $stmt->execute([':event_id' => $eventId]);
-        $row = $stmt->fetch();
-
-        return is_array($row) ? $row : null;
     }
 
     public function findPendingOrderItemForUser(int $userId, int $orderItemId): ?array
@@ -130,45 +110,6 @@ class PaymentRepository extends Repository
         $status = $stmt->fetchColumn();
 
         return $status === 'payed';
-    }
-
-    /**
-     * Create a new order with status 'payed'.
-     * Returns the new order ID.
-     */
-    public function createPaidOrder(int $userId): int
-    {
-        $stmt = $this->getConnection()->prepare(
-            'INSERT INTO `orders` (user_id, order_status, created_at)
-             VALUES (:user_id, :status, NOW())'
-        );
-
-        $stmt->execute([
-            ':user_id' => $userId,
-            ':status'  => 'payed',
-        ]);
-
-        return (int) $this->getConnection()->lastInsertId();
-    }
-
-    /**
-     * Create an order item linked to the order and event.
-     * Returns the new order_item ID.
-     */
-    public function createOrderItem(int $orderId, int $eventId, int $quantity): int
-    {
-        $stmt = $this->getConnection()->prepare(
-            'INSERT INTO `order_items` (order_id, event_id, quantity, created_at)
-             VALUES (:order_id, :event_id, :quantity, NOW())'
-        );
-
-        $stmt->execute([
-            ':order_id' => $orderId,
-            ':event_id' => $eventId,
-            ':quantity' => $quantity,
-        ]);
-
-        return (int) $this->getConnection()->lastInsertId();
     }
 
     /**

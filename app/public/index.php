@@ -95,7 +95,6 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
 
     // Payment routes (Stripe checkout)
     $r->addRoute('POST', '/payment/checkout', ['App\Controllers\PaymentController', 'checkoutRedirect']);
-    $r->addRoute('POST', '/api/payment/create-session', ['App\Controllers\PaymentController', 'createCheckoutSession']);
     $r->addRoute('POST', '/api/payment/webhook', ['App\Controllers\PaymentController', 'handleWebhook']);
     $r->addRoute('GET',  '/payment/success', ['App\Controllers\PaymentController', 'success']);
     $r->addRoute('GET',  '/payment/cancel', ['App\Controllers\PaymentController', 'cancel']);
