@@ -20,7 +20,8 @@ declare(strict_types=1);
     type="button"
     disabled
     class="flex h-dance-btn w-dance-btn shrink-0 cursor-not-allowed items-center justify-center gap-2 rounded border border-dance-accent bg-dance-accent-soft text-base font-bold text-dance-on-dark opacity-75"
-    aria-label="Add to cart"
+    aria-label="Add to cart (unavailable)"
+    aria-disabled="true"
   >
     <span class="inline-block h-dance-icon w-dance-icon" aria-hidden="true"></span> ADD
   </button>
