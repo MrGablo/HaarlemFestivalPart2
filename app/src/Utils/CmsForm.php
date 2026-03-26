@@ -53,7 +53,7 @@ final class CmsForm
     {
         foreach ($node as $key => $value) {
             $currentPath = [...$path, (string)$key];
-                
+
             if (is_array($value)) {
                 echo '<fieldset class="rounded-xl border border-slate-200 p-4">';
                 echo '<legend class="px-1 text-sm font-semibold text-slate-800">' . self::h(self::label((string)$key)) . '</legend>';
@@ -229,7 +229,7 @@ final class CmsForm
         $itemPath = [...$path, $index];
         $itemLabel = $index === '__INDEX__' ? 'New Item' : ('Item ' . ((int)$index + 1));
 
-        echo '<div class="rounded-lg border border-slate-200 bg-slate-50 p-4" data-repeater-item>'; 
+        echo '<div class="rounded-lg border border-slate-200 bg-slate-50 p-4" data-repeater-item>';
         echo '<div class="mb-3 flex items-center justify-between gap-3">';
         echo '<p class="text-sm font-semibold text-slate-800">' . self::h($itemLabel) . '</p>';
         echo '<button type="button" class="rounded-lg bg-rose-100 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-200" data-repeater-remove>Remove</button>';
