@@ -6,10 +6,13 @@ use App\Framework\Repository;
 
 /**
  * Simple repository for Stripe payment flow.
+ * Creates and updates orders used by checkout fulfilment.
  * Marks pending orders paid and creates tickets after successful checkout.
  */
 class PaymentRepository extends Repository
 {
+    private ?string $orderItemPassDateColumn = null;
+
     public function findPendingOrderByUserId(int $userId): ?array
     {
         $stmt = $this->getConnection()->prepare(
@@ -136,20 +139,39 @@ class PaymentRepository extends Repository
     }
 
     /**
-     * Create a ticket linked to the order item and user.
-     * Returns the new ticket ID.
+     * Create a new order with status 'payed'.
+     * Returns the new order ID.
      */
-    public function createTicket(int $orderItemId, int $userId, string $qr): int
+    public function createPaidOrder(int $userId): int
     {
         $stmt = $this->getConnection()->prepare(
-            'INSERT INTO `Ticket` (order_item_id, user_id, qr)
-             VALUES (:order_item_id, :user_id, :qr)'
+            'INSERT INTO `orders` (user_id, order_status, created_at)
+             VALUES (:user_id, :status, NOW())'
         );
 
         $stmt->execute([
-            ':order_item_id' => $orderItemId,
-            ':user_id'       => $userId,
-            ':qr'            => $qr,
+            ':user_id' => $userId,
+            ':status'  => 'payed',
+        ]);
+
+        return (int) $this->getConnection()->lastInsertId();
+    }
+
+    /**
+     * Create an order item linked to the order and event.
+     * Returns the new order_item ID.
+     */
+    public function createOrderItem(int $orderId, int $eventId, int $quantity): int
+    {
+        $stmt = $this->getConnection()->prepare(
+            'INSERT INTO `order_items` (order_id, event_id, quantity, created_at)
+             VALUES (:order_id, :event_id, :quantity, NOW())'
+        );
+
+        $stmt->execute([
+            ':order_id' => $orderId,
+            ':event_id' => $eventId,
+            ':quantity' => $quantity,
         ]);
 
         return (int) $this->getConnection()->lastInsertId();
@@ -157,46 +179,19 @@ class PaymentRepository extends Repository
 
     public function getOrderItemsByOrderId(int $orderId): array
     {
-        $stmt = $this->getConnection()->prepare(
-            'SELECT order_item_id, order_id, event_id, quantity
-             FROM `order_items`
-             WHERE order_id = :order_id'
-        );
-        $stmt->execute([':order_id' => $orderId]);
-        $rows = $stmt->fetchAll();
+        $passDateExpr = $this->orderItemsPassDateSelectExpression('oi');
 
-        return is_array($rows) ? $rows : [];
-    }
-
-    public function getPaidTicketsForUser(int $userId): array
-    {
         $stmt = $this->getConnection()->prepare(
-            'SELECT
-                t.ticket_id,
-                t.qr,
+            "SELECT
                 oi.order_item_id,
                 oi.order_id,
                 oi.event_id,
-                e.title,
-                COALESCE(j.price, d.price, p.base_price, 0) AS price,
-                     \'\' AS location
-             FROM `Ticket` t
-             INNER JOIN `order_items` oi ON oi.order_item_id = t.order_item_id
-             INNER JOIN `orders` o ON o.order_id = oi.order_id
-             INNER JOIN `Event` e ON e.event_id = oi.event_id
-             LEFT JOIN `JazzEvent` j ON j.event_id = e.event_id
-             LEFT JOIN `DanceEvent` d ON d.event_id = e.event_id
-             LEFT JOIN `PassEvent` p ON p.event_id = e.event_id
-             WHERE o.user_id = :user_id
-               AND LOWER(TRIM(o.order_status)) <> :pending_status
-             ORDER BY t.ticket_id DESC'
+                oi.quantity,
+                {$passDateExpr} AS pass_date
+             FROM `order_items` oi
+                 WHERE order_id = :order_id"
         );
-
-        $stmt->execute([
-            ':user_id' => $userId,
-            ':pending_status' => 'pending',
-        ]);
-
+        $stmt->execute([':order_id' => $orderId]);
         $rows = $stmt->fetchAll();
 
         return is_array($rows) ? $rows : [];
@@ -295,5 +290,38 @@ class PaymentRepository extends Repository
             $pdo->rollBack();
             throw $e;
         }
+    }
+
+    private function orderItemsPassDateColumn(): ?string
+    {
+        if ($this->orderItemPassDateColumn !== null) {
+            return $this->orderItemPassDateColumn;
+        }
+
+        $stmt = $this->getConnection()->query("SHOW COLUMNS FROM `order_items` LIKE 'pass_date_key'");
+        $row = $stmt ? $stmt->fetch() : false;
+        if (is_array($row)) {
+            $this->orderItemPassDateColumn = 'pass_date_key';
+            return $this->orderItemPassDateColumn;
+        }
+
+        $stmt = $this->getConnection()->query("SHOW COLUMNS FROM `order_items` LIKE 'pass_date'");
+        $row = $stmt ? $stmt->fetch() : false;
+        if (is_array($row)) {
+            $this->orderItemPassDateColumn = 'pass_date';
+            return $this->orderItemPassDateColumn;
+        }
+
+        return null;
+    }
+
+    private function orderItemsPassDateSelectExpression(string $tableAlias): string
+    {
+        $column = $this->orderItemsPassDateColumn();
+        if ($column === null) {
+            return 'NULL';
+        }
+
+        return $tableAlias . '.' . $column;
     }
 }

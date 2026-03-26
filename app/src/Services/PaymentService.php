@@ -11,10 +11,12 @@ use App\Repositories\PaymentRepository;
 class PaymentService
 {
     private PaymentRepository $repo;
+    private TicketService $ticketService;
 
-    public function __construct(PaymentRepository $repo)
+    public function __construct(PaymentRepository $repo, ?TicketService $ticketService = null)
     {
         $this->repo = $repo;
+        $this->ticketService = $ticketService ?? new TicketService();
     }
 
     /**
@@ -96,18 +98,15 @@ class PaymentService
         $items = $this->repo->getOrderItemsByOrderId($orderId);
         foreach ($items as $item) {
             $orderItemId = (int)($item['order_item_id'] ?? 0);
+            $eventId = (int)($item['event_id'] ?? 0);
             $quantity    = (int)($item['quantity'] ?? 0);
-            if ($orderItemId <= 0 || $quantity <= 0) {
+            $passDate = isset($item['pass_date']) ? (string)$item['pass_date'] : null;
+
+            if ($orderItemId <= 0 || $eventId <= 0 || $quantity <= 0) {
                 continue;
             }
-            for ($i = 0; $i < $quantity; $i++) {
-                try {
-                    $qr = 'TICKET_' . uniqid('', true);
-                    $this->repo->createTicket($orderItemId, $userId, $qr);
-                } catch (\Throwable $e) {
-                    error_log("Ticket creation failed: " . $e->getMessage());
-                }
-            }
+
+            $this->ticketService->createTicketsForOrderItem($orderItemId, $userId, $eventId, $quantity, $passDate);
         }
 
         error_log("Payment OK: order=$orderId user=$userId");
@@ -129,7 +128,10 @@ class PaymentService
             throw new \RuntimeException('Payment: missing pending_order_id in checkout session metadata.');
         }
 
-        $this->fulfillPendingOrder($userId, $pendingOrderId);
+        $orderId     = $this->repo->createPaidOrder($userId);
+        $orderItemId = $this->repo->createOrderItem($orderId, $eventId, $quantity);
+        $this->ticketService->createTicketsForOrderItem($orderItemId, $userId, $eventId, $quantity, null);
+        error_log("Payment OK (fallback): order=$orderId user=$userId event=$eventId qty=$quantity");
     }
 
     private function getStripeSecretKey(): string
