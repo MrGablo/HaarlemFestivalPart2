@@ -66,6 +66,30 @@ class PassService
         return in_array($isoDate, $availableDates, true);
     }
 
+    /** @return array<int, int> */
+    public function getJazzEventIdsByDate(string $isoDate): array
+    {
+        return $this->passRepo->getJazzEventIdsByDate($isoDate);
+    }
+
+    /** @return array<int, int> */
+    public function getAllJazzEventIds(): array
+    {
+        return $this->passRepo->getAllJazzEventIds();
+    }
+
+    /** @return array<int, int> */
+    public function getDanceSessionEventIdsByPassEvent(int $passEventId): array
+    {
+        return $this->passRepo->getDanceSessionEventIdsByPassEvent($passEventId);
+    }
+
+    /** @return array<int, int> */
+    public function getAllDanceSessionEventIds(): array
+    {
+        return $this->passRepo->getAllDanceSessionEventIds();
+    }
+
     private function isIsoDate(string $value): bool
     {
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {

@@ -6,9 +6,9 @@ namespace App\Controllers;
 
 use App\Config;
 use App\Repositories\OrderRepository;
-use App\Repositories\PaymentRepository;
 use App\Services\EventModelBuilderService;
 use App\Services\OrderService;
+use App\Services\TicketService;
 use App\Utils\AuthSessionData;
 use App\Utils\Session;
 
@@ -59,13 +59,13 @@ class ProgramController
         $orderIds = array_map(static fn(array $row) => (int)($row['order_id'] ?? 0), $ordersRows);
         $orderIds = array_values(array_filter($orderIds, static fn(int $id) => $id > 0));
 
-        $paymentRepo = new PaymentRepository();
+        $ticketService = new TicketService();
 
         $paidEvents = [];
         $totalEvents = 0;
 
         if ($orderIds !== []) {
-            $ticketRows = $paymentRepo->getPaidTicketsForUser($userId);
+            $ticketRows = $ticketService->getPaidTicketsForUser($userId);
 
             foreach ($ticketRows as $row) {
                 $totalEvents += 1;
