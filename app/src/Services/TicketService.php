@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Repositories\DanceHomeRepository;
+use App\Repositories\JazzEventRepository;
 use App\Models\PassEvent;
 use App\Repositories\PassRepository;
 use App\Repositories\TicketRepository;
@@ -10,11 +12,19 @@ class TicketService
 {
     private TicketRepository $ticketRepository;
     private PassService $passService;
+    private JazzEventRepository $jazzEventRepository;
+    private DanceHomeRepository $danceHomeRepository;
 
-    public function __construct(?TicketRepository $ticketRepository = null, ?PassService $passService = null)
-    {
+    public function __construct(
+        ?TicketRepository $ticketRepository = null,
+        ?PassService $passService = null,
+        ?JazzEventRepository $jazzEventRepository = null,
+        ?DanceHomeRepository $danceHomeRepository = null
+    ) {
         $this->ticketRepository = $ticketRepository ?? new TicketRepository();
         $this->passService = $passService ?? new PassService(new PassRepository());
+        $this->jazzEventRepository = $jazzEventRepository ?? new JazzEventRepository();
+        $this->danceHomeRepository = $danceHomeRepository ?? new DanceHomeRepository();
     }
 
     public function createTicketsForOrderItem(int $orderItemId, int $userId, int $eventId, int $quantity, ?string $passDate): void
@@ -25,7 +35,8 @@ class TicketService
 
         $coveredEventIds = $this->resolveCoveredEventIds($eventId, $passDate);
         if ($coveredEventIds === []) {
-            $coveredEventIds = [$eventId];
+            // Pass products should never generate a QR for the pass item itself.
+            return;
         }
 
         for ($i = 0; $i < $quantity; $i++) {
@@ -61,25 +72,25 @@ class TicketService
 
         if ($scope === 'day') {
             if ($festivalType === 'jazz') {
-                if ($passDate === null || !$this->passService->isValidJazzPassDate($passDate)) {
+                if ($passDate === null || trim($passDate) === '') {
                     return [];
                 }
 
-                return $this->passService->getJazzEventIdsByDate($passDate);
+                return $this->jazzEventRepository->getJazzEventIdsByDate($passDate);
             }
 
             if ($festivalType === 'dance') {
-                return $this->passService->getDanceSessionEventIdsByPassEvent($eventId);
+                return $this->danceHomeRepository->getDanceSessionEventIdsByPassEvent($eventId);
             }
         }
 
         if ($scope === 'all_days') {
             if ($festivalType === 'jazz') {
-                return $this->passService->getAllJazzEventIds();
+                return $this->jazzEventRepository->getAllJazzEventIds();
             }
 
             if ($festivalType === 'dance') {
-                return $this->passService->getAllDanceSessionEventIds();
+                return $this->danceHomeRepository->getAllDanceSessionEventIds();
             }
         }
 

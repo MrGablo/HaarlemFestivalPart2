@@ -133,6 +133,81 @@ final class DanceHomeRepository extends Repository
         return $out;
     }
 
+    /** @return array<int, int> */
+    public function getDanceSessionEventIdsByPassEvent(int $passEventId): array
+    {
+        try {
+            $stmt = $this->getConnection()->prepare(
+                "SELECT DATE(COALESCE(d.event_date, d.start_date)) AS day_key
+                 FROM DanceEvent d
+                 WHERE d.event_id = :event_id
+                 LIMIT 1"
+            );
+            $stmt->execute([':event_id' => $passEventId]);
+            $dayKey = $stmt->fetchColumn();
+
+            if (is_string($dayKey) && trim($dayKey) !== '') {
+                $eventsStmt = $this->getConnection()->prepare(
+                    "SELECT d.event_id
+                     FROM DanceEvent d
+                     INNER JOIN Event e ON e.event_id = d.event_id
+                     WHERE e.event_type = 'dance'
+                       AND d.row_kind = 'session'
+                       AND DATE(COALESCE(d.event_date, d.start_date)) = :day_key
+                     ORDER BY d.sort_order ASC, d.event_id ASC"
+                );
+                $eventsStmt->execute([':day_key' => trim($dayKey)]);
+                $rows = $eventsStmt->fetchAll();
+
+                return $this->normalizeEventIds(is_array($rows) ? $rows : []);
+            }
+        } catch (\Throwable $e) {
+            // Fallback to legacy label schema below.
+        }
+
+        $stmt = $this->getConnection()->prepare(
+            'SELECT TRIM(d.day_display_label) AS day_label
+             FROM DanceEvent d
+             WHERE d.event_id = :event_id
+             LIMIT 1'
+        );
+        $stmt->execute([':event_id' => $passEventId]);
+        $dayLabel = $stmt->fetchColumn();
+        if (!is_string($dayLabel) || trim($dayLabel) === '') {
+            return [];
+        }
+
+        $eventsStmt = $this->getConnection()->prepare(
+            "SELECT d.event_id
+             FROM DanceEvent d
+             INNER JOIN Event e ON e.event_id = d.event_id
+             WHERE e.event_type = 'dance'
+               AND d.row_kind = 'session'
+               AND TRIM(d.day_display_label) = :day_label
+             ORDER BY d.sort_order ASC, d.event_id ASC"
+        );
+        $eventsStmt->execute([':day_label' => trim((string)$dayLabel)]);
+        $rows = $eventsStmt->fetchAll();
+
+        return $this->normalizeEventIds(is_array($rows) ? $rows : []);
+    }
+
+    /** @return array<int, int> */
+    public function getAllDanceSessionEventIds(): array
+    {
+        $stmt = $this->getConnection()->query(
+            "SELECT d.event_id
+             FROM DanceEvent d
+             INNER JOIN Event e ON e.event_id = d.event_id
+             WHERE e.event_type = 'dance'
+               AND d.row_kind = 'session'
+             ORDER BY d.sort_order ASC, d.event_id ASC"
+        );
+        $rows = $stmt ? $stmt->fetchAll() : [];
+
+        return $this->normalizeEventIds(is_array($rows) ? $rows : []);
+    }
+
     /** @return list<array<string, mixed>>|null */
     private function tryFetchRows(\PDO $pdo, string $sql): ?array
     {
@@ -146,5 +221,21 @@ final class DanceHomeRepository extends Repository
 
             return null;
         }
+    }
+
+    /** @param array<int, array<string, mixed>> $rows
+     *  @return array<int, int>
+     */
+    private function normalizeEventIds(array $rows): array
+    {
+        $eventIds = [];
+        foreach ($rows as $row) {
+            $eventId = (int)($row['event_id'] ?? 0);
+            if ($eventId > 0) {
+                $eventIds[] = $eventId;
+            }
+        }
+
+        return array_values(array_unique($eventIds));
     }
 }
