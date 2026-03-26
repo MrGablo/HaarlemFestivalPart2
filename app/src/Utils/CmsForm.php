@@ -53,7 +53,7 @@ final class CmsForm
     {
         foreach ($node as $key => $value) {
             $currentPath = [...$path, (string)$key];
-
+            //TODO: not good practice to echo in html
             if (is_array($value)) {
                 echo '<fieldset class="rounded-xl border border-slate-200 p-4">';
                 echo '<legend class="px-1 text-sm font-semibold text-slate-800">' . self::h(self::label((string)$key)) . '</legend>';
