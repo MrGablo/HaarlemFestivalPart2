@@ -60,6 +60,33 @@
                     'href' => '/cms/artists',
                     'label' => 'Open',
                 ],
+                [
+                    'id' => 5,
+                    'title' => 'Users',
+                    'type' => 'users',
+                    'updated' => '-',
+                    'created' => '-',
+                    'href' => '/cms/users',
+                    'label' => 'Open',
+                ],
+                [
+                    'id' => 6,
+                    'title' => 'Venues',
+                    'type' => 'venues',
+                    'updated' => '-',
+                    'created' => '-',
+                    'href' => '/cms/venues',
+                    'label' => 'Open',
+                ],
+                [
+                    'id' => 7,
+                    'title' => 'Orders',
+                    'type' => 'orders',
+                    'updated' => '-',
+                    'created' => '-',
+                    'href' => '/cms/orders',
+                    'label' => 'Open',
+                ],
             ];
             ?>
 

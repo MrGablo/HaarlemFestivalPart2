@@ -1,6 +1,7 @@
 <?php
 
 use App\Config; ?>
+<?php /** @var \App\Models\UserModel $user */ ?>
 <!doctype html>
 <html lang="en">
 
@@ -86,22 +87,13 @@ use App\Config; ?>
         </div>
 
         <div>
-          <label class="mb-1 block text-sm font-medium text-slate-700">Profile picture URL (optional)</label>
-          <input
-            name="profilePicturePath"
-            type="text"
-            value="<?= htmlspecialchars($old['profilePicturePath'] ?? ($user->profilePicturePath ?? '')) ?>"
-            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
-          <p class="mt-1 text-xs text-slate-500">Or upload a file below.</p>
-        </div>
-
-        <div>
-          <label class="mb-1 block text-sm font-medium text-slate-700">Profile picture file (optional)</label>
+          <label class="mb-1 block text-sm font-medium text-slate-700">Profile picture (optional)</label>
           <input
             name="profilePicture"
             type="file"
             accept=".jpg,.jpeg,.png,.webp,.gif"
             class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700">
+          <p class="mt-1 text-xs text-slate-500">Upload a new image to replace your current profile picture.</p>
         </div>
 
         <button type="submit"

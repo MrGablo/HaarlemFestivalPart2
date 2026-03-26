@@ -41,7 +41,7 @@
                             <th class="px-4 py-3 text-left font-semibold text-slate-700">Title</th>
                             <th class="px-4 py-3 text-left font-semibold text-slate-700">Artist</th>
                             <th class="px-4 py-3 text-left font-semibold text-slate-700">Start</th>
-                            <th class="px-4 py-3 text-left font-semibold text-slate-700">Location</th>
+                               <th class="px-4 py-3 text-left font-semibold text-slate-700">Venue</th>
                             <th class="px-4 py-3 text-left font-semibold text-slate-700">Price</th>
                             <th class="px-4 py-3 text-left font-semibold text-slate-700">Actions</th>
                         </tr>
@@ -59,7 +59,7 @@
                                     <td class="px-4 py-3 font-medium text-slate-900"><?= htmlspecialchars((string)$e->title) ?></td>
                                     <td class="px-4 py-3 text-slate-700"><?= htmlspecialchars((string)($e->artist_name ?? '')) ?></td>
                                     <td class="whitespace-nowrap px-4 py-3 text-slate-700"><?= htmlspecialchars((string)($e->start_date ?? '')) ?></td>
-                                    <td class="px-4 py-3 text-slate-700"><?= htmlspecialchars((string)($e->location ?? '')) ?></td>
+                                       <td class="px-4 py-3 text-slate-700"><?= htmlspecialchars((string)($e->venue_name !== '' ? $e->venue_name : '-')) ?></td>
                                     <td class="whitespace-nowrap px-4 py-3 text-slate-700"><?= htmlspecialchars((string)($e->price ?? '')) ?></td>
                                     <td class="whitespace-nowrap px-4 py-3">
                                         <div class="flex flex-wrap gap-2">
