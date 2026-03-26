@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Cms\Controllers;
 
+use App\Cms\Models\OrderExportRequest;
+use App\Cms\Models\OrderSearchCriteria;
+use App\Cms\Services\CmsOrderExportService;
 use App\Cms\Services\CmsOrderService;
 use App\Utils\AdminGuard;
 use App\Utils\Csrf;
@@ -13,10 +16,12 @@ use App\Utils\Session;
 final class CMSOrderController
 {
     private CmsOrderService $service;
+    private CmsOrderExportService $exportService;
 
     public function __construct()
     {
         $this->service = new CmsOrderService();
+        $this->exportService = new CmsOrderExportService($this->service);
         Session::ensureStarted();
     }
 
@@ -24,10 +29,12 @@ final class CMSOrderController
     {
         AdminGuard::requireAdmin(true);
 
-        $search = trim((string)($_GET['search'] ?? ''));
-        $statusFilter = trim((string)($_GET['status'] ?? ''));
-        $sortColumn = trim((string)($_GET['sort'] ?? 'created_at'));
-        $sortDirection = trim((string)($_GET['dir'] ?? 'DESC'));
+        $criteria = OrderSearchCriteria::fromArray($_GET);
+
+        $search = $criteria->search;
+        $statusFilter = $criteria->statusFilter;
+        $sortColumn = $criteria->sortColumn;
+        $sortDirection = $criteria->sortDirection;
 
         $orders = $this->service->searchOrders($search, $statusFilter, $sortColumn, $sortDirection);
         $statuses = $this->service->getStatuses();
@@ -68,7 +75,7 @@ final class CMSOrderController
         $order = $details['order'];
 
         try {
-            $availableColumns = $this->service->getAvailableExportColumnsForOrder($id);
+            $availableColumns = $this->exportService->getAvailableExportColumnsForOrder($id);
         } catch (\Throwable $e) {
             Flash::setErrors(['general' => $e->getMessage()]);
             header('Location: /cms/orders/' . $id, true, 302);
@@ -109,110 +116,25 @@ final class CMSOrderController
 
     public function export(): void
     {
-        AdminGuard::requireAdmin(true); //TODO changing this method to not have a true or false, just check in the method itself
-        //TODO move all the logic from this method into CmsOrderExportService and just call a single method here that returns a structured result with all the data needed for export, and then handle the actual output (CSV/Excel) in separate private methods here in the controller. This will make it easier to test the export logic without dealing with headers and output buffering.
-        //TODO make this into a model, and pass this into constroctor, then call order service wit the data of the model.
-        $search = trim((string)($_GET['search'] ?? ''));
-        $statusFilter = trim((string)($_GET['status'] ?? ''));
-        $sortColumn = trim((string)($_GET['sort'] ?? 'created_at'));
-        $sortDirection = trim((string)($_GET['dir'] ?? 'DESC'));
-        $format = strtolower(trim((string)($_GET['format'] ?? 'csv')));
-        $scope = strtolower(trim((string)($_GET['scope'] ?? 'all')));
-        $userId = isset($_GET['user_id']) ? max(0, (int)$_GET['user_id']) : 0;
-        $orderId = isset($_GET['order_id']) ? max(0, (int)$_GET['order_id']) : 0;
-        $statusTotals = null;
+        AdminGuard::requireAdmin(true);
 
-        if (in_array($scope, ['all', 'user'], true)) {
-            $statusTotals = [
-                'payed' => 0.0,
-                'pending' => 0.0,
-                'general' => 0.0,
-            ];
-
-            $orderSummaries = $this->service->searchOrders($search, $statusFilter, $sortColumn, $sortDirection);
-            foreach ($orderSummaries as $summary) {
-                $summaryUserId = (int)($summary['user_id'] ?? 0);
-                if ($scope === 'user' && $userId > 0 && $summaryUserId !== $userId) {
-                    continue;
-                }
-                //TODO:  filter through database not in the controller
-                $amount = (float)($summary['total_amount'] ?? 0.0);
-                $status = strtolower((string)($summary['status'] ?? 'pending'));
-
-                if ($status === 'payed') {
-                    $statusTotals['payed'] += $amount;
-                } else {
-                    $statusTotals['pending'] += $amount;
-                }
-
-                $statusTotals['general'] += $amount;
-            }
-        }
-
-        $columnMap = $this->service->getExportColumns();
-        $query = http_build_query([
-            'search' => $search,
-            'status' => $statusFilter,
-            'sort' => $sortColumn,
-            'dir' => $sortDirection,
-            'scope' => $scope,
-            'user_id' => $userId > 0 ? $userId : null,
-            'order_id' => $orderId > 0 ? $orderId : null,
-        ]);
+        $request = OrderExportRequest::fromArray($_GET);
+        $query = http_build_query($request->toRedirectQueryParams());
 
         try {
-            $exportRows = $this->service->buildExportRows(
-                $scope,
-                $orderId,
-                $userId,
-                $search,
-                $statusFilter,
-                $sortColumn,
-                $sortDirection
-            );
+            $result = $this->exportService->prepareExport($request);
         } catch (\Throwable $e) {
             Flash::setErrors(['general' => $e->getMessage()]);
             header('Location: /cms/orders' . ($query !== '' ? ('?' . $query) : ''), true, 302);
             exit;
         }
-        //TODO single responsability, move them to their method don't handle them here.
-        if ($scope === 'order' && $orderId > 0) {
-            $availableForOrder = $this->service->getAvailableExportColumnsForOrder($orderId);
-            $requestedColumns = $_GET['columns'] ?? [];
-            $columns = $this->normalizeColumnsFromMap($requestedColumns, $availableForOrder, array_keys($availableForOrder));
-            $columnMap = $availableForOrder;
-        } else {
-            $requestedColumns = $_GET['columns'] ?? [];
-            $allColumnKeys = array_keys($columnMap);
-            $columns = $this->normalizeColumnsFromMap($requestedColumns, $columnMap, $allColumnKeys);
-        }
 
-        $safeRows = [];
-        foreach ($exportRows as $exportRow) {
-            $row = [];
-            foreach ($columns as $column) {
-                if (!array_key_exists($column, $columnMap)) {
-                    continue;
-                }
-
-                $row[$columnMap[$column]] = (string)($exportRow[$column] ?? '');
-            }
-            $safeRows[] = $row;
-        }
-
-        if (in_array($scope, ['all', 'user'], true) && is_array($statusTotals) && $safeRows !== []) {
-            $summaryRows = $this->buildStatusSummaryRows($columns, $columnMap, $statusTotals);
-            foreach ($summaryRows as $summaryRow) {
-                $safeRows[] = $summaryRow;
-            }
-        }
-
-        if ($format === 'excel') {
-            $this->outputExcel($safeRows, $columns, $columnMap);
+        if ($result->format === 'excel') {
+            $this->outputExcel($result->rows, $result->columns, $result->columnMap);
             return;
         }
 
-        $this->outputCsv($safeRows, $columns, $columnMap);
+        $this->outputCsv($result->rows, $result->columns, $result->columnMap);
     }
 
     /** @return array<string, mixed> */
@@ -314,86 +236,4 @@ final class CMSOrderController
         return htmlspecialchars($value, ENT_XML1 | ENT_COMPAT, 'UTF-8');
     }
 
-    /** @param array<int, string> $columns */
-    /** @param array<string, string> $columnMap */
-    /** @param array{payed: float, pending: float, general: float} $statusTotals */
-    /** @return array<int, array<string, string>> */
-    private function buildStatusSummaryRows(array $columns, array $columnMap, array $statusTotals): array
-    {
-        $labels = [];
-        foreach ($columns as $column) {
-            if (isset($columnMap[$column])) {
-                $labels[$column] = $columnMap[$column];
-            }
-        }
-
-        $labelColumnPreference = ['customer_name', 'event_title', 'order_id'];
-        $labelColumn = null;
-        foreach ($labelColumnPreference as $candidate) {
-            if (isset($labels[$candidate])) {
-                $labelColumn = $candidate;
-                break;
-            }
-        }
-        if ($labelColumn === null && $columns !== []) {
-            $first = (string)$columns[0];
-            if (isset($labels[$first])) {
-                $labelColumn = $first;
-            }
-        }
-
-        $totalColumnPreference = ['order_total', 'line_total', 'unit_price'];
-        $totalColumn = null;
-        foreach ($totalColumnPreference as $candidate) {
-            if (isset($labels[$candidate])) {
-                $totalColumn = $candidate;
-                break;
-            }
-        }
-
-        $buildSingleRow = function (string $label, float $value) use ($labels, $labelColumn, $totalColumn): array {
-            $row = [];
-            foreach ($labels as $displayLabel) {
-                $row[$displayLabel] = '';
-            }
-
-            if ($labelColumn !== null) {
-                $row[$labels[$labelColumn]] = $label;
-            }
-
-            if ($totalColumn !== null) {
-                $row[$labels[$totalColumn]] = number_format($value, 2, '.', '');
-            }
-
-            return $row;
-        };
-
-        return [
-            $buildSingleRow('TOTAL PAYED', (float)$statusTotals['payed']),
-            $buildSingleRow('TOTAL PENDING', (float)$statusTotals['pending']),
-            $buildSingleRow('TOTAL GENERAL', (float)$statusTotals['general']),
-        ];
-    }
-
-    /** @param mixed $requestedColumns */
-    /** @param array<string, string> $columnMap */
-    /** @param array<int, string> $defaultColumns */
-    /** @return array<int, string> */
-    private function normalizeColumnsFromMap(mixed $requestedColumns, array $columnMap, array $defaultColumns): array
-    {
-        if (!is_array($requestedColumns) || $requestedColumns === []) {
-            return $defaultColumns;
-        }
-
-        $allowed = array_keys($columnMap);
-        $selected = [];
-        foreach ($requestedColumns as $column) {
-            $key = trim((string)$column);
-            if ($key !== '' && in_array($key, $allowed, true) && !in_array($key, $selected, true)) {
-                $selected[] = $key;
-            }
-        }
-
-        return $selected !== [] ? $selected : $defaultColumns;
-    }
 }
