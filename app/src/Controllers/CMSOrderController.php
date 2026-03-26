@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Services\CmsOrderExportHelperService;
+use App\Services\CmsOrderExportOutputService;
+use App\Services\CmsOrderExportService;
 use App\Services\CmsOrderService;
 use App\Utils\AdminGuard;
 use App\Utils\Csrf;
@@ -13,10 +16,16 @@ use App\Utils\Session;
 final class CMSOrderController
 {
     private CmsOrderService $service;
+    private CmsOrderExportService $exportService;
+    private CmsOrderExportHelperService $exportHelper;
+    private CmsOrderExportOutputService $exportOutput;
 
     public function __construct()
     {
         $this->service = new CmsOrderService();
+        $this->exportService = new CmsOrderExportService($this->service);
+        $this->exportHelper = new CmsOrderExportHelperService();
+        $this->exportOutput = new CmsOrderExportOutputService();
         Session::ensureStarted();
     }
 
@@ -68,7 +77,7 @@ final class CMSOrderController
         $order = $details['order'];
 
         try {
-            $availableColumns = $this->service->getAvailableExportColumnsForOrder($id);
+            $availableColumns = $this->exportService->getAvailableExportColumnsForOrder($id);
         } catch (\Throwable $e) {
             Flash::setErrors(['general' => $e->getMessage()]);
             header('Location: /cms/orders/' . $id, true, 302);
@@ -148,7 +157,7 @@ final class CMSOrderController
             }
         }
 
-        $columnMap = $this->service->getExportColumns();
+        $columnMap = $this->exportService->getExportColumns();
         $query = http_build_query([
             'search' => $search,
             'status' => $statusFilter,
@@ -160,7 +169,7 @@ final class CMSOrderController
         ]);
 
         try {
-            $exportRows = $this->service->buildExportRows(
+            $exportRows = $this->exportService->buildExportRows(
                 $scope,
                 $orderId,
                 $userId,
@@ -176,42 +185,31 @@ final class CMSOrderController
         }
 
         if ($scope === 'order' && $orderId > 0) {
-            $availableForOrder = $this->service->getAvailableExportColumnsForOrder($orderId);
+            $availableForOrder = $this->exportService->getAvailableExportColumnsForOrder($orderId);
             $requestedColumns = $_GET['columns'] ?? [];
-            $columns = $this->normalizeColumnsFromMap($requestedColumns, $availableForOrder, array_keys($availableForOrder));
+            $columns = $this->exportHelper->normalizeColumnsFromMap($requestedColumns, $availableForOrder, array_keys($availableForOrder));
             $columnMap = $availableForOrder;
         } else {
             $requestedColumns = $_GET['columns'] ?? [];
             $allColumnKeys = array_keys($columnMap);
-            $columns = $this->normalizeColumnsFromMap($requestedColumns, $columnMap, $allColumnKeys);
+            $columns = $this->exportHelper->normalizeColumnsFromMap($requestedColumns, $columnMap, $allColumnKeys);
         }
 
-        $safeRows = [];
-        foreach ($exportRows as $exportRow) {
-            $row = [];
-            foreach ($columns as $column) {
-                if (!array_key_exists($column, $columnMap)) {
-                    continue;
-                }
-
-                $row[$columnMap[$column]] = (string)($exportRow[$column] ?? '');
-            }
-            $safeRows[] = $row;
-        }
+        $safeRows = $this->exportHelper->buildSafeRows($exportRows, $columns, $columnMap);
 
         if (in_array($scope, ['all', 'user'], true) && is_array($statusTotals) && $safeRows !== []) {
-            $summaryRows = $this->buildStatusSummaryRows($columns, $columnMap, $statusTotals);
+            $summaryRows = $this->exportHelper->buildStatusSummaryRows($columns, $columnMap, $statusTotals);
             foreach ($summaryRows as $summaryRow) {
                 $safeRows[] = $summaryRow;
             }
         }
 
         if ($format === 'excel') {
-            $this->outputExcel($safeRows, $columns, $columnMap);
+            $this->exportOutput->outputExcel($safeRows, $columns, $columnMap);
             return;
         }
 
-        $this->outputCsv($safeRows, $columns, $columnMap);
+        $this->exportOutput->outputCsv($safeRows, $columns, $columnMap);
     }
 
     /** @return array<string, mixed> */
@@ -225,174 +223,5 @@ final class CMSOrderController
         Flash::setErrors(['general' => 'Order not found.']);
         header('Location: /cms/orders', true, 302);
         exit;
-    }
-
-    /** @param array<int, array<string, string>> $rows */
-    /** @param array<int, string> $columns */
-    /** @param array<string, string> $columnMap */
-    private function outputCsv(array $rows, array $columns, array $columnMap): void
-    {
-        $filename = 'orders_export_' . date('Ymd_His') . '.csv';
-
-        header('Content-Type: text/csv; charset=utf-8');
-        header('Content-Disposition: attachment; filename="' . $filename . '"');
-
-        $output = fopen('php://output', 'wb');
-        if ($output === false) {
-            http_response_code(500);
-            echo 'Could not generate export.';
-            exit;
-        }
-
-        $headerLabels = array_map(fn(string $column): string => (string)($columnMap[$column] ?? $column), $columns);
-        fputcsv($output, $headerLabels, ',', '"', '\\');
-
-        foreach ($rows as $row) {
-            $line = [];
-            foreach ($headerLabels as $label) {
-                $line[] = $row[$label] ?? '';
-            }
-            fputcsv($output, $line, ',', '"', '\\');
-        }
-
-        fclose($output);
-        exit;
-    }
-
-    /** @param array<int, array<string, string>> $rows */
-    /** @param array<int, string> $columns */
-    /** @param array<string, string> $columnMap */
-    private function outputExcel(array $rows, array $columns, array $columnMap): void
-    {
-        $filename = 'orders_export_' . date('Ymd_His') . '.xml';
-
-        header('Content-Type: application/vnd.ms-excel; charset=utf-8');
-        header('Content-Disposition: attachment; filename="' . $filename . '"');
-
-        $headerLabels = array_map(fn(string $column): string => (string)($columnMap[$column] ?? $column), $columns);
-        $numericLabels = [
-            'Order ID',
-            'User ID',
-            'Order Item ID',
-            'Event ID',
-            'Quantity',
-            'Price Per Item',
-            'Line Total',
-            'Order Total',
-        ];
-
-        echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
-        echo "<Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\"";
-        echo " xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\">";
-        echo "<Worksheet ss:Name=\"Orders\"><Table>";
-
-        echo '<Row>';
-        foreach ($headerLabels as $label) {
-            echo '<Cell><Data ss:Type="String">' . $this->xmlEscape($label) . '</Data></Cell>';
-        }
-        echo '</Row>';
-
-        foreach ($rows as $row) {
-            echo '<Row>';
-            foreach ($headerLabels as $label) {
-                $value = (string)($row[$label] ?? '');
-                $isNumeric = in_array($label, $numericLabels, true) && is_numeric($value);
-                $type = $isNumeric ? 'Number' : 'String';
-                echo '<Cell><Data ss:Type="' . $type . '">' . $this->xmlEscape($value) . '</Data></Cell>';
-            }
-            echo '</Row>';
-        }
-
-        echo '</Table></Worksheet></Workbook>';
-
-        exit;
-    }
-
-    private function xmlEscape(string $value): string
-    {
-        return htmlspecialchars($value, ENT_XML1 | ENT_COMPAT, 'UTF-8');
-    }
-
-    /** @param array<int, string> $columns */
-    /** @param array<string, string> $columnMap */
-    /** @param array{payed: float, pending: float, general: float} $statusTotals */
-    /** @return array<int, array<string, string>> */
-    private function buildStatusSummaryRows(array $columns, array $columnMap, array $statusTotals): array
-    {
-        $labels = [];
-        foreach ($columns as $column) {
-            if (isset($columnMap[$column])) {
-                $labels[$column] = $columnMap[$column];
-            }
-        }
-
-        $labelColumnPreference = ['customer_name', 'event_title', 'order_id'];
-        $labelColumn = null;
-        foreach ($labelColumnPreference as $candidate) {
-            if (isset($labels[$candidate])) {
-                $labelColumn = $candidate;
-                break;
-            }
-        }
-        if ($labelColumn === null && $columns !== []) {
-            $first = (string)$columns[0];
-            if (isset($labels[$first])) {
-                $labelColumn = $first;
-            }
-        }
-
-        $totalColumnPreference = ['order_total', 'line_total', 'unit_price'];
-        $totalColumn = null;
-        foreach ($totalColumnPreference as $candidate) {
-            if (isset($labels[$candidate])) {
-                $totalColumn = $candidate;
-                break;
-            }
-        }
-
-        $buildSingleRow = function (string $label, float $value) use ($labels, $labelColumn, $totalColumn): array {
-            $row = [];
-            foreach ($labels as $displayLabel) {
-                $row[$displayLabel] = '';
-            }
-
-            if ($labelColumn !== null) {
-                $row[$labels[$labelColumn]] = $label;
-            }
-
-            if ($totalColumn !== null) {
-                $row[$labels[$totalColumn]] = number_format($value, 2, '.', '');
-            }
-
-            return $row;
-        };
-
-        return [
-            $buildSingleRow('TOTAL PAYED', (float)$statusTotals['payed']),
-            $buildSingleRow('TOTAL PENDING', (float)$statusTotals['pending']),
-            $buildSingleRow('TOTAL GENERAL', (float)$statusTotals['general']),
-        ];
-    }
-
-    /** @param mixed $requestedColumns */
-    /** @param array<string, string> $columnMap */
-    /** @param array<int, string> $defaultColumns */
-    /** @return array<int, string> */
-    private function normalizeColumnsFromMap(mixed $requestedColumns, array $columnMap, array $defaultColumns): array
-    {
-        if (!is_array($requestedColumns) || $requestedColumns === []) {
-            return $defaultColumns;
-        }
-
-        $allowed = array_keys($columnMap);
-        $selected = [];
-        foreach ($requestedColumns as $column) {
-            $key = trim((string)$column);
-            if ($key !== '' && in_array($key, $allowed, true) && !in_array($key, $selected, true)) {
-                $selected[] = $key;
-            }
-        }
-
-        return $selected !== [] ? $selected : $defaultColumns;
     }
 }
