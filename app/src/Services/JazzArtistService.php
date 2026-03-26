@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Cms\PageBuilder\Builders\JazzArtistPageBuilder;
+use App\Cms\PageBuilder\Content\JazzArtistPageContentViewModel;
 use App\Repositories\Interfaces\IPageRepository;
 use App\Repositories\Interfaces\IJazzEventRepository;
 use App\ViewModels\JazzArtistPageViewModel;
@@ -11,16 +13,18 @@ class JazzArtistService
 {
     public function __construct(
         private IPageRepository $pageRepo,
-        private IJazzEventRepository $eventRepo
+        private IJazzEventRepository $eventRepo,
+        private JazzArtistPageBuilder $builder = new JazzArtistPageBuilder()
     ) {}
 
     public function getArtistPageViewModel(int $pageId, ?string $tab): JazzArtistPageViewModel
     {
-        $content = $this->pageRepo->getPageContentById($pageId);
+        /** @var JazzArtistPageContentViewModel $page */
+        $page = $this->builder->buildViewModel($this->pageRepo->getPageContentById($pageId));
 
         $allowed = ['events', 'career', 'album'];
 
-        $defaultTab = (string)($content['tabs']['default'] ?? 'events');
+        $defaultTab = (string)($page->tabs['default'] ?? 'events');
         if (!in_array($defaultTab, $allowed, true)) {
             $defaultTab = 'events';
         }
@@ -34,14 +38,14 @@ class JazzArtistService
         $models = $this->eventRepo->getJazzEventsByPageId($pageId);
         $events = array_map([$this, 'mapEventForArtistPage'], $models);
 
-        $artist = is_array($content['artist'] ?? null) ? $content['artist'] : [];
+        $artist = $page->artist;
         $breadcrumb = is_array($artist['breadcrumb'] ?? null) ? $artist['breadcrumb'] : [];
 
         $heroMedia = is_array($artist['hero_media'] ?? null) ? $artist['hero_media'] : [];
         $mainMedia = is_array($heroMedia['main'] ?? null) ? $heroMedia['main'] : null;
         $secondaryMedia = is_array($heroMedia['secondary'] ?? null) ? $heroMedia['secondary'] : [];
 
-        $tabLabelsRaw = is_array($content['tabs']['labels'] ?? null) ? $content['tabs']['labels'] : [];
+        $tabLabelsRaw = is_array($page->tabs['labels'] ?? null) ? $page->tabs['labels'] : [];
         $tabLabels = [
             'events' => (string)($tabLabelsRaw['events'] ?? 'Events'),
             'career' => (string)($tabLabelsRaw['career'] ?? 'Career Highlights'),
@@ -54,15 +58,15 @@ class JazzArtistService
             'album' => '/jazz/artist?page_id=' . $pageId . '&tab=album',
         ];
 
-        $career = is_array($content['career_highlights'] ?? null) ? $content['career_highlights'] : [];
+        $career = $page->careerHighlights;
         $careerLeftItems = is_array($career['left'] ?? null) ? $career['left'] : [];
         $careerRightItems = is_array($career['right'] ?? null) ? $career['right'] : [];
 
-        $albumsRaw = is_array($content['albums'] ?? null) ? $content['albums'] : [];
+        $albumsRaw = $page->albums;
         $albums = array_map([$this, 'mapAlbumForArtistPage'], $albumsRaw);
 
-        $about = is_array($content['about'] ?? null) ? $content['about'] : [];
-        $band = is_array($content['band_members'] ?? null) ? $content['band_members'] : [];
+        $about = $page->about;
+        $band = $page->bandMembers;
 
         $kickerText = trim((string)($artist['kicker'] ?? ''));
         $heroTitleText = trim((string)($artist['hero_title'] ?? ($artist['name'] ?? '')));
@@ -97,7 +101,7 @@ class JazzArtistService
             $tabLinks,
             $activeTab,
             $events,
-            (string)($content['events']['ticket_button_label'] ?? 'Tickets'),
+            (string)($page->events['ticket_button_label'] ?? 'Tickets'),
             isset($career['left_html']) ? (string)$career['left_html'] : null,
             isset($career['right_html']) ? (string)$career['right_html'] : null,
             $careerLeftItems,

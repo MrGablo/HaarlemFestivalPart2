@@ -2,7 +2,7 @@
     <div class="max-w-[1200px] mx-auto px-5 flex flex-wrap justify-between items-start gap-10">
         
         <div class="flex-1 min-w-[200px] flex flex-col gap-5 max-w-[300px]">
-            <img src="/assets/img/homepage/logo.svg" alt="Haarlem Festival Logo" class="w-[60px]">
+            <img src="/assets/svg/logo.svg" alt="Haarlem Festival Logo" class="w-[60px]">
             
             <div class="flex gap-[15px]">
                 <a href="#">
