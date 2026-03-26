@@ -19,7 +19,7 @@ declare(strict_types=1);
         <h1 class="mb-2 text-3xl font-extrabold text-red-500">Payment Cancelled</h1>
         <p class="mb-1 text-neutral-600">Your payment was not completed. No charges were made.</p>
         <p class="text-neutral-600">You can try again whenever you're ready.</p>
-        <a href="/jazz"
+        <a href="/program"
             class="mt-8 inline-block rounded-lg border-0 bg-black px-7 py-3 text-sm font-bold uppercase tracking-wide text-white no-underline transition hover:bg-neutral-800">
             Back to Events
         </a>
