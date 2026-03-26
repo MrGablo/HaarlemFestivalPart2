@@ -44,6 +44,7 @@ final class CMSJazzController
         $old = Flash::getOld();
         $pages = $this->service->allPages();
         $artists = $this->service->allArtists();
+        $venues = $this->service->allVenues();
         $errors = Flash::getErrors();
         $flashSuccess = Flash::getSuccess();
         $csrfToken = Csrf::token();
@@ -63,7 +64,7 @@ final class CMSJazzController
                 'event_type' => 'jazz',
                 'img_background' => null,
             ]);
-            $this->fillEventFromPost($event);
+            $this->service->hydrateEventFromInput($event, $_POST);
             $this->handleImageUpload($event, false);
 
             $newId = $this->service->createEvent($event);
@@ -85,6 +86,8 @@ final class CMSJazzController
         $event = $this->getEventOrRedirect($id);
 
         $artists = $this->service->allArtists();
+        $pages = $this->service->allPages();
+        $venues = $this->service->allVenues();
         $errors = Flash::getErrors();
         $flashSuccess = Flash::getSuccess();
         $csrfToken = Csrf::token();
@@ -101,7 +104,7 @@ final class CMSJazzController
         try {
             Csrf::assertPost();
 
-            $this->fillEventFromPost($event);
+            $this->service->hydrateEventFromInput($event, $_POST);
             $this->handleImageUpload($event, true);
 
             $this->service->updateEvent($event);
@@ -130,7 +133,7 @@ final class CMSJazzController
                 exit;
             }
 
-            $this->deleteJazzImageIfExists($event->img_background);
+            $this->uploads->deleteImage($event->img_background, 'jazz', 'event');
             Flash::setSuccess('Jazz event deleted successfully.');
         } catch (\Throwable $e) {
             Flash::setErrors(['general' => $e->getMessage()]);
@@ -152,20 +155,6 @@ final class CMSJazzController
         exit;
     }
 
-    private function fillEventFromPost(JazzEvent $event): void
-    {
-        $event->title = $this->requestText('title', 'Title');
-        $event->start_date = $this->normalizeDateTime((string)($_POST['start_date'] ?? ''));
-        $event->end_date = $this->normalizeDateTime((string)($_POST['end_date'] ?? ''));
-        $event->location = $this->requestText('location', 'Location');
-        $event->artist_id = $this->parseRequiredPositiveInt((string)($_POST['artist_id'] ?? ''), 'Artist');
-        if (!$this->service->artistExists((int)$event->artist_id)) {
-            throw new \RuntimeException('Selected artist does not exist.');
-        }
-        $event->price = $this->parsePrice((string)($_POST['price'] ?? ''));
-        $event->page_id = $this->parseOptionalPositiveInt((string)($_POST['page_id'] ?? ''), 'Page ID');
-    }
-
     private function handleImageUpload(JazzEvent $event, bool $replaceOld): void
     {
         if (!isset($_FILES['img_background_file']) || !is_array($_FILES['img_background_file'])) {
@@ -185,101 +174,5 @@ final class CMSJazzController
             false,
             $replaceOld ? $event->img_background : null
         );
-    }
-
-    private function requestText(string $key, string $label): string
-    {
-        $raw = trim((string)($_POST[$key] ?? ''));
-        if ($raw === '') {
-            throw new \RuntimeException($label . ' is required.');
-        }
-
-        return $raw;
-    }
-
-    private function parsePrice(string $raw): float
-    {
-        $raw = trim($raw);
-        if ($raw === '') {
-            throw new \RuntimeException('Price is required.');
-        }
-
-        if (!is_numeric($raw)) {
-            throw new \RuntimeException('Price must be numeric.');
-        }
-
-        $price = (float)$raw;
-        if ($price < 0) {
-            throw new \RuntimeException('Price cannot be negative.');
-        }
-
-        return $price;
-    }
-
-    private function parseOptionalPositiveInt(string $raw, string $label): ?int
-    {
-        $raw = trim($raw);
-        if ($raw === '') {
-            return null;
-        }
-
-        $value = (int)$raw;
-        if ($value <= 0) {
-            throw new \RuntimeException($label . ' must be a positive integer.');
-        }
-
-        return $value;
-    }
-
-    private function parseRequiredPositiveInt(string $raw, string $label): int
-    {
-        $raw = trim($raw);
-        if ($raw === '') {
-            throw new \RuntimeException($label . ' is required.');
-        }
-
-        $value = (int)$raw;
-        if ($value <= 0) {
-            throw new \RuntimeException($label . ' must be a positive integer.');
-        }
-
-        return $value;
-    }
-
-    private function normalizeDateTime(string $input): string
-    {
-        $input = trim($input);
-
-        if ($input === '') {
-            throw new \RuntimeException('Date/time fields are required.');
-        }
-
-        if (preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/', $input)) {
-            return str_replace('T', ' ', $input) . ':00';
-        }
-
-        try {
-            $dt = new \DateTime($input);
-            return $dt->format('Y-m-d H:i:s');
-        } catch (\Throwable $e) {
-            throw new \RuntimeException('Invalid date/time format.');
-        }
-    }
-
-    private function deleteJazzImageIfExists(?string $path): void
-    {
-        if ($path === null || trim($path) === '') {
-            return;
-        }
-
-        $relative = ltrim($path, '/');
-        if (!str_starts_with($relative, 'assets/img/jazz/event/')) {
-            return;
-        }
-
-        $absolute = __DIR__ . '/../../public/' . $relative;
-        if (is_file($absolute)) {
-            @unlink($absolute);
-        }
     }
 }
