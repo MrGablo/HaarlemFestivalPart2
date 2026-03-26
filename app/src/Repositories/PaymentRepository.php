@@ -38,11 +38,12 @@ class PaymentRepository extends Repository
                 oi.event_id,
                 oi.quantity,
                 e.title,
-                COALESCE(j.price, d.price, 0) AS price
+                COALESCE(j.price, d.price, p.base_price, 0) AS price
              FROM `order_items` oi
              INNER JOIN Event e ON e.event_id = oi.event_id
              LEFT JOIN JazzEvent j ON j.event_id = e.event_id
              LEFT JOIN DanceEvent d ON d.event_id = e.event_id
+             LEFT JOIN PassEvent p ON p.event_id = e.event_id
              WHERE oi.order_id = :order_id
              ORDER BY oi.created_at ASC, oi.order_item_id ASC'
         );
@@ -50,6 +51,27 @@ class PaymentRepository extends Repository
         $rows = $stmt->fetchAll();
 
         return is_array($rows) ? $rows : [];
+    }
+
+    /**
+     * Find an event and its price by ID.
+     */
+    public function findEventById(int $eventId): ?array
+    {
+        $stmt = $this->getConnection()->prepare(
+            'SELECT e.event_id, e.title, e.event_type, COALESCE(j.price, d.price, p.base_price, 0) AS price
+               FROM Event e
+               LEFT JOIN JazzEvent j ON j.event_id = e.event_id
+               LEFT JOIN DanceEvent d ON d.event_id = e.event_id
+               LEFT JOIN PassEvent p ON p.event_id = e.event_id
+              WHERE e.event_id = :event_id
+              LIMIT 1'
+        );
+
+        $stmt->execute([':event_id' => $eventId]);
+        $row = $stmt->fetch();
+
+        return is_array($row) ? $row : null;
     }
 
     public function findPendingOrderItemForUser(int $userId, int $orderItemId): ?array
@@ -61,12 +83,13 @@ class PaymentRepository extends Repository
                 oi.event_id,
                 oi.quantity,
                 e.title,
-                COALESCE(j.price, d.price, 0) AS price
+                                COALESCE(j.price, d.price, p.base_price, 0) AS price
              FROM `order_items` oi
              INNER JOIN `orders` o ON o.order_id = oi.order_id
              INNER JOIN Event e ON e.event_id = oi.event_id
              LEFT JOIN JazzEvent j ON j.event_id = e.event_id
              LEFT JOIN DanceEvent d ON d.event_id = e.event_id
+                         LEFT JOIN PassEvent p ON p.event_id = e.event_id
              WHERE o.user_id = :user_id
                AND o.order_status = :status
                AND oi.order_item_id = :order_item_id
