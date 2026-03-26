@@ -16,8 +16,8 @@ class EventModelBuilderService
 
         return match ($eventType) {
             'jazz' => $this->buildJazzEvent($row),
-            'dance' => $this->buildDanceEvent($row),
             'yummy' => $this->buildYummyEvent($row),
+            'dance' => $this->buildDanceEvent($row),
             default => $this->buildGenericEvent($row),
         };
     }
@@ -26,6 +26,7 @@ class EventModelBuilderService
     {
         return new JazzEvent($row);
     }
+
 
     private function buildDanceEvent(array $row): DanceEvent
     {
