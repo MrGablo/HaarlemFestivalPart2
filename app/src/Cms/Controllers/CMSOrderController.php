@@ -92,6 +92,24 @@ final class CMSOrderController
         require __DIR__ . '/../../Views/cms/order_export.php';
     }
 
+    public function exportOptionsScope(): void
+    {
+        AdminGuard::requireAdmin(true);
+
+        $request = OrderExportRequest::fromArray($_GET);
+        if (!in_array($request->scope, ['all', 'user'], true)) {
+            $request->scope = 'all';
+        }
+
+        $availableColumns = $this->exportService->getExportColumns();
+        $defaultSelectedColumns = array_keys($availableColumns);
+
+        $errors = Flash::getErrors();
+        $flashSuccess = Flash::getSuccess();
+
+        require __DIR__ . '/../../Views/cms/order_export_scope.php';
+    }
+
     public function update(int $id): void
     {
         AdminGuard::requireAdmin(true);

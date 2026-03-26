@@ -79,7 +79,7 @@
                 </div>
             </form>
 
-            <form method="GET" action="/cms/orders/export" class="mt-6 rounded-lg border border-slate-200 bg-white p-4">
+            <form method="GET" action="/cms/orders/export/options" class="mt-6 rounded-lg border border-slate-200 bg-white p-4">
                 <input type="hidden" name="search" value="<?= htmlspecialchars((string)($search ?? '')) ?>">
                 <input type="hidden" name="status" value="<?= htmlspecialchars((string)($statusFilter ?? '')) ?>">
                 <input type="hidden" name="sort" value="<?= htmlspecialchars((string)($sortColumn ?? 'created_at')) ?>">
