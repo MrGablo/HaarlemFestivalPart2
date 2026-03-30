@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 use App\Utils\AuthSessionData;
 
-$auth = AuthSessionData::read();
+$auth = AuthSessionData::read() ?? [];
 $userName = $auth['userName'] ?? 'Guest';
 ?>
 <!doctype html>
