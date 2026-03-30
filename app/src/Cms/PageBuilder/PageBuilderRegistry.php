@@ -9,6 +9,7 @@ use App\Cms\PageBuilder\Builders\GenericPageBuilder;
 use App\Cms\PageBuilder\Builders\HomePageBuilder;
 use App\Cms\PageBuilder\Builders\JazzArtistPageBuilder;
 use App\Cms\PageBuilder\Builders\JazzHomePageBuilder;
+use App\Cms\PageBuilder\Builders\StoriesHomePageBuilder;
 
 final class PageBuilderRegistry
 {
@@ -25,6 +26,7 @@ final class PageBuilderRegistry
             new JazzHomePageBuilder(),
             new DanceHomePageBuilder(),
             new JazzArtistPageBuilder(),
+            new StoriesHomePageBuilder(),
         ];
 
         foreach ($builders as $builder) {
