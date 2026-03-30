@@ -50,7 +50,7 @@ class TicketService
                         $orderItemId,
                         $userId,
                         $coveredEventId,
-                        'TICKET_' . uniqid('', true)
+                        'TICKET_' . bin2hex(random_bytes(16))
                     );
 
                     $availabilityUpdated = $this->eventRepository->decrementAvailabilityByOne($coveredEventId);
