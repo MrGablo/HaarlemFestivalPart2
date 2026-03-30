@@ -72,7 +72,10 @@ final class CmsOrderExportResponder
         ];
 
         $writer = new \XMLWriter();
-        $writer->openMemory();
+        if ($writer->openUri('php://output') === false) {
+            http_response_code(500);
+            exit;
+        }
         $writer->startDocument('1.0', 'UTF-8');
         $writer->startElement('Workbook');
         $writer->writeAttribute('xmlns', 'urn:schemas-microsoft-com:office:spreadsheet');
@@ -91,6 +94,7 @@ final class CmsOrderExportResponder
             $writer->endElement();
         }
         $writer->endElement();
+        $writer->flush();
 
         foreach ($rows as $row) {
             $writer->startElement('Row');
@@ -107,21 +111,14 @@ final class CmsOrderExportResponder
                 $writer->endElement();
             }
             $writer->endElement();
+            $writer->flush();
         }
 
         $writer->endElement();
         $writer->endElement();
         $writer->endElement();
         $writer->endDocument();
-
-        $output = fopen('php://output', 'wb');
-        if ($output === false) {
-            http_response_code(500);
-            exit;
-        }
-
-        fwrite($output, $writer->outputMemory());
-        fclose($output);
+        $writer->flush();
         exit;
     }
 }
