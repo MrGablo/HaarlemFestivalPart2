@@ -60,6 +60,9 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     $r->addRoute('GET', '/jazz', ['App\Controllers\JazzController', 'home']);
     $r->addRoute('GET', '/jazz/artist', ['App\Controllers\JazzController', 'artist']);
 
+    // Personal Program (My Program) page
+    $r->addRoute('GET', '/program', ['App\Controllers\ProgramController', 'show']);
+    
     //Yummy Festival routes
     $r->addRoute('GET', '/yummy', ['App\Controllers\YummyController', 'home']);
     $r->addRoute('GET', '/yummy/restaurant', ['App\Controllers\YummyController', 'gerRestaurant']);
@@ -93,8 +96,11 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     $r->addRoute('POST', '/order/item/remove', ['App\Controllers\OrderController', 'removeItem']);
     $r->addRoute('POST', '/order/item/quantity', ['App\Controllers\OrderController', 'updateItemQuantity']);
 
-    // Venue API
-    $r->addRoute('GET', '/api/venues', ['App\Controllers\VenueController', 'list']);
+    // Payment routes (Stripe checkout)
+    $r->addRoute('POST', '/payment/checkout', ['App\Controllers\PaymentController', 'checkoutRedirect']);
+    $r->addRoute('POST', '/api/payment/webhook', ['App\Controllers\PaymentController', 'handleWebhook']);
+    $r->addRoute('GET',  '/payment/success', ['App\Controllers\PaymentController', 'success']);
+    $r->addRoute('GET',  '/payment/cancel', ['App\Controllers\PaymentController', 'cancel']);
 
     // Scanner routes (admin and employee access)
     $r->addRoute('GET', '/scanner', ['App\Controllers\ScannerController', 'index']);
@@ -155,9 +161,6 @@ $uri = strtok($_SERVER['REQUEST_URI'], '?');
 $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
 Session::ensureStarted();
 
-/**
- * Switch on the dispatcher result and call the appropriate controller method if found.
- */
 /**
  * Switch on the dispatcher result and call the appropriate controller method if found.
  */

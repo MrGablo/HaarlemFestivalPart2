@@ -285,4 +285,50 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
             throw $e;
         }
     }
+
+    public function getJazzEventIdsByDate(string $isoDate): array
+    {
+        $stmt = $this->getConnection()->prepare(
+            "SELECT e.event_id
+             FROM Event e
+             INNER JOIN JazzEvent j ON j.event_id = e.event_id
+             WHERE e.event_type = 'jazz'
+               AND DATE(j.start_date) = :pass_date
+             ORDER BY j.start_date ASC, e.event_id ASC"
+        );
+        $stmt->execute([':pass_date' => $isoDate]);
+        $rows = $stmt->fetchAll();
+
+        return $this->normalizeEventIds(is_array($rows) ? $rows : []);
+    }
+
+    public function getAllJazzEventIds(): array
+    {
+        $stmt = $this->getConnection()->query(
+            "SELECT e.event_id
+             FROM Event e
+             INNER JOIN JazzEvent j ON j.event_id = e.event_id
+             WHERE e.event_type = 'jazz'
+             ORDER BY j.start_date ASC, e.event_id ASC"
+        );
+        $rows = $stmt ? $stmt->fetchAll() : [];
+
+        return $this->normalizeEventIds(is_array($rows) ? $rows : []);
+    }
+
+    /** @param array<int, array<string, mixed>> $rows
+     *  @return array<int, int>
+     */
+    private function normalizeEventIds(array $rows): array
+    {
+        $eventIds = [];
+        foreach ($rows as $row) {
+            $eventId = (int)($row['event_id'] ?? 0);
+            if ($eventId > 0) {
+                $eventIds[] = $eventId;
+            }
+        }
+
+        return array_values(array_unique($eventIds));
+    }
 }

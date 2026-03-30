@@ -53,7 +53,19 @@ $intro = $vm->intro;
       <?php foreach ($vm->lineupArtists as $artist): ?>
         <div class="flex flex-col items-center">
           <div class="relative h-dance-photo-sm w-dance-photo-sm overflow-hidden rounded-none md:h-dance-photo-lg md:w-dance-photo-lg">
-            <img src="<?= htmlspecialchars((string) ($artist['imageUrl'] ?? '')) ?>" alt="<?= htmlspecialchars((string) ($artist['alt'] ?? '')) ?>" class="h-full w-full object-cover object-top" loading="lazy">
+            <img
+              src="/assets/img/dance-assets/artistBG.svg"
+              alt=""
+              aria-hidden="true"
+              class="absolute inset-0 z-0 h-full w-full scale-110 object-contain object-center pointer-events-none select-none"
+              loading="lazy"
+            >
+            <img
+              src="<?= htmlspecialchars((string) ($artist['imageUrl'] ?? '')) ?>"
+              alt="<?= htmlspecialchars((string) ($artist['alt'] ?? '')) ?>"
+              class="relative z-10 h-full w-full object-cover object-top"
+              loading="lazy"
+            >
           </div>
           <div class="mt-3.5 max-w-dance-lineup-name text-center text-sm font-bold uppercase tracking-wide text-dance-text md:text-base"><?= htmlspecialchars((string) ($artist['name'] ?? '')) ?></div>
         </div>

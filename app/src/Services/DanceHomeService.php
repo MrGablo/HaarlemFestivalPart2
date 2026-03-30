@@ -122,6 +122,7 @@ final class DanceHomeService
     {
         $allAccess = null;
         $dayOrder = [];
+        $dayLabels = [];
         $passByDay = [];
         $sessionsByDay = [];
 
@@ -150,26 +151,28 @@ final class DanceHomeService
                 continue;
             }
 
-            $day = (string) ($r['day_display_label'] ?? '');
-            if ($day === '') {
+            $dayMeta = $this->resolveDayMeta($r);
+            if ($dayMeta === null) {
                 continue;
             }
-            if (!in_array($day, $dayOrder, true)) {
-                $dayOrder[] = $day;
+            $dayKey = $dayMeta['key'];
+            if (!in_array($dayKey, $dayOrder, true)) {
+                $dayOrder[] = $dayKey;
             }
+            $dayLabels[$dayKey] = $dayMeta['label'];
             if ($kind === 'day_pass') {
-                $passByDay[$day] = $r;
+                $passByDay[$dayKey] = $r;
             } elseif ($kind === 'session') {
-                $sessionsByDay[$day][] = $r;
+                $sessionsByDay[$dayKey][] = $r;
             }
         }
 
         $days = [];
-        foreach ($dayOrder as $dayLabel) {
-            $pass = $passByDay[$dayLabel] ?? null;
+        foreach ($dayOrder as $dayKey) {
+            $pass = $passByDay[$dayKey] ?? null;
             $passEid = $pass !== null ? (int) ($pass['event_id'] ?? 0) : 0;
             $days[] = [
-                'dayLabel' => $dayLabel,
+                'dayLabel' => (string) ($dayLabels[$dayKey] ?? $dayKey),
                 'passLabel' => $pass !== null
                     ? (string) ($pass['title'] ?? 'DAY PASS')
                     : 'DAY PASS',
@@ -177,7 +180,7 @@ final class DanceHomeService
                     ? $this->formatEuro((float) ($pass['price'] ?? 0))
                     : '',
                 'passEventId' => $passEid,
-                'sessions' => $this->mapSessions($sessionsByDay[$dayLabel] ?? []),
+                'sessions' => $this->mapSessions($sessionsByDay[$dayKey] ?? []),
             ];
         }
 
@@ -192,13 +195,21 @@ final class DanceHomeService
     {
         $out = [];
         foreach ($sessionRows as $r) {
-            $start = (string) ($r['session_start'] ?? '');
-            $end = (string) ($r['session_end'] ?? '');
+            $start = $this->formatSessionTimeValue($r['session_start'] ?? null);
+            $end = $this->formatSessionTimeValue($r['session_end'] ?? null);
+            $timeRange = '';
+            if ($start !== '' && $end !== '') {
+                $timeRange = $start . ' - ' . $end;
+            } elseif ($start !== '') {
+                $timeRange = $start;
+            } elseif ($end !== '') {
+                $timeRange = $end;
+            }
             $out[] = [
                 'title' => (string) ($r['title'] ?? ''),
                 'tag' => (string) ($r['session_tag'] ?? ''),
                 'tagSpecial' => !empty($r['tag_special']),
-                'timeRange' => $start !== '' || $end !== '' ? $start . ' - ' . $end : '',
+                'timeRange' => $timeRange,
                 'venueName' => (string) ($r['location_name'] ?? ''),
                 'priceLabel' => $this->formatEuro((float) ($r['price'] ?? 0)),
                 'eventId' => (int) ($r['event_id'] ?? 0),
@@ -241,6 +252,7 @@ final class DanceHomeService
     /** @return list<array{name: string, imageSrc: string, alt: string}> */
     private function buildLineupArtistsFromDatabase(array $lineup): array
     {
+        $dbArtists = $this->danceRepo->findDanceLineupArtists(6);
         $dbHeadlines = $this->danceRepo->findDanceLineupHeadlines(6);
         $cycle = array_column(self::DEFAULT_LINEUP, 'image');
         $n = count($cycle);
@@ -249,7 +261,50 @@ final class DanceHomeService
             $n = 1;
         }
 
+        if ($dbArtists !== []) {
+            $out = [];
+            foreach ($dbArtists as $i => $artist) {
+                $artistName = trim((string) ($artist['name'] ?? ''));
+                if ($artistName === '') {
+                    continue;
+                }
+                $out[] = [
+                    'name' => mb_strtoupper($artistName, 'UTF-8'),
+                    'imageSrc' => $cycle[$i % $n],
+                    'alt' => $artistName,
+                ];
+            }
+            if ($out !== []) {
+                return $out;
+            }
+        }
+
         if ($dbHeadlines !== []) {
+            $artistNames = [];
+            foreach ($dbHeadlines as $h) {
+                foreach ($this->extractArtistNames((string) ($h['title'] ?? '')) as $artistName) {
+                    if (!in_array($artistName, $artistNames, true)) {
+                        $artistNames[] = $artistName;
+                    }
+                    if (count($artistNames) >= 6) {
+                        break 2;
+                    }
+                }
+            }
+
+            if ($artistNames !== []) {
+                $out = [];
+                foreach ($artistNames as $i => $artistName) {
+                    $out[] = [
+                        'name' => mb_strtoupper($artistName, 'UTF-8'),
+                        'imageSrc' => $cycle[$i % $n],
+                        'alt' => $artistName,
+                    ];
+                }
+
+                return $out;
+            }
+
             $out = [];
             foreach ($dbHeadlines as $i => $h) {
                 $title = trim($h['title']);
@@ -267,6 +322,36 @@ final class DanceHomeService
         }
 
         return $this->buildLineupFromCmsOrDefaults($lineup);
+    }
+
+    /** @return list<string> */
+    private function extractArtistNames(string $rawTitle): array
+    {
+        $title = trim($rawTitle);
+        if ($title === '') {
+            return [];
+        }
+
+        // Remove day/time hints often present in event titles.
+        $title = (string) preg_replace('/\s*\([^)]*\)\s*/', ' ', $title);
+        $title = (string) preg_replace('/\s+-\s+/', ' / ', $title);
+        $title = (string) preg_replace('/\s+&\s+/i', ' / ', $title);
+        $title = (string) preg_replace('/\s+b2b\s+/i', ' / ', $title);
+
+        $parts = preg_split('/\s*\/\s*/', $title) ?: [];
+        $out = [];
+        foreach ($parts as $part) {
+            $name = trim((string) preg_replace('/\s+/', ' ', $part));
+            if ($name === '') {
+                continue;
+            }
+            if (preg_match('/^(all[\s-]*access|day\s*pass)$/i', $name) === 1) {
+                continue;
+            }
+            $out[] = $name;
+        }
+
+        return $out;
     }
 
     /**
@@ -308,9 +393,9 @@ final class DanceHomeService
         $venues = [];
         foreach ($rows as $r) {
             $kind = (string) ($r['row_kind'] ?? '');
-            $day = trim((string) ($r['day_display_label'] ?? ''));
-            if ($day !== '' && ($kind === 'session' || $kind === 'day_pass' || $kind === 'all_access')) {
-                $daysSeen[$day] = true;
+            $dayMeta = $this->resolveDayMeta($r);
+            if ($dayMeta !== null && ($kind === 'session' || $kind === 'day_pass' || $kind === 'all_access')) {
+                $daysSeen[$dayMeta['key']] = true;
             }
             if ($kind === 'session') {
                 ++$sessions;
@@ -332,8 +417,12 @@ final class DanceHomeService
     {
         $ordered = [];
         foreach ($rows as $r) {
-            $d = trim((string) ($r['day_display_label'] ?? ''));
-            if ($d !== '' && !in_array($d, $ordered, true)) {
+            $dayMeta = $this->resolveDayMeta($r);
+            if ($dayMeta === null) {
+                continue;
+            }
+            $d = $dayMeta['label'];
+            if (!in_array($d, $ordered, true)) {
                 $ordered[] = $d;
             }
         }
@@ -345,6 +434,76 @@ final class DanceHomeService
         }
 
         return $ordered[0] . ' → ' . $ordered[count($ordered) - 1];
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @return array{key: string, label: string}|null
+     */
+    private function resolveDayMeta(array $row): ?array
+    {
+        $rawLabel = trim((string) ($row['day_display_label'] ?? ''));
+        $dayDate = $this->parseDateTimeValue($row['session_start'] ?? null)
+            ?? $this->parseDateTimeValue($row['session_end'] ?? null)
+            ?? $this->parseDateTimeValue($rawLabel);
+
+        if ($dayDate instanceof \DateTimeImmutable) {
+            return [
+                'key' => $dayDate->format('Y-m-d'),
+                'label' => $dayDate->format('l F jS'),
+            ];
+        }
+
+        if ($rawLabel === '') {
+            return null;
+        }
+
+        return ['key' => $rawLabel, 'label' => $rawLabel];
+    }
+
+    private function formatSessionTimeValue(mixed $value): string
+    {
+        $dt = $this->parseDateTimeValue($value);
+        if ($dt instanceof \DateTimeImmutable) {
+            return $dt->format('H:i');
+        }
+
+        if (!is_scalar($value)) {
+            return '';
+        }
+        $text = trim((string) $value);
+        if ($text === '') {
+            return '';
+        }
+        if (preg_match('/^\d{2}:\d{2}(:\d{2})?$/', $text) === 1) {
+            return substr($text, 0, 5);
+        }
+
+        return $text;
+    }
+
+    private function parseDateTimeValue(mixed $value): ?\DateTimeImmutable
+    {
+        if ($value instanceof \DateTimeImmutable) {
+            return $value;
+        }
+        if ($value instanceof \DateTimeInterface) {
+            return \DateTimeImmutable::createFromInterface($value);
+        }
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $text = trim((string) $value);
+        if ($text === '') {
+            return null;
+        }
+
+        try {
+            return new \DateTimeImmutable($text);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /**
