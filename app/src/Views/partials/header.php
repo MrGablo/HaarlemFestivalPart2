@@ -67,6 +67,7 @@ function getNavClass($path, $currentPath, $matchPrefix = false)
             <a href="/yummy" class="<?= getNavClass('/yummy', $currentPath) ?>">Yummy</a>
             <a href="/stories" class="<?= getNavClass('/stories', $currentPath) ?>">Stories</a>
             <a href="/history" class="<?= getNavClass('/history', $currentPath) ?>">History</a>
+            <a href="/program" class="<?= getNavClass('/program', $currentPath) ?>">Program</a>
 
             <button
                 type="button"
@@ -75,7 +76,7 @@ function getNavClass($path, $currentPath, $matchPrefix = false)
                 aria-haspopup="dialog"
                 aria-controls="cartOverlay"
                 aria-expanded="false">
-                Program
+                Cart
                 <span class="relative flex items-center">
                     <img src="/assets/img/headerfooter/cart.svg" alt="Cart" class="block h-5 w-5 min-w-[20px] flex-none object-contain">
                     <span
