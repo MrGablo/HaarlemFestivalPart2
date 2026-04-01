@@ -32,7 +32,7 @@ $tinyMceApiKey = trim((string)($_ENV['TINYMCE_API_KEY'] ?? $_SERVER['TINYMCE_API
                         <?= CmsForm::h((string)($page['Page_Type'] ?? '')) ?>
                     </p>
                 </div>
-                <a href="/cms" class="text-sm font-medium text-slate-600 hover:text-slate-900">← Back to CMS</a>
+                <a href="/cms/pages" class="text-sm font-medium text-slate-600 hover:text-slate-900">← Back to CMS Pages</a>
             </div>
 
             <?php require __DIR__ . '/../partials/flash_success.php'; ?>
@@ -59,7 +59,13 @@ $tinyMceApiKey = trim((string)($_ENV['TINYMCE_API_KEY'] ?? $_SERVER['TINYMCE_API
                         class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300">
                         Save content
                     </button>
-                    <a href="/cms" class="text-sm font-medium text-slate-600 hover:text-slate-900">Cancel</a>
+                    <a href="/cms/pages" class="text-sm font-medium text-slate-600 hover:text-slate-900">Cancel</a>
+                    <form method="POST" action="/cms/page/<?= (int)($page['Page_ID'] ?? 0) ?>/delete" onsubmit="return confirm('Delete this page? Linked artist and jazz event page references will be cleared. This cannot be undone.');">
+                        <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string)($csrfToken ?? '')) ?>">
+                        <button type="submit" class="rounded-lg bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-300">
+                            Delete page
+                        </button>
+                    </form>
                 </div>
             </form>
         </section>

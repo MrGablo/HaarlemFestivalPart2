@@ -48,7 +48,13 @@
                                 <td class="whitespace-nowrap px-4 py-3 text-slate-700"><?= htmlspecialchars((string)($page['Updated_At'] ?? '-')) ?></td>
                                 <td class="whitespace-nowrap px-4 py-3 text-slate-700"><?= htmlspecialchars((string)($page['Created_At'] ?? '-')) ?></td>
                                 <td class="whitespace-nowrap px-4 py-3">
-                                    <a href="/cms/page/<?= (int)($page['Page_ID'] ?? 0) ?>" class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">Edit</a>
+                                    <div class="flex items-center gap-2">
+                                        <a href="/cms/page/<?= (int)($page['Page_ID'] ?? 0) ?>" class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">Edit</a>
+                                        <form method="POST" action="/cms/page/<?= (int)($page['Page_ID'] ?? 0) ?>/delete" onsubmit="return confirm('Delete this page? Linked artist and jazz event page references will be cleared. This cannot be undone.');">
+                                            <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string)($csrfToken ?? '')) ?>">
+                                            <button type="submit" class="rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700">Delete</button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

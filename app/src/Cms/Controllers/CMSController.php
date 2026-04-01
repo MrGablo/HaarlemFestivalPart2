@@ -49,6 +49,7 @@ class CMSController
         $pages = $this->pages->getAllPages();
         $errors = Flash::getErrors();
         $flashSuccess = Flash::getSuccess();
+        $csrfToken = Csrf::token();
 
         require __DIR__ . '/../../Views/cms/index.php';
     }
@@ -241,6 +242,27 @@ class CMSController
         }
 
         header('Location: /cms/page/' . $id, true, 302);
+        exit;
+    }
+
+    public function delete(int $id): void
+    {
+        AdminGuard::requireAdmin(true);
+
+        try {
+            Csrf::assertPost();
+
+            $deleted = $this->pages->deletePageById($id);
+            if (!$deleted) {
+                Flash::setErrors(['general' => 'Page not found or could not be deleted.']);
+            } else {
+                Flash::setSuccess('Page deleted successfully.');
+            }
+        } catch (\Throwable $e) {
+            Flash::setErrors(['general' => $e->getMessage()]);
+        }
+
+        header('Location: /cms/pages', true, 302);
         exit;
     }
 

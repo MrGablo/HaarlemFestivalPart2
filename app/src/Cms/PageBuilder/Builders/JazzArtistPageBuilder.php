@@ -168,7 +168,6 @@ final class JazzArtistPageBuilder extends AbstractPageViewModelBuilder
                         'fields' => [
                             ['key' => 'artist', 'type' => 'text', 'label' => 'Artist'],
                             ['key' => 'title', 'type' => 'text', 'label' => 'Album Title'],
-                            ['key' => 'description', 'type' => 'textarea', 'label' => 'Plain Description'],
                             ['key' => 'description_html', 'type' => 'wysiwyg', 'label' => 'Rich Description'],
                             [
                                 'key' => 'image',
@@ -193,7 +192,6 @@ final class JazzArtistPageBuilder extends AbstractPageViewModelBuilder
                         'fields' => [
                             ['key' => 'title', 'type' => 'text', 'label' => 'About Title'],
                             ['key' => 'html', 'type' => 'wysiwyg', 'label' => 'About HTML'],
-                            ['key' => 'text', 'type' => 'textarea', 'label' => 'About Text'],
                         ],
                     ],
                     [

@@ -117,6 +117,7 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     $r->addRoute('POST', '/cms/page/create/{type:[A-Za-z0-9_\-]+}', ['App\Cms\Controllers\CMSController', 'create']);
     $r->addRoute('GET', '/cms/page/{id:\\d+}', ['App\Cms\Controllers\CMSController', 'edit']);
     $r->addRoute('POST', '/cms/page/{id:\\d+}/update', ['App\Cms\Controllers\CMSController', 'update']);
+    $r->addRoute('POST', '/cms/page/{id:\\d+}/delete', ['App\Cms\Controllers\CMSController', 'delete']);
     $r->addRoute('GET',  '/cms/events', ['App\Cms\Controllers\CMSEventController', 'index']);
     $r->addRoute('GET',  '/cms/events/{id:\\d+}', ['App\Cms\Controllers\CMSEventController', 'edit']);
     $r->addRoute('POST', '/cms/events/{id:\\d+}', ['App\Cms\Controllers\CMSEventController', 'update']);

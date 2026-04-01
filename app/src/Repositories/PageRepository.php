@@ -168,4 +168,36 @@ class PageRepository extends Repository implements IPageRepository
 
         return (int)$pdo->lastInsertId();
     }
+
+    public function deletePageById(int $pageId): bool
+    {
+        $pdo = $this->getConnection();
+        $pdo->beginTransaction();
+
+        try {
+            $clearArtist = $pdo->prepare(
+                'UPDATE Artist
+                 SET page_id = NULL,
+                     updated_at = CURRENT_TIMESTAMP
+                 WHERE page_id = :id'
+            );
+            $clearArtist->execute([':id' => $pageId]);
+
+            $clearJazzEvents = $pdo->prepare(
+                'UPDATE JazzEvent
+                 SET page_id = NULL
+                 WHERE page_id = :id'
+            );
+            $clearJazzEvents->execute([':id' => $pageId]);
+
+            $delete = $pdo->prepare('DELETE FROM Page WHERE Page_ID = :id LIMIT 1');
+            $delete->execute([':id' => $pageId]);
+
+            $pdo->commit();
+            return $delete->rowCount() > 0;
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
+    }
 }

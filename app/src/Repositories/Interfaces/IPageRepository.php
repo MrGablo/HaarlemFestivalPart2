@@ -19,4 +19,6 @@ interface IPageRepository
     public function savePageContentById(int $pageId, array $content): void;
 
     public function createPage(string $pageTitle, string $pageType, array $content): int;
+
+    public function deletePageById(int $pageId): bool;
 }
