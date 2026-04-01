@@ -4,7 +4,9 @@ namespace App\Cms\Controllers;
 
 use App\Cms\PageBuilder\Builders\GenericPageBuilder;
 use App\Cms\PageBuilder\PageBuilderRegistry;
+use App\Repositories\ArtistRepository;
 use App\Repositories\Interfaces\IPageRepository;
+use App\Repositories\JazzEventRepository;
 use App\Repositories\PageRepository;
 use App\Cms\Services\CmsContentService;
 use App\Cms\Services\CmsPageEditorService;
@@ -23,6 +25,8 @@ class CMSController
     private CmsContentService $contentService;
     private CmsPageEditorService $pageEditor;
     private PageBuilderRegistry $pageBuilders;
+    private ArtistRepository $artists;
+    private JazzEventRepository $jazzEvents;
     private UploadService $uploads;
 
     public function __construct()
@@ -31,6 +35,8 @@ class CMSController
         $this->contentService = new CmsContentService();
         $this->pageEditor = new CmsPageEditorService();
         $this->pageBuilders = new PageBuilderRegistry();
+        $this->artists = new ArtistRepository();
+        $this->jazzEvents = new JazzEventRepository();
         $this->uploads = new UploadService();
 
         Session::ensureStarted();
@@ -90,12 +96,15 @@ class CMSController
 
             $old = Flash::getOld();
             $oldContent = is_array($old['content'] ?? null) ? $old['content'] : [];
-            $content = $oldContent !== [] ? $oldContent : $builder->normalizeInput([]);
+            $selectedArtistId = (int)($old['selected_artist_id'] ?? 0);
+            $selectedArtistName = $this->resolveSelectedArtistName($selectedArtistId);
+            $content = $this->pageEditor->buildCreateContent($builder, $definition['type'], $oldContent, $selectedArtistName);
 
             $pageType = $definition['type'];
             $pageTypeLabel = $definition['label'];
-            $pageTitle = trim((string)($old['page_title'] ?? $definition['suggestedTitle']));
+            $pageTitle = trim((string)($old['page_title'] ?? ($selectedArtistName ?: $definition['suggestedTitle'])));
             $editorSchema = $builder->editorSchema();
+            $artistOptions = $this->pageEditor->isJazzDetailPageType($pageType) ? $this->artists->getAllArtists() : [];
             $errors = Flash::getErrors();
             $flashSuccess = Flash::getSuccess();
             $csrfToken = Csrf::token();
@@ -129,14 +138,27 @@ class CMSController
                 throw new \RuntimeException('Page title is required.');
             }
 
+            $selectedArtistId = (int)($_POST['selected_artist_id'] ?? 0);
+            $selectedArtistName = $this->resolveSelectedArtistName($selectedArtistId);
+            if ($this->pageEditor->isJazzDetailPageType($definition['type']) && $selectedArtistName === null) {
+                throw new \RuntimeException('Please select an artist.');
+            }
+
             $contentInput = $_POST['content'] ?? [];
             if (!is_array($contentInput)) {
                 throw new \RuntimeException('Invalid content payload.');
             }
 
+            $contentInput = $this->pageEditor->applyArtistSelection($definition['type'], $contentInput, $selectedArtistName);
+
             $normalized = $this->pageEditor->normalizeSchemaInput($builder, $definition['type'], $contentInput, $_FILES, $this->uploads);
 
             $newPageId = $this->pages->createPage($pageTitle, $definition['type'], $normalized);
+
+            if ($this->pageEditor->isJazzDetailPageType($definition['type']) && $selectedArtistId > 0) {
+                $this->artists->assignPageToArtist($selectedArtistId, $newPageId);
+                $this->jazzEvents->assignPageToArtistEvents($selectedArtistId, $newPageId);
+            }
 
             Flash::setSuccess('Page created successfully.');
             header('Location: /cms/page/' . $newPageId, true, 302);
@@ -145,9 +167,10 @@ class CMSController
             Flash::setErrors(['general' => $e->getMessage()]);
             Flash::setOld([
                 'page_title' => (string)($_POST['page_title'] ?? ''),
+                'selected_artist_id' => (string)($_POST['selected_artist_id'] ?? ''),
                 'content' => is_array($_POST['content'] ?? null) ? $_POST['content'] : [],
             ]);
-            header('Location: /cms/page/create/' . urlencode($definition['type']), true, 302);
+            header('Location: /cms/page/create/' . urlencode($type), true, 302);
             exit;
         }
     }
@@ -219,5 +242,20 @@ class CMSController
 
         header('Location: /cms/page/' . $id, true, 302);
         exit;
+    }
+
+    private function resolveSelectedArtistName(int $artistId): ?string
+    {
+        if ($artistId <= 0) {
+            return null;
+        }
+
+        $artist = $this->artists->findArtistById($artistId);
+        if ($artist === null) {
+            return null;
+        }
+
+        $name = trim((string)$artist->name);
+        return $name !== '' ? $name : null;
     }
 }
