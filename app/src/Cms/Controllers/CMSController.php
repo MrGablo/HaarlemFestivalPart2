@@ -7,9 +7,9 @@ use App\Cms\PageBuilder\PageBuilderRegistry;
 use App\Repositories\Interfaces\IPageRepository;
 use App\Repositories\PageRepository;
 use App\Cms\Services\CmsContentService;
+use App\Cms\Services\CmsPageEditorService;
 use App\Services\UploadService;
 use App\Utils\AdminGuard;
-use App\Utils\CmsForm;
 use App\Utils\Csrf;
 use App\Utils\Flash;
 use App\Utils\Session;
@@ -21,6 +21,7 @@ class CMSController
 
     private IPageRepository $pages;
     private CmsContentService $contentService;
+    private CmsPageEditorService $pageEditor;
     private PageBuilderRegistry $pageBuilders;
     private UploadService $uploads;
 
@@ -28,6 +29,7 @@ class CMSController
     {
         $this->pages = new PageRepository();
         $this->contentService = new CmsContentService();
+        $this->pageEditor = new CmsPageEditorService();
         $this->pageBuilders = new PageBuilderRegistry();
         $this->uploads = new UploadService();
 
@@ -56,61 +58,66 @@ class CMSController
 
     public function createType(): void
     {
-        AdminGuard::requireAdmin(true);
+        try {
+            AdminGuard::requireAdmin(true);
 
-        $pageTypes = $this->creatablePageTypes();
-        $errors = Flash::getErrors();
-        $flashSuccess = Flash::getSuccess();
+            $pageTypes = $this->pageEditor->creatablePageTypes($this->pageBuilders, self::CREATABLE_PAGE_TYPES);
+            $errors = Flash::getErrors();
+            $flashSuccess = Flash::getSuccess();
 
-        require __DIR__ . '/../../Views/cms/create_type.php';
+            require __DIR__ . '/../../Views/cms/create_type.php';
+        } catch (\Throwable $e) {
+            Flash::setErrors(['general' => $e->getMessage()]);
+            header('Location: /cms/pages', true, 302);
+            exit;
+        }
     }
 
     public function createForm(string $type): void
     {
-        AdminGuard::requireAdmin(true);
+        try {
+            AdminGuard::requireAdmin(true);
 
-        $definition = $this->findCreatablePageType($type);
-        if ($definition === null) {
-            Flash::setErrors(['general' => 'Unsupported page type.']);
+            $definition = $this->pageEditor->findCreatablePageType($type, $this->pageBuilders, self::CREATABLE_PAGE_TYPES);
+            if ($definition === null) {
+                throw new \RuntimeException('Unsupported page type.');
+            }
+
+            $builder = $this->pageBuilders->resolveForPageType($definition['type']);
+            if ($builder instanceof GenericPageBuilder) {
+                throw new \RuntimeException('No schema builder is registered for this page type.');
+            }
+
+            $old = Flash::getOld();
+            $oldContent = is_array($old['content'] ?? null) ? $old['content'] : [];
+            $content = $oldContent !== [] ? $oldContent : $builder->normalizeInput([]);
+
+            $pageType = $definition['type'];
+            $pageTypeLabel = $definition['label'];
+            $pageTitle = trim((string)($old['page_title'] ?? $definition['suggestedTitle']));
+            $editorSchema = $builder->editorSchema();
+            $errors = Flash::getErrors();
+            $flashSuccess = Flash::getSuccess();
+            $csrfToken = Csrf::token();
+
+            require __DIR__ . '/../../Views/cms/create.php';
+        } catch (\Throwable $e) {
+            Flash::setErrors(['general' => $e->getMessage()]);
             header('Location: /cms/page/create', true, 302);
             exit;
         }
-
-        $builder = $this->pageBuilders->resolveForPageType($definition['type']);
-        if ($builder instanceof GenericPageBuilder) {
-            Flash::setErrors(['general' => 'No schema builder is registered for this page type.']);
-            header('Location: /cms/page/create', true, 302);
-            exit;
-        }
-
-        $old = Flash::getOld();
-        $oldContent = is_array($old['content'] ?? null) ? $old['content'] : [];
-        $content = $oldContent !== [] ? $oldContent : $builder->normalizeInput([]);
-
-        $pageType = $definition['type'];
-        $pageTypeLabel = $definition['label'];
-        $pageTitle = trim((string)($old['page_title'] ?? $definition['suggestedTitle']));
-        $editorSchema = $builder->editorSchema();
-        $errors = Flash::getErrors();
-        $flashSuccess = Flash::getSuccess();
-        $csrfToken = Csrf::token();
-
-        require __DIR__ . '/../../Views/cms/create.php';
     }
 
     public function create(string $type): void
     {
-        AdminGuard::requireAdmin(true);
-
-        $definition = $this->findCreatablePageType($type);
-        if ($definition === null) {
-            Flash::setErrors(['general' => 'Unsupported page type.']);
-            header('Location: /cms/page/create', true, 302);
-            exit;
-        }
-
         try {
+            AdminGuard::requireAdmin(true);
             Csrf::assertPost();
+
+            $definition = $this->pageEditor->findCreatablePageType($type, $this->pageBuilders, self::CREATABLE_PAGE_TYPES);
+            if ($definition === null) {
+                throw new \RuntimeException('Unsupported page type.');
+            }
 
             $builder = $this->pageBuilders->resolveForPageType($definition['type']);
             if ($builder instanceof GenericPageBuilder) {
@@ -127,8 +134,7 @@ class CMSController
                 throw new \RuntimeException('Invalid content payload.');
             }
 
-            $contentInput = $this->applySchemaUploads($builder->editorSchema(), $contentInput, $definition['type']);
-            $normalized = $builder->normalizeInput($contentInput);
+            $normalized = $this->pageEditor->normalizeSchemaInput($builder, $definition['type'], $contentInput, $_FILES, $this->uploads);
 
             $newPageId = $this->pages->createPage($pageTitle, $definition['type'], $normalized);
 
@@ -201,8 +207,7 @@ class CMSController
                 $typeMap = $_POST['types'] ?? [];
                 $normalized = $this->contentService->normalizeContent($contentInput, is_array($typeMap) ? $typeMap : []);
             } else {
-                $contentInput = $this->applySchemaUploads($builder->editorSchema(), $contentInput, $pageType);
-                $normalized = $builder->normalizeInput($contentInput);
+                $normalized = $this->pageEditor->normalizeSchemaInput($builder, $pageType, $contentInput, $_FILES, $this->uploads);
             }
 
             $this->pages->savePageContentById($id, $normalized);
@@ -214,157 +219,5 @@ class CMSController
 
         header('Location: /cms/page/' . $id, true, 302);
         exit;
-    }
-
-    /** @param array<int, array<string, mixed>> $schema */
-    private function applySchemaUploads(array $schema, array $contentInput, string $pageType): array
-    {
-        foreach ($schema as $section) {
-            foreach (($section['fields'] ?? []) as $field) {
-                if (!is_array($field) || !isset($field['key'])) {
-                    continue;
-                }
-
-                $key = (string)$field['key'];
-                $contentInput[$key] = $this->applyFieldUploads($field, $contentInput[$key] ?? null, [$key], $pageType);
-            }
-        }
-
-        return $contentInput;
-    }
-
-    private function applyFieldUploads(array $field, mixed $value, array $path, string $pageType): mixed
-    {
-        $type = (string)($field['type'] ?? 'text');
-
-        if ($type === 'image') {
-            return $this->applyImageUpload($field, $value, $path, $pageType);
-        }
-
-        if ($type === 'object') {
-            $value = is_array($value) ? $value : [];
-            foreach (($field['fields'] ?? []) as $childField) {
-                if (!is_array($childField) || !isset($childField['key'])) {
-                    continue;
-                }
-
-                $childKey = (string)$childField['key'];
-                $value[$childKey] = $this->applyFieldUploads($childField, $value[$childKey] ?? null, [...$path, $childKey], $pageType);
-            }
-            return $value;
-        }
-
-        if ($type === 'repeater') {
-            $items = is_array($value) ? array_values($value) : [];
-            $itemType = (string)($field['itemType'] ?? 'object');
-
-            foreach ($items as $index => $item) {
-                $itemPath = [...$path, (string)$index];
-
-                if ($itemType === 'image') {
-                    $itemField = is_array($field['itemField'] ?? null) ? $field['itemField'] : ['type' => 'image', 'storage' => 'string'];
-                    $items[$index] = $this->applyFieldUploads($itemField, $item, $itemPath, $pageType);
-                    continue;
-                }
-
-                if ($itemType === 'text') {
-                    continue;
-                }
-
-                $itemArray = is_array($item) ? $item : [];
-                foreach (($field['fields'] ?? []) as $childField) {
-                    if (!is_array($childField) || !isset($childField['key'])) {
-                        continue;
-                    }
-
-                    $childKey = (string)$childField['key'];
-                    $itemArray[$childKey] = $this->applyFieldUploads($childField, $itemArray[$childKey] ?? null, [...$itemPath, $childKey], $pageType);
-                }
-                $items[$index] = $itemArray;
-            }
-
-            return $items;
-        }
-
-        return $value;
-    }
-
-    private function applyImageUpload(array $field, mixed $value, array $path, string $pageType): mixed
-    {
-        $storage = (string)($field['storage'] ?? 'object');
-        $currentPath = '';
-        $meta = [];
-
-        if ($storage === 'string') {
-            $currentPath = is_scalar($value) ? trim((string)$value) : '';
-        } elseif (is_array($value)) {
-            $meta = $value;
-            $currentPath = trim((string)($value['src'] ?? ''));
-        } elseif (is_scalar($value)) {
-            $currentPath = trim((string)$value);
-        }
-
-        $uploadField = CmsForm::uploadFieldName($path);
-        if (isset($_FILES[$uploadField]) && is_array($_FILES[$uploadField]) && (int)($_FILES[$uploadField]['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
-            $folder = $this->slug($pageType);
-            $storedPath = $this->uploads->storeImage($_FILES[$uploadField], 'page', $folder, null, false, $currentPath);
-            $currentPath = $storedPath;
-        }
-
-        if ($storage === 'string') {
-            return $currentPath;
-        }
-
-        $meta['src'] = $currentPath;
-        return $meta;
-    }
-
-    private function slug(string $value): string
-    {
-        $value = strtolower(trim($value));
-        $value = preg_replace('~[^a-z0-9_-]+~', '-', $value) ?? $value;
-        return trim($value, '-') ?: 'page';
-    }
-
-    /** @return array<int, array{type: string, label: string, suggestedTitle: string}> */
-    private function creatablePageTypes(): array
-    {
-        $types = [];
-        $builders = $this->pageBuilders->all();
-
-        foreach (self::CREATABLE_PAGE_TYPES as $pageType) {
-            $builder = $builders[$pageType] ?? null;
-            if ($builder === null || $builder instanceof GenericPageBuilder) {
-                continue;
-            }
-
-            $types[] = [
-                'type' => $pageType,
-                'label' => $this->pageTypeLabel($pageType),
-                'suggestedTitle' => $this->pageTypeLabel($pageType),
-            ];
-        }
-
-        return $types;
-    }
-
-    /** @return array{type: string, label: string, suggestedTitle: string}|null */
-    private function findCreatablePageType(string $pageType): ?array
-    {
-        foreach ($this->creatablePageTypes() as $type) {
-            if ($type['type'] === $pageType) {
-                return $type;
-            }
-        }
-
-        return null;
-    }
-
-    private function pageTypeLabel(string $pageType): string
-    {
-        return match ($pageType) {
-            'Jazz_Detail_Page' => 'Jazz Artist Detail Page',
-            default => ucwords(strtolower(str_replace(['_', '-'], ' ', $pageType))),
-        };
     }
 }
