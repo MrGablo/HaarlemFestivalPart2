@@ -128,10 +128,7 @@ class PaymentService
             throw new \RuntimeException('Payment: missing pending_order_id in checkout session metadata.');
         }
 
-        $orderId     = $this->repo->createPaidOrder($userId);
-        $orderItemId = $this->repo->createOrderItem($orderId, $eventId, $quantity);
-        $this->ticketService->createTicketsForOrderItem($orderItemId, $userId, $eventId, $quantity, null);
-        error_log("Payment OK (fallback): order=$orderId user=$userId event=$eventId qty=$quantity");
+        $this->fulfillPendingOrder($userId, $pendingOrderId);
     }
 
     private function getStripeSecretKey(): string
