@@ -143,4 +143,29 @@ class PageRepository extends Repository implements IPageRepository
             ':id' => $pageId,
         ]);
     }
+
+    public function createPage(string $pageTitle, string $pageType, array $content): int
+    {
+        $pdo = $this->getConnection();
+
+        $json = json_encode($content, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($json === false) {
+            throw new \RuntimeException('Failed to encode page content to JSON.');
+        }
+
+        $insert = $pdo->prepare(
+            "
+            INSERT INTO Page (Page_Title, Page_Type, Content, Created_At, Updated_At)
+            VALUES (:title, :type, :content, NOW(), NULL)
+            "
+        );
+
+        $insert->execute([
+            ':title' => trim($pageTitle),
+            ':type' => trim($pageType),
+            ':content' => $json,
+        ]);
+
+        return (int)$pdo->lastInsertId();
+    }
 }

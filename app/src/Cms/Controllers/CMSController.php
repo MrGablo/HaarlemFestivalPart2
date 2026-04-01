@@ -16,6 +16,9 @@ use App\Utils\Session;
 
 class CMSController
 {
+    /** @var array<int, string> */
+    private const CREATABLE_PAGE_TYPES = ['Jazz_Detail_Page'];
+
     private IPageRepository $pages;
     private CmsContentService $contentService;
     private PageBuilderRegistry $pageBuilders;
@@ -49,6 +52,98 @@ class CMSController
         $flashSuccess = Flash::getSuccess();
 
         require __DIR__ . '/../../Views/cms/generalIndex.php';
+    }
+
+    public function createType(): void
+    {
+        AdminGuard::requireAdmin(true);
+
+        $pageTypes = $this->creatablePageTypes();
+        $errors = Flash::getErrors();
+        $flashSuccess = Flash::getSuccess();
+
+        require __DIR__ . '/../../Views/cms/create_type.php';
+    }
+
+    public function createForm(string $type): void
+    {
+        AdminGuard::requireAdmin(true);
+
+        $definition = $this->findCreatablePageType($type);
+        if ($definition === null) {
+            Flash::setErrors(['general' => 'Unsupported page type.']);
+            header('Location: /cms/page/create', true, 302);
+            exit;
+        }
+
+        $builder = $this->pageBuilders->resolveForPageType($definition['type']);
+        if ($builder instanceof GenericPageBuilder) {
+            Flash::setErrors(['general' => 'No schema builder is registered for this page type.']);
+            header('Location: /cms/page/create', true, 302);
+            exit;
+        }
+
+        $old = Flash::getOld();
+        $oldContent = is_array($old['content'] ?? null) ? $old['content'] : [];
+        $content = $oldContent !== [] ? $oldContent : $builder->normalizeInput([]);
+
+        $pageType = $definition['type'];
+        $pageTypeLabel = $definition['label'];
+        $pageTitle = trim((string)($old['page_title'] ?? $definition['suggestedTitle']));
+        $editorSchema = $builder->editorSchema();
+        $errors = Flash::getErrors();
+        $flashSuccess = Flash::getSuccess();
+        $csrfToken = Csrf::token();
+
+        require __DIR__ . '/../../Views/cms/create.php';
+    }
+
+    public function create(string $type): void
+    {
+        AdminGuard::requireAdmin(true);
+
+        $definition = $this->findCreatablePageType($type);
+        if ($definition === null) {
+            Flash::setErrors(['general' => 'Unsupported page type.']);
+            header('Location: /cms/page/create', true, 302);
+            exit;
+        }
+
+        try {
+            Csrf::assertPost();
+
+            $builder = $this->pageBuilders->resolveForPageType($definition['type']);
+            if ($builder instanceof GenericPageBuilder) {
+                throw new \RuntimeException('No schema builder is registered for this page type.');
+            }
+
+            $pageTitle = trim((string)($_POST['page_title'] ?? ''));
+            if ($pageTitle === '') {
+                throw new \RuntimeException('Page title is required.');
+            }
+
+            $contentInput = $_POST['content'] ?? [];
+            if (!is_array($contentInput)) {
+                throw new \RuntimeException('Invalid content payload.');
+            }
+
+            $contentInput = $this->applySchemaUploads($builder->editorSchema(), $contentInput, $definition['type']);
+            $normalized = $builder->normalizeInput($contentInput);
+
+            $newPageId = $this->pages->createPage($pageTitle, $definition['type'], $normalized);
+
+            Flash::setSuccess('Page created successfully.');
+            header('Location: /cms/page/' . $newPageId, true, 302);
+            exit;
+        } catch (\Throwable $e) {
+            Flash::setErrors(['general' => $e->getMessage()]);
+            Flash::setOld([
+                'page_title' => (string)($_POST['page_title'] ?? ''),
+                'content' => is_array($_POST['content'] ?? null) ? $_POST['content'] : [],
+            ]);
+            header('Location: /cms/page/create/' . urlencode($definition['type']), true, 302);
+            exit;
+        }
     }
 
     // --- existing page edit/update ----
@@ -229,5 +324,47 @@ class CMSController
         $value = strtolower(trim($value));
         $value = preg_replace('~[^a-z0-9_-]+~', '-', $value) ?? $value;
         return trim($value, '-') ?: 'page';
+    }
+
+    /** @return array<int, array{type: string, label: string, suggestedTitle: string}> */
+    private function creatablePageTypes(): array
+    {
+        $types = [];
+        $builders = $this->pageBuilders->all();
+
+        foreach (self::CREATABLE_PAGE_TYPES as $pageType) {
+            $builder = $builders[$pageType] ?? null;
+            if ($builder === null || $builder instanceof GenericPageBuilder) {
+                continue;
+            }
+
+            $types[] = [
+                'type' => $pageType,
+                'label' => $this->pageTypeLabel($pageType),
+                'suggestedTitle' => $this->pageTypeLabel($pageType),
+            ];
+        }
+
+        return $types;
+    }
+
+    /** @return array{type: string, label: string, suggestedTitle: string}|null */
+    private function findCreatablePageType(string $pageType): ?array
+    {
+        foreach ($this->creatablePageTypes() as $type) {
+            if ($type['type'] === $pageType) {
+                return $type;
+            }
+        }
+
+        return null;
+    }
+
+    private function pageTypeLabel(string $pageType): string
+    {
+        return match ($pageType) {
+            'Jazz_Detail_Page' => 'Jazz Artist Detail Page',
+            default => ucwords(strtolower(str_replace(['_', '-'], ' ', $pageType))),
+        };
     }
 }

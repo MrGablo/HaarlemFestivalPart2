@@ -112,6 +112,9 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     // CMS routes (admin only)
     $r->addRoute('GET', '/cms', ['App\Cms\Controllers\CMSController', 'generalIndex']);
     $r->addRoute('GET', '/cms/pages', ['App\Cms\Controllers\CMSController', 'index']);
+    $r->addRoute('GET', '/cms/page/create', ['App\Cms\Controllers\CMSController', 'createType']);
+    $r->addRoute('GET', '/cms/page/create/{type:[A-Za-z0-9_\-]+}', ['App\Cms\Controllers\CMSController', 'createForm']);
+    $r->addRoute('POST', '/cms/page/create/{type:[A-Za-z0-9_\-]+}', ['App\Cms\Controllers\CMSController', 'create']);
     $r->addRoute('GET', '/cms/page/{id:\\d+}', ['App\Cms\Controllers\CMSController', 'edit']);
     $r->addRoute('POST', '/cms/page/{id:\\d+}/update', ['App\Cms\Controllers\CMSController', 'update']);
     $r->addRoute('GET',  '/cms/events', ['App\Cms\Controllers\CMSEventController', 'index']);

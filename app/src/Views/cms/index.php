@@ -15,7 +15,13 @@
         <section class="rounded-2xl bg-white p-6 shadow-xl ring-1 ring-slate-200">
             <div class="flex items-center justify-between gap-4">
                 <h1 class="text-2xl font-semibold tracking-tight text-slate-900">CMS Pages</h1>
-                <a href="/" class="text-sm font-medium text-slate-600 hover:text-slate-900">← Back to home</a>
+                <div class="flex items-center gap-3">
+                    <a href="/cms/page/create"
+                        class="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
+                        + Create New Page
+                    </a>
+                    <a href="/" class="text-sm font-medium text-slate-600 hover:text-slate-900">← Back to home</a>
+                </div>
             </div>
 
             <?php require __DIR__ . '/../partials/flash_success.php'; ?>
