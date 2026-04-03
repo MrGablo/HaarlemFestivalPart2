@@ -7,20 +7,19 @@ namespace App\Cms\Services;
 use App\Cms\PageBuilder\Builders\GenericPageBuilder;
 use App\Cms\PageBuilder\PageBuilderRegistry;
 use App\Cms\PageBuilder\PageViewModelBuilderInterface;
-use App\Repositories\Interfaces\IPageRepository;
-use App\Repositories\PageRepository;
+use App\Services\PageService;
 use App\Services\UploadService;
 use App\Utils\CmsForm;
 
 final class CmsPageEditorService
 {
     public function __construct(
-        private IPageRepository $pages = new PageRepository()
+        private PageService $pages = new PageService()
     ) {}
 
     public function allPages(): array
     {
-        return $this->pages->getAllPages();
+        return $this->pages->allPages();
     }
 
     public function createPage(string $pageTitle, string $pageType, array $content): int

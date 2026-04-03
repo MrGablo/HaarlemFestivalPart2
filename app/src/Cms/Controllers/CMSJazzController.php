@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Cms\Controllers;
 
 use App\Models\JazzEvent;
-use App\Cms\Services\CmsJazzEventService;
+use App\Services\JazzEventService;
 use App\Services\UploadService;
 use App\Utils\AdminGuard;
 use App\Utils\Csrf;
@@ -14,12 +14,12 @@ use App\Utils\Session;
 
 final class CMSJazzController
 {
-    private CmsJazzEventService $service;
+    private JazzEventService $service;
     private UploadService $uploads;
 
     public function __construct()
     {
-        $this->service = new CmsJazzEventService();
+        $this->service = new JazzEventService();
         $this->uploads = new UploadService();
 
         Session::ensureStarted();

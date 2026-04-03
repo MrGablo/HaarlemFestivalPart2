@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Cms\Controllers;
 
 use App\Models\Venue;
-use App\Cms\Services\CmsVenueService;
+use App\Services\VenueService;
 use App\Utils\AdminGuard;
 use App\Utils\Csrf;
 use App\Utils\Flash;
@@ -13,11 +13,11 @@ use App\Utils\Session;
 
 final class CMSVenueController
 {
-    private CmsVenueService $service;
+    private VenueService $service;
 
     public function __construct()
     {
-        $this->service = new CmsVenueService();
+        $this->service = new VenueService();
         Session::ensureStarted();
     }
 

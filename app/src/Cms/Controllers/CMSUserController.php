@@ -6,7 +6,7 @@ namespace App\Cms\Controllers;
 
 use App\Models\UserModel;
 use App\Models\UserRole;
-use App\Cms\Services\CmsUserService;
+use App\Services\UserService;
 use App\Utils\AdminGuard;
 use App\Utils\Csrf;
 use App\Utils\Flash;
@@ -14,11 +14,11 @@ use App\Utils\Session;
 
 final class CMSUserController
 {
-    private CmsUserService $service;
+    private UserService $service;
 
     public function __construct()
     {
-        $this->service = new CmsUserService();
+        $this->service = new UserService();
         Session::ensureStarted();
     }
 

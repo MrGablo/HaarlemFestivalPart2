@@ -4,10 +4,10 @@ namespace App\Cms\Controllers;
 
 use App\Cms\PageBuilder\Builders\GenericPageBuilder;
 use App\Cms\PageBuilder\PageBuilderRegistry;
-use App\Cms\Services\CmsArtistService;
 use App\Cms\Services\CmsContentService;
-use App\Cms\Services\CmsJazzEventService;
 use App\Cms\Services\CmsPageEditorService;
+use App\Services\ArtistService;
+use App\Services\JazzEventService;
 use App\Services\UploadService;
 use App\Utils\AdminGuard;
 use App\Utils\Csrf;
@@ -19,18 +19,18 @@ class CMSController
     /** @var array<int, string> */
     private const CREATABLE_PAGE_TYPES = ['Jazz_Detail_Page'];
 
-    private CmsArtistService $artists;
+    private ArtistService $artists;
     private CmsContentService $contentService;
-    private CmsJazzEventService $jazzEvents;
+    private JazzEventService $jazzEvents;
     private CmsPageEditorService $pageEditor;
     private PageBuilderRegistry $pageBuilders;
     private UploadService $uploads;
 
     public function __construct()
     {
-        $this->artists = new CmsArtistService();
+        $this->artists = new ArtistService();
         $this->contentService = new CmsContentService();
-        $this->jazzEvents = new CmsJazzEventService();
+        $this->jazzEvents = new JazzEventService();
         $this->pageEditor = new CmsPageEditorService();
         $this->pageBuilders = new PageBuilderRegistry();
         $this->uploads = new UploadService();

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Cms\Controllers;
 
-use App\Cms\Services\CmsPassService;
+use App\Services\PassService;
 use App\Utils\AdminGuard;
 use App\Utils\Csrf;
 use App\Utils\Flash;
@@ -12,11 +12,11 @@ use App\Utils\Session;
 
 final class CMSPassController
 {
-    private CmsPassService $service;
+    private PassService $service;
 
     public function __construct()
     {
-        $this->service = new CmsPassService();
+        $this->service = new PassService();
         Session::ensureStarted();
     }
 
