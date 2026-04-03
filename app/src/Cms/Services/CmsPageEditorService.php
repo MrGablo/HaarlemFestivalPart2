@@ -7,11 +7,47 @@ namespace App\Cms\Services;
 use App\Cms\PageBuilder\Builders\GenericPageBuilder;
 use App\Cms\PageBuilder\PageBuilderRegistry;
 use App\Cms\PageBuilder\PageViewModelBuilderInterface;
+use App\Repositories\Interfaces\IPageRepository;
+use App\Repositories\PageRepository;
 use App\Services\UploadService;
 use App\Utils\CmsForm;
 
 final class CmsPageEditorService
 {
+    public function __construct(
+        private IPageRepository $pages = new PageRepository()
+    ) {}
+
+    public function allPages(): array
+    {
+        return $this->pages->getAllPages();
+    }
+
+    public function createPage(string $pageTitle, string $pageType, array $content): int
+    {
+        return $this->pages->createPage($pageTitle, $pageType, $content);
+    }
+
+    public function findPageById(int $pageId): ?array
+    {
+        return $this->pages->findPageById($pageId);
+    }
+
+    public function getPageContentById(int $pageId): array
+    {
+        return $this->pages->getPageContentById($pageId);
+    }
+
+    public function savePageContentById(int $pageId, array $content): void
+    {
+        $this->pages->savePageContentById($pageId, $content);
+    }
+
+    public function deletePageById(int $pageId): bool
+    {
+        return $this->pages->deletePageById($pageId);
+    }
+
     public function isJazzDetailPageType(string $pageType): bool
     {
         return $pageType === 'Jazz_Detail_Page';

@@ -4,11 +4,9 @@ namespace App\Cms\Controllers;
 
 use App\Cms\PageBuilder\Builders\GenericPageBuilder;
 use App\Cms\PageBuilder\PageBuilderRegistry;
-use App\Repositories\ArtistRepository;
-use App\Repositories\Interfaces\IPageRepository;
-use App\Repositories\JazzEventRepository;
-use App\Repositories\PageRepository;
+use App\Cms\Services\CmsArtistService;
 use App\Cms\Services\CmsContentService;
+use App\Cms\Services\CmsJazzEventService;
 use App\Cms\Services\CmsPageEditorService;
 use App\Services\UploadService;
 use App\Utils\AdminGuard;
@@ -21,22 +19,20 @@ class CMSController
     /** @var array<int, string> */
     private const CREATABLE_PAGE_TYPES = ['Jazz_Detail_Page'];
 
-    private IPageRepository $pages;
+    private CmsArtistService $artists;
     private CmsContentService $contentService;
+    private CmsJazzEventService $jazzEvents;
     private CmsPageEditorService $pageEditor;
     private PageBuilderRegistry $pageBuilders;
-    private ArtistRepository $artists;
-    private JazzEventRepository $jazzEvents;
     private UploadService $uploads;
 
     public function __construct()
     {
-        $this->pages = new PageRepository();
+        $this->artists = new CmsArtistService();
         $this->contentService = new CmsContentService();
+        $this->jazzEvents = new CmsJazzEventService();
         $this->pageEditor = new CmsPageEditorService();
         $this->pageBuilders = new PageBuilderRegistry();
-        $this->artists = new ArtistRepository();
-        $this->jazzEvents = new JazzEventRepository();
         $this->uploads = new UploadService();
 
         Session::ensureStarted();
@@ -46,7 +42,7 @@ class CMSController
     {
         AdminGuard::requireAdmin(true);
 
-        $pages = $this->pages->getAllPages();
+        $pages = $this->pageEditor->allPages();
         $errors = Flash::getErrors();
         $flashSuccess = Flash::getSuccess();
         $csrfToken = Csrf::token();
@@ -105,7 +101,7 @@ class CMSController
             $pageTypeLabel = $definition['label'];
             $pageTitle = trim((string)($old['page_title'] ?? ($selectedArtistName ?: $definition['suggestedTitle'])));
             $editorSchema = $builder->editorSchema();
-            $artistOptions = $this->pageEditor->isJazzDetailPageType($pageType) ? $this->artists->getAllArtists() : [];
+            $artistOptions = $this->pageEditor->isJazzDetailPageType($pageType) ? $this->artists->allArtists() : [];
             $errors = Flash::getErrors();
             $flashSuccess = Flash::getSuccess();
             $csrfToken = Csrf::token();
@@ -154,7 +150,7 @@ class CMSController
 
             $normalized = $this->pageEditor->normalizeSchemaInput($builder, $definition['type'], $contentInput, $_FILES, $this->uploads);
 
-            $newPageId = $this->pages->createPage($pageTitle, $definition['type'], $normalized);
+            $newPageId = $this->pageEditor->createPage($pageTitle, $definition['type'], $normalized);
 
             if ($this->pageEditor->isJazzDetailPageType($definition['type']) && $selectedArtistId > 0) {
                 $this->artists->assignPageToArtist($selectedArtistId, $newPageId);
@@ -182,7 +178,7 @@ class CMSController
     {
         AdminGuard::requireAdmin(true);
 
-        $page = $this->pages->findPageById($id);
+        $page = $this->pageEditor->findPageById($id);
         if ($page === null) {
             http_response_code(404);
             echo 'Page not found.';
@@ -191,7 +187,7 @@ class CMSController
 
         $pageType = (string)($page['Page_Type'] ?? '');
         $builder = $this->pageBuilders->resolveForPageType($pageType);
-        $content = $this->pages->getPageContentById($id);
+        $content = $this->pageEditor->getPageContentById($id);
         $usesSchemaEditor = !$builder instanceof GenericPageBuilder;
         if ($usesSchemaEditor) {
             $content = $builder->normalizeInput($content);
@@ -209,7 +205,7 @@ class CMSController
     {
         AdminGuard::requireAdmin(true);
 
-        $page = $this->pages->findPageById($id);
+        $page = $this->pageEditor->findPageById($id);
         if ($page === null) {
             Flash::setErrors(['general' => 'Page not found.']);
             header('Location: /cms', true, 302);
@@ -234,7 +230,7 @@ class CMSController
                 $normalized = $this->pageEditor->normalizeSchemaInput($builder, $pageType, $contentInput, $_FILES, $this->uploads);
             }
 
-            $this->pages->savePageContentById($id, $normalized);
+            $this->pageEditor->savePageContentById($id, $normalized);
 
             Flash::setSuccess('Page content updated successfully.');
         } catch (\Throwable $e) {
@@ -252,7 +248,7 @@ class CMSController
         try {
             Csrf::assertPost();
 
-            $deleted = $this->pages->deletePageById($id);
+            $deleted = $this->pageEditor->deletePageById($id);
             if (!$deleted) {
                 Flash::setErrors(['general' => 'Page not found or could not be deleted.']);
             } else {
@@ -272,7 +268,7 @@ class CMSController
             return null;
         }
 
-        $artist = $this->artists->findArtistById($artistId);
+        $artist = $this->artists->findArtist($artistId);
         if ($artist === null) {
             return null;
         }

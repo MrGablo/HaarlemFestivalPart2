@@ -49,6 +49,7 @@ class CmsJazzEventService
     public function updateEvent(JazzEvent $event): void { $this->events->updateJazzEvent($event); }
     public function deleteEvent(int $id): bool { return $this->events->deleteJazzEventById($id); }
     public function artistExists(int $id): bool { return $this->artists->findArtistById($id) !== null; }
+    public function assignPageToArtistEvents(int $artistId, int $pageId): void { $this->events->assignPageToArtistEvents($artistId, $pageId); }
 
     private function requireText(array $input, string $key, string $label): string
     {
