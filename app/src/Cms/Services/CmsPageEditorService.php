@@ -14,7 +14,8 @@ use App\Utils\CmsForm;
 final class CmsPageEditorService
 {
     public function __construct(
-        private PageService $pages = new PageService()
+        private PageService $pages = new PageService(),
+        private CmsJazzDetailPageService $jazzDetails = new CmsJazzDetailPageService()
     ) {}
 
     public function allPages(): array
@@ -49,7 +50,7 @@ final class CmsPageEditorService
 
     public function isJazzDetailPageType(string $pageType): bool
     {
-        return $pageType === 'Jazz_Detail_Page';
+        return $this->jazzDetails->isJazzDetailPageType($pageType);
     }
 
     /**
@@ -63,7 +64,7 @@ final class CmsPageEditorService
         }
 
         if ($this->isJazzDetailPageType($pageType)) {
-            return $this->jazzArtistDefaultTemplate($artistName);
+            return $this->jazzDetails->defaultTemplate($artistName);
         }
 
         return $builder->normalizeInput([]);
@@ -75,23 +76,11 @@ final class CmsPageEditorService
      */
     public function applyArtistSelection(string $pageType, array $contentInput, ?string $artistName): array
     {
-        $artistName = trim((string)$artistName);
-        if (!$this->isJazzDetailPageType($pageType) || $artistName === '') {
+        if (!$this->isJazzDetailPageType($pageType)) {
             return $contentInput;
         }
 
-        $contentInput['artist'] = is_array($contentInput['artist'] ?? null) ? $contentInput['artist'] : [];
-        $contentInput['artist']['name'] = $artistName;
-        $contentInput['artist']['hero_title'] = $artistName;
-
-        $contentInput['artist']['breadcrumb'] = is_array($contentInput['artist']['breadcrumb'] ?? null)
-            ? $contentInput['artist']['breadcrumb']
-            : [];
-        $contentInput['artist']['breadcrumb']['back_href'] = (string)($contentInput['artist']['breadcrumb']['back_href'] ?? '/jazz');
-        $contentInput['artist']['breadcrumb']['back_label'] = (string)($contentInput['artist']['breadcrumb']['back_label'] ?? 'Jazz Event');
-        $contentInput['artist']['breadcrumb']['current'] = $artistName;
-
-        return $contentInput;
+        return $this->jazzDetails->applyArtistSelection($contentInput, $artistName);
     }
 
     /**
@@ -299,61 +288,13 @@ final class CmsPageEditorService
 
     private function pageTypeLabel(string $pageType): string
     {
+        $jazzLabel = $this->jazzDetails->pageTypeLabel($pageType);
+        if ($jazzLabel !== null) {
+            return $jazzLabel;
+        }
+
         return match ($pageType) {
-            'Jazz_Detail_Page' => 'Jazz Artist Detail Page',
             default => ucwords(strtolower(str_replace(['_', '-'], ' ', $pageType))),
         };
-    }
-
-    /** @return array<string, mixed> */
-    private function jazzArtistDefaultTemplate(?string $artistName): array
-    {
-        $artistName = trim((string)$artistName);
-
-        return [
-            'artist' => [
-                'name' => $artistName,
-                'cover_image' => '',
-                'breadcrumb' => [
-                    'back_href' => '/jazz',
-                    'back_label' => 'Jazz Event',
-                    'current' => $artistName,
-                ],
-                'kicker' => 'Haarlem Jazz',
-                'hero_title' => $artistName,
-                'hero_subtitle' => 'Haarlem Jazz',
-                'hero_media' => [
-                    'main' => ['image' => ''],
-                    'secondary' => [],
-                ],
-            ],
-            'tabs' => [
-                'default' => 'events',
-                'labels' => [
-                    'events' => 'Events',
-                    'career' => 'Career Highlights',
-                    'album' => 'Album',
-                ],
-            ],
-            'events' => [
-                'ticket_button_label' => 'Tickets',
-            ],
-            'career_highlights' => [
-                'left_html' => '',
-                'right_html' => '',
-                'left' => [],
-                'right' => [],
-            ],
-            'albums' => [],
-            'about' => [
-                'title' => 'About',
-                'html' => '',
-                'text' => '',
-            ],
-            'band_members' => [
-                'title' => 'Band Members',
-                'items' => [],
-            ],
-        ];
     }
 }
