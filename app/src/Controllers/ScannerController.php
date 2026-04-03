@@ -2,20 +2,20 @@
 
 namespace App\Controllers;
 
-use App\Repositories\ScannerRepository;
+use App\Services\TicketService;
 use App\Utils\AdminGuard;
 use App\Utils\Csrf;
 use App\Utils\Flash;
 
 class ScannerController
 {
-    private ScannerRepository $scannerRepository;
+    private TicketService $ticketService;
 
     public function __construct()
     {
         // Require user to be admin/staff to scan tickets (optional but recommended)
         AdminGuard::requireEmployee();
-        $this->scannerRepository = new ScannerRepository();
+        $this->ticketService = new TicketService();
     }
 
     public function index(): void
@@ -46,14 +46,14 @@ class ScannerController
         if (empty($qrHash)) {
             Flash::setErrors(['status' => 'error', 'message' => 'No QR Code provided']);
         } else {
-            $ticketInfo = $this->scannerRepository->getTicketInfo($qrHash);
+            $ticketInfo = $this->ticketService->getTicketInfoByQr($qrHash);
 
             if (!$ticketInfo) {
                 Flash::setErrors(['status' => 'error', 'message' => 'Invalid QR Code']);
             } elseif ($ticketInfo['is_scanned'] == 1) {
                 Flash::setErrors(['status' => 'warning', 'message' => 'Ticket already scanned!']);
             } else {
-                $this->scannerRepository->markAsScanned($ticketInfo['ticket_id']);
+                $this->ticketService->markAsScanned($ticketInfo['ticket_id']);
                 Flash::setSuccess('Ticket verified and checked in!');
                 Flash::setOld([
                     'eventName' => $ticketInfo['event_name'],
