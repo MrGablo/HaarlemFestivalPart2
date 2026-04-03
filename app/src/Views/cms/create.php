@@ -56,33 +56,15 @@ $tinyMceApiKey = trim((string)($_ENV['TINYMCE_API_KEY'] ?? $_SERVER['TINYMCE_API
                         class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
                 </div>
 
-                <?php if ((string)$pageType === 'Jazz_Detail_Page'): ?>
-                    <?php
-                    $selectedArtistId = (string)($selectedArtistId ?? '0');
-                    $artistOptions = is_array($artistOptions ?? null) ? $artistOptions : [];
-                    ?>
-                    <div class="rounded-xl border border-slate-200 p-4">
-                        <label for="selected_artist_id" class="mb-1 block text-sm font-medium text-slate-700">Artist</label>
-                        <select
-                            id="selected_artist_id"
-                            name="selected_artist_id"
-                            required
-                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
-                            <option value="">Select artist</option>
-                            <?php foreach ($artistOptions as $artist): ?>
-                                <?php
-                                $artistId = (string)($artist->artist_id ?? 0);
-                                $artistName = (string)($artist->name ?? '');
-                                $isSelected = $artistId === $selectedArtistId ? ' selected' : '';
-                                ?>
-                                <option value="<?= htmlspecialchars($artistId) ?>" data-artist-name="<?= htmlspecialchars($artistName) ?>"<?= $isSelected ?>>
-                                    <?= htmlspecialchars($artistName) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                        <p class="mt-1 text-xs text-slate-500">Selecting an artist auto-fills artist name and default breadcrumb current label.</p>
-                    </div>
-                <?php endif; ?>
+                <?php
+                $typeFieldsPartial = match ((string)$pageType) {
+                    'Jazz_Detail_Page' => __DIR__ . '/partials/create/type_fields_jazz_detail.php',
+                    default => null,
+                };
+                if (is_string($typeFieldsPartial)) {
+                    require $typeFieldsPartial;
+                }
+                ?>
 
                 <div class="grid grid-cols-1 gap-3">
                     <?php CmsForm::renderSchema($editorSchema, $content); ?>
@@ -161,44 +143,17 @@ $tinyMceApiKey = trim((string)($_ENV['TINYMCE_API_KEY'] ?? $_SERVER['TINYMCE_API
             });
         });
 
-        const artistSelect = document.getElementById('selected_artist_id');
-        const artistNameInput = document.getElementById('content_artist_name');
-        const breadcrumbCurrentInput = document.getElementById('content_artist_breadcrumb_current');
-        const heroTitleInput = document.getElementById('content_artist_hero_title');
-        const pageTitleInput = document.getElementById('page_title');
-
-        if (artistSelect && artistNameInput) {
-            let pageTitleManuallyEdited = pageTitleInput ? pageTitleInput.value.trim() !== '' : false;
-
-            if (pageTitleInput) {
-                pageTitleInput.addEventListener('input', () => {
-                    pageTitleManuallyEdited = true;
-                });
-            }
-
-            const syncArtistIntoFields = () => {
-                const selectedOption = artistSelect.options[artistSelect.selectedIndex] || null;
-                const artistName = selectedOption ? (selectedOption.dataset.artistName || '').trim() : '';
-                if (artistName === '') {
-                    return;
-                }
-
-                artistNameInput.value = artistName;
-                if (breadcrumbCurrentInput) {
-                    breadcrumbCurrentInput.value = artistName;
-                }
-                if (heroTitleInput && heroTitleInput.value.trim() === '') {
-                    heroTitleInput.value = artistName;
-                }
-                if (pageTitleInput && !pageTitleManuallyEdited) {
-                    pageTitleInput.value = artistName;
-                }
-            };
-
-            artistSelect.addEventListener('change', syncArtistIntoFields);
-            syncArtistIntoFields();
-        }
     </script>
+
+    <?php
+    $typeScriptPartial = match ((string)$pageType) {
+        'Jazz_Detail_Page' => __DIR__ . '/partials/create/type_script_jazz_detail.php',
+        default => null,
+    };
+    if (is_string($typeScriptPartial)) {
+        require $typeScriptPartial;
+    }
+    ?>
 </body>
 
 </html>
