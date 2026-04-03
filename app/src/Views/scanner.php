@@ -25,7 +25,7 @@
 </head>
 
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
-    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md text-center">
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md text-center min-h-[400px] flex flex-col">
         <h1 class="text-3xl font-bold mb-6 text-gray-800">Festival Ticket Scanner</h1>
 
         <?php if (isset($status)): ?>
@@ -97,18 +97,37 @@
                     const html5QrcodeScanner = new Html5QrcodeScanner(
                         "reader", {
                             fps: 10,
-                            qrbox: {
-                                width: 250,
-                                height: 250
+                            // Calculate the box size dynamically
+                            qrbox: function(viewfinderWidth, viewfinderHeight) {
+
+                                let minEdgePercentage = 0.9;
+                                let minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+                                let qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
+
+                                return {
+                                    width: qrboxSize,
+                                    height: qrboxSize
+                                };
                             }
                         },
-                        /* verbose= */
                         false
                     );
                     html5QrcodeScanner.render(onScanSuccess, onScanFailure);
                 });
             </script>
         <?php endif; ?>
+
+        <div class="mt-auto pt-8">
+            <a href="/"
+                class="bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg w-full font-bold inline-flex items-center justify-center transition-colors">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Go back to home
+            </a>
+        </div>
     </div>
 </body>
 
