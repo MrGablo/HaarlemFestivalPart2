@@ -8,6 +8,9 @@ use App\Repositories\Interfaces\IPassRepository;
 
 class PassRepository extends Repository implements IPassRepository
 {
+    // Pass products are availability-agnostic; covered events are decremented instead.
+    private const PASS_EVENT_AVAILABILITY_SENTINEL = 1;
+
     public function getActivePassProductsByFestivalType(string $festivalType): array
     {
         $festivalType = strtolower(trim($festivalType));
@@ -173,7 +176,7 @@ class PassRepository extends Repository implements IPassRepository
             );
             $insertEvent->execute([
                 ':title' => $title,
-                ':availability' => 300,
+                ':availability' => self::PASS_EVENT_AVAILABILITY_SENTINEL,
             ]);
 
             $eventId = (int)$pdo->lastInsertId();
