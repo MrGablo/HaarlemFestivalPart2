@@ -15,17 +15,13 @@ class PassService
     /** @return array<int, array<string, mixed>> */
     public function allPassProducts(): array
     {
-        if (!$this->passRepo instanceof PassRepository) {
-            return [];
-        }
-
         return $this->passRepo->getAllPassProducts();
     }
 
     /** @return array<string, mixed>|null */
     public function findPassProduct(int $eventId): ?array
     {
-        if ($eventId <= 0 || !$this->passRepo instanceof PassRepository) {
+        if ($eventId <= 0) {
             return null;
         }
 
@@ -46,10 +42,6 @@ class PassService
 
     public function createPassProductFromInput(array $input): int
     {
-        if (!$this->passRepo instanceof PassRepository) {
-            throw new \RuntimeException('Pass management requires PassRepository.');
-        }
-
         $title = $this->requireTitle((string)($input['title'] ?? ''));
         $festivalType = $this->requireFestivalType((string)($input['festival_type'] ?? ''));
         $passScope = $this->requirePassScope((string)($input['pass_scope'] ?? ''));
@@ -63,10 +55,6 @@ class PassService
     {
         if ($eventId <= 0) {
             throw new \RuntimeException('Invalid pass id.');
-        }
-
-        if (!$this->passRepo instanceof PassRepository) {
-            throw new \RuntimeException('Pass management requires PassRepository.');
         }
 
         if ($this->findPassProduct($eventId) === null) {
@@ -86,10 +74,6 @@ class PassService
     {
         if ($eventId <= 0) {
             throw new \RuntimeException('Invalid pass id.');
-        }
-
-        if (!$this->passRepo instanceof PassRepository) {
-            throw new \RuntimeException('Pass management requires PassRepository.');
         }
 
         if ($this->findPassProduct($eventId) === null) {
