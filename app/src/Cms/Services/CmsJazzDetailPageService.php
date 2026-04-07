@@ -56,7 +56,6 @@ final class CmsJazzDetailPageService
             'about' => [
                 'title' => 'About',
                 'html' => '',
-                'text' => '',
             ],
             'band_members' => [
                 'title' => 'Band Members',
