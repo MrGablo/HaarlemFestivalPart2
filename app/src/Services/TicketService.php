@@ -69,6 +69,16 @@ class TicketService
         return $this->ticketRepository->getPaidTicketsForUser($userId);
     }
 
+    public function getTicketInfoByQr(string $qr): ?array
+    {
+        return $this->ticketRepository->getTicketInfoByQr($qr);
+    }
+
+    public function markAsScanned(int $ticketId): void
+    {
+        $this->ticketRepository->markAsScanned($ticketId);
+    }
+
     private function resolveCoveredEventIds(int $eventId, ?string $passDate): array
     {
         $pass = $this->passService->findActivePassProductByEventId($eventId);
