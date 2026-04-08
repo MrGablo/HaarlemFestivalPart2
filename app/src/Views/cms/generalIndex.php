@@ -89,6 +89,15 @@
                     'href' => '/cms/orders',
                     'label' => 'Open',
                 ],
+                [
+                    'id' => 8,
+                    'title' => 'Passes',
+                    'type' => 'passes',
+                    'updated' => '-',
+                    'created' => '-',
+                    'href' => '/cms/passes',
+                    'label' => 'Open',
+                ],
             ];
             ?>
 

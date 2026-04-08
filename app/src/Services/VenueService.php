@@ -2,14 +2,16 @@
 
 declare(strict_types=1);
 
-namespace App\Cms\Services;
+namespace App\Services;
 
 use App\Models\Venue;
 use App\Repositories\VenueRepository;
 
-class CmsVenueService
+class VenueService
 {
-    public function __construct(private VenueRepository $venues = new VenueRepository()) {}
+    public function __construct(
+        private VenueRepository $venues = new VenueRepository()
+    ) {}
 
     /** @return Venue[] */
     public function allVenues(): array
@@ -78,7 +80,7 @@ class CmsVenueService
         return $this->venues->countJazzEventsUsingVenue($venueId);
     }
 
-    /** @return array<int,int> */
+    /** @return array<int, int> */
     public function getUsageByVenueId(): array
     {
         $usage = [];

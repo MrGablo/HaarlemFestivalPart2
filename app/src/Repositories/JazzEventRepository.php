@@ -331,4 +331,18 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
 
         return array_values(array_unique($eventIds));
     }
+
+    public function assignPageToArtistEvents(int $artistId, int $pageId): void
+    {
+        $stmt = $this->getConnection()->prepare(
+            'UPDATE JazzEvent
+             SET page_id = :page_id
+             WHERE artist_id = :artist_id'
+        );
+
+        $stmt->execute([
+            ':page_id' => $pageId,
+            ':artist_id' => $artistId,
+        ]);
+    }
 }

@@ -2,7 +2,6 @@
 
 use App\Utils\CmsForm;
 
-//get the TinyMCE API key from env variables, with fallback to empty string if not set
 $tinyMceApiKey = trim((string)($_ENV['TINYMCE_API_KEY'] ?? $_SERVER['TINYMCE_API_KEY'] ?? getenv('TINYMCE_API_KEY') ?: ''));
 ?>
 <!doctype html>
@@ -11,7 +10,7 @@ $tinyMceApiKey = trim((string)($_ENV['TINYMCE_API_KEY'] ?? $_SERVER['TINYMCE_API
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>CMS Edit Page</title>
+    <title>Create CMS Page</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script
         src="https://cdn.tiny.cloud/1/<?= htmlspecialchars($tinyMceApiKey, ENT_QUOTES, 'UTF-8') ?>/tinymce/6/tinymce.min.js"
@@ -24,50 +23,60 @@ $tinyMceApiKey = trim((string)($_ENV['TINYMCE_API_KEY'] ?? $_SERVER['TINYMCE_API
 
     <main class="mx-auto max-w-5xl p-4 py-8">
         <section class="rounded-2xl bg-white p-6 shadow-xl ring-1 ring-slate-200">
-            <div class="flex items-center justify-between gap-4">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Edit page content</h1>
+                    <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Create page</h1>
                     <p class="mt-1 text-sm text-slate-600">
-                        #<?= (int)($page['Page_ID'] ?? 0) ?> · <?= CmsForm::h((string)($page['Page_Title'] ?? '')) ?> ·
-                        <?= CmsForm::h((string)($page['Page_Type'] ?? '')) ?>
+                        <?= CmsForm::h((string)$pageTypeLabel) ?> · <?= CmsForm::h((string)$pageType) ?>
                     </p>
                 </div>
-                <a href="/cms/pages" class="text-sm font-medium text-slate-600 hover:text-slate-900">← Back to CMS Pages</a>
+                <div class="flex items-center gap-2">
+                    <a href="/cms/page/create"
+                        class="rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200">
+                        Change type
+                    </a>
+                    <a href="/cms/pages" class="text-sm font-medium text-slate-600 hover:text-slate-900">← Back to pages</a>
+                </div>
             </div>
 
             <?php require __DIR__ . '/../partials/flash_success.php'; ?>
             <?php require __DIR__ . '/../partials/error_general.php'; ?>
 
-            <form method="POST" enctype="multipart/form-data" action="/cms/page/<?= (int)($page['Page_ID'] ?? 0) ?>/update" class="mt-6 space-y-4">
+            <form method="POST" enctype="multipart/form-data" action="/cms/page/create/<?= urlencode((string)$pageType) ?>" class="mt-6 space-y-4">
                 <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string)($csrfToken ?? '')) ?>">
 
-                <?php if ($content === []): ?>
-                    <p class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">This page currently
-                        has empty JSON content.</p>
-                <?php else: ?>
-                    <div class="grid grid-cols-1 gap-3">
-                        <?php if (!empty($usesSchemaEditor) && !empty($editorSchema)): ?>
-                            <?php CmsForm::renderSchema($editorSchema, $content); ?>
-                        <?php else: ?>
-                            <?php CmsForm::renderContent($content); ?>
-                        <?php endif; ?>
-                    </div>
-                <?php endif; ?>
+                <div class="rounded-xl border border-slate-200 p-4">
+                    <label for="page_title" class="mb-1 block text-sm font-medium text-slate-700">Page title</label>
+                    <input
+                        id="page_title"
+                        name="page_title"
+                        type="text"
+                        required
+                        value="<?= htmlspecialchars((string)($pageTitle ?? '')) ?>"
+                        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
+                </div>
+
+                <?php
+                $typeFieldsPartial = match ((string)$pageType) {
+                    'Jazz_Detail_Page' => __DIR__ . '/partials/create/type_fields_jazz_detail.php',
+                    default => null,
+                };
+                if (is_string($typeFieldsPartial)) {
+                    require $typeFieldsPartial;
+                }
+                ?>
+
+                <div class="grid grid-cols-1 gap-3">
+                    <?php CmsForm::renderSchema($editorSchema, $content); ?>
+                </div>
 
                 <div class="flex items-center gap-3 pt-2">
                     <button type="submit"
-                        class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300">
-                        Save content
+                        class="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-300">
+                        Create page
                     </button>
                     <a href="/cms/pages" class="text-sm font-medium text-slate-600 hover:text-slate-900">Cancel</a>
                 </div>
-            </form>
-
-            <form method="POST" action="/cms/page/<?= (int)($page['Page_ID'] ?? 0) ?>/delete" onsubmit="return confirm('Delete this page? Linked artist and jazz event page references will be cleared. This cannot be undone.');" class="mt-3 flex justify-end">
-                <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string)($csrfToken ?? '')) ?>">
-                <button type="submit" class="rounded-lg bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-300">
-                    Delete page
-                </button>
             </form>
         </section>
     </main>
@@ -133,7 +142,18 @@ $tinyMceApiKey = trim((string)($_ENV['TINYMCE_API_KEY'] ?? $_SERVER['TINYMCE_API
                 }
             });
         });
+
     </script>
+
+    <?php
+    $typeScriptPartial = match ((string)$pageType) {
+        'Jazz_Detail_Page' => __DIR__ . '/partials/create/type_script_jazz_detail.php',
+        default => null,
+    };
+    if (is_string($typeScriptPartial)) {
+        require $typeScriptPartial;
+    }
+    ?>
 </body>
 
 </html>

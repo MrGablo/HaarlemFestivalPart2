@@ -2,26 +2,26 @@
 
 declare(strict_types=1);
 
-namespace App\Cms\Services;
+namespace App\Services;
 
 use App\Repositories\EventRepository;
-enum EventTypes: string
-    {
-        case JAZZ = 'jazz';
-        case STORIES = 'stories';
-        case DANCE = 'dance';
-    }
-class CmsEventService
-{
-    
 
+enum EventTypes: string
+{
+    case JAZZ = 'jazz';
+    case STORIES = 'stories';
+    case DANCE = 'dance';
+}
+
+class EventService
+{
     public function __construct(
         private EventRepository $events = new EventRepository()
     ) {}
 
     public function getAllowedEventTypes(): array
     {
-        return $values = array_map(fn($case) => $case->value, EventTypes::cases());
+        return array_map(fn($case) => $case->value, EventTypes::cases());
     }
 
     public function normalizeFilterType(mixed $rawType): ?string

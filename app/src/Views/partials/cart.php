@@ -4,6 +4,8 @@ $headerCartItems = [];
 if ($headerCartOrder instanceof \App\Models\Order && is_array($headerCartOrder->items)) {
     $headerCartItems = $headerCartOrder->items;
 }
+
+$headerCanCheckout = $headerIsLoggedIn && $headerCartItems !== [];
 ?>
 
 <div id="cartOverlayBackdrop" class="fixed inset-0 z-[999] hidden bg-black/35" aria-hidden="true"></div>
@@ -77,6 +79,10 @@ if ($headerCartOrder instanceof \App\Models\Order && is_array($headerCartOrder->
             <span>Total</span>
             <span id="cartTotalValue">EUR <?= number_format($headerCartTotal, 2) ?></span>
         </p>
+
+        <form id="cartPayForm" action="/payment/checkout" method="POST" class="mt-3 <?= $headerCanCheckout ? '' : 'hidden' ?>">
+            <button type="submit" class="w-full cursor-pointer rounded-lg border-0 bg-[#2F80ED] px-5 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-[#1c6ddb]">Pay</button>
+        </form>
     </div>
 </aside>
 

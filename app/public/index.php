@@ -112,8 +112,12 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     // CMS routes (admin only)
     $r->addRoute('GET', '/cms', ['App\Cms\Controllers\CMSController', 'generalIndex']);
     $r->addRoute('GET', '/cms/pages', ['App\Cms\Controllers\CMSController', 'index']);
+    $r->addRoute('GET', '/cms/page/create', ['App\Cms\Controllers\CMSController', 'createType']);
+    $r->addRoute('GET', '/cms/page/create/{type:[A-Za-z0-9_\-]+}', ['App\Cms\Controllers\CMSController', 'createForm']);
+    $r->addRoute('POST', '/cms/page/create/{type:[A-Za-z0-9_\-]+}', ['App\Cms\Controllers\CMSController', 'create']);
     $r->addRoute('GET', '/cms/page/{id:\\d+}', ['App\Cms\Controllers\CMSController', 'edit']);
     $r->addRoute('POST', '/cms/page/{id:\\d+}/update', ['App\Cms\Controllers\CMSController', 'update']);
+    $r->addRoute('POST', '/cms/page/{id:\\d+}/delete', ['App\Cms\Controllers\CMSController', 'delete']);
     $r->addRoute('GET',  '/cms/events', ['App\Cms\Controllers\CMSEventController', 'index']);
     $r->addRoute('GET',  '/cms/events/{id:\\d+}', ['App\Cms\Controllers\CMSEventController', 'edit']);
     $r->addRoute('POST', '/cms/events/{id:\\d+}', ['App\Cms\Controllers\CMSEventController', 'update']);
@@ -123,6 +127,12 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     $r->addRoute('GET',  '/cms/artists/{id:\\d+}', ['App\Cms\Controllers\CMSArtistController', 'edit']);
     $r->addRoute('POST', '/cms/artists/{id:\\d+}', ['App\Cms\Controllers\CMSArtistController', 'update']);
     $r->addRoute('POST', '/cms/artists/{id:\\d+}/delete', ['App\Cms\Controllers\CMSArtistController', 'delete']);
+    $r->addRoute('GET',  '/cms/passes', ['App\Cms\Controllers\CMSPassController', 'index']);
+    $r->addRoute('GET',  '/cms/passes/create', ['App\Cms\Controllers\CMSPassController', 'createForm']);
+    $r->addRoute('POST', '/cms/passes/create', ['App\Cms\Controllers\CMSPassController', 'create']);
+    $r->addRoute('GET',  '/cms/passes/{id:\\d+}', ['App\Cms\Controllers\CMSPassController', 'edit']);
+    $r->addRoute('POST', '/cms/passes/{id:\\d+}', ['App\Cms\Controllers\CMSPassController', 'update']);
+    $r->addRoute('POST', '/cms/passes/{id:\\d+}/delete', ['App\Cms\Controllers\CMSPassController', 'delete']);
     // CMS User Control routes (admin only)
     $r->addRoute('GET',  '/cms/users', ['App\Cms\Controllers\CMSUserController', 'index']);
     $r->addRoute('GET',  '/cms/users/create', ['App\Cms\Controllers\CMSUserController', 'createForm']);

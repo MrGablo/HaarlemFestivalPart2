@@ -6,6 +6,7 @@
     var cartBadge = document.getElementById('cartBadge');
     var cartBody = document.getElementById('cartOverlayBody');
     var cartTotalValue = document.getElementById('cartTotalValue');
+    var cartPayForm = document.getElementById('cartPayForm');
     var cartActionFlash = document.getElementById('cartActionFlash');
     var cartActionFlashTimer = null;
 
@@ -60,6 +61,15 @@
         ].join('');
     }
 
+    function updateCheckoutVisibility(itemCount) {
+        if (!cartPayForm) {
+            return;
+        }
+
+        var canCheckout = cartBody.dataset.loggedIn === '1' && Number(itemCount || 0) > 0;
+        cartPayForm.classList.toggle('hidden', !canCheckout);
+    }
+
     function updateCartUI(cart) {
         if (!cart) {
             return;
@@ -71,6 +81,7 @@
 
         cartBadge.textContent = String(count);
         cartTotalValue.textContent = 'EUR ' + totalLabel;
+        updateCheckoutVisibility(count);
 
         if (cartBody.dataset.loggedIn !== '1') {
             return;
@@ -114,6 +125,8 @@
         open: function () { setOpen(true); },
         close: function () { setOpen(false); }
     };
+
+    updateCheckoutVisibility(Number(cartBadge.textContent || 0));
 
     toggleBtn.addEventListener('click', function () {
         var isOpen = toggleBtn.getAttribute('aria-expanded') === 'true';

@@ -4,27 +4,34 @@ namespace App\Cms\Controllers;
 
 use App\Cms\PageBuilder\Builders\GenericPageBuilder;
 use App\Cms\PageBuilder\PageBuilderRegistry;
-use App\Repositories\Interfaces\IPageRepository;
-use App\Repositories\PageRepository;
 use App\Cms\Services\CmsContentService;
+use App\Cms\Services\CmsPageEditorService;
+use App\Services\ArtistService;
+use App\Services\JazzEventService;
 use App\Services\UploadService;
 use App\Utils\AdminGuard;
-use App\Utils\CmsForm;
 use App\Utils\Csrf;
 use App\Utils\Flash;
 use App\Utils\Session;
 
 class CMSController
 {
-    private IPageRepository $pages;
+    /** @var array<int, string> */
+    private const CREATABLE_PAGE_TYPES = ['Jazz_Detail_Page'];
+
+    private ArtistService $artists;
     private CmsContentService $contentService;
+    private JazzEventService $jazzEvents;
+    private CmsPageEditorService $pageEditor;
     private PageBuilderRegistry $pageBuilders;
     private UploadService $uploads;
 
     public function __construct()
     {
-        $this->pages = new PageRepository();
+        $this->artists = new ArtistService();
         $this->contentService = new CmsContentService();
+        $this->jazzEvents = new JazzEventService();
+        $this->pageEditor = new CmsPageEditorService();
         $this->pageBuilders = new PageBuilderRegistry();
         $this->uploads = new UploadService();
 
@@ -35,9 +42,10 @@ class CMSController
     {
         AdminGuard::requireAdmin(true);
 
-        $pages = $this->pages->getAllPages();
+        $pages = $this->pageEditor->allPages();
         $errors = Flash::getErrors();
         $flashSuccess = Flash::getSuccess();
+        $csrfToken = Csrf::token();
 
         require __DIR__ . '/../../Views/cms/index.php';
     }
@@ -51,13 +59,126 @@ class CMSController
         require __DIR__ . '/../../Views/cms/generalIndex.php';
     }
 
+    public function createType(): void
+    {
+        try {
+            AdminGuard::requireAdmin(true);
+
+            $pageTypes = $this->pageEditor->creatablePageTypes($this->pageBuilders, self::CREATABLE_PAGE_TYPES);
+            $errors = Flash::getErrors();
+            $flashSuccess = Flash::getSuccess();
+
+            require __DIR__ . '/../../Views/cms/create_type.php';
+        } catch (\Throwable $e) {
+            Flash::setErrors(['general' => $e->getMessage()]);
+            header('Location: /cms/pages', true, 302);
+            exit;
+        }
+    }
+
+    public function createForm(string $type): void
+    {
+        try {
+            AdminGuard::requireAdmin(true);
+
+            $definition = $this->pageEditor->findCreatablePageType($type, $this->pageBuilders, self::CREATABLE_PAGE_TYPES);
+            if ($definition === null) {
+                throw new \RuntimeException('Unsupported page type.');
+            }
+
+            $builder = $this->pageBuilders->resolveForPageType($definition['type']);
+            if ($builder instanceof GenericPageBuilder) {
+                throw new \RuntimeException('No schema builder is registered for this page type.');
+            }
+
+            $old = Flash::getOld();
+            $oldContent = is_array($old['content'] ?? null) ? $old['content'] : [];
+            $selectedArtistId = (int)($old['selected_artist_id'] ?? 0);
+            $selectedArtistName = $this->resolveSelectedArtistName($selectedArtistId);
+            $content = $this->pageEditor->buildCreateContent($builder, $definition['type'], $oldContent, $selectedArtistName);
+
+            $pageType = $definition['type'];
+            $pageTypeLabel = $definition['label'];
+            $pageTitle = trim((string)($old['page_title'] ?? ($selectedArtistName ?: $definition['suggestedTitle'])));
+            $editorSchema = $builder->editorSchema();
+            $artistOptions = $this->pageEditor->isJazzDetailPageType($pageType) ? $this->artists->allArtists() : [];
+            $errors = Flash::getErrors();
+            $flashSuccess = Flash::getSuccess();
+            $csrfToken = Csrf::token();
+
+            require __DIR__ . '/../../Views/cms/create.php';
+        } catch (\Throwable $e) {
+            Flash::setErrors(['general' => $e->getMessage()]);
+            header('Location: /cms/page/create', true, 302);
+            exit;
+        }
+    }
+
+    public function create(string $type): void
+    {
+        try {
+            AdminGuard::requireAdmin(true);
+            Csrf::assertPost();
+
+            $definition = $this->pageEditor->findCreatablePageType($type, $this->pageBuilders, self::CREATABLE_PAGE_TYPES);
+            if ($definition === null) {
+                throw new \RuntimeException('Unsupported page type.');
+            }
+
+            $builder = $this->pageBuilders->resolveForPageType($definition['type']);
+            if ($builder instanceof GenericPageBuilder) {
+                throw new \RuntimeException('No schema builder is registered for this page type.');
+            }
+
+            $pageTitle = trim((string)($_POST['page_title'] ?? ''));
+            if ($pageTitle === '') {
+                throw new \RuntimeException('Page title is required.');
+            }
+
+            $selectedArtistId = (int)($_POST['selected_artist_id'] ?? 0);
+            $selectedArtistName = $this->resolveSelectedArtistName($selectedArtistId);
+            if ($this->pageEditor->isJazzDetailPageType($definition['type']) && $selectedArtistName === null) {
+                throw new \RuntimeException('Please select an artist.');
+            }
+
+            $contentInput = $_POST['content'] ?? [];
+            if (!is_array($contentInput)) {
+                throw new \RuntimeException('Invalid content payload.');
+            }
+
+            $contentInput = $this->pageEditor->applyArtistSelection($definition['type'], $contentInput, $selectedArtistName);
+
+            $normalized = $this->pageEditor->normalizeSchemaInput($builder, $definition['type'], $contentInput, $_FILES, $this->uploads);
+
+            $newPageId = $this->pageEditor->createPage($pageTitle, $definition['type'], $normalized);
+
+            if ($this->pageEditor->isJazzDetailPageType($definition['type']) && $selectedArtistId > 0) {
+                $this->artists->assignPageToArtist($selectedArtistId, $newPageId);
+                $this->jazzEvents->assignPageToArtistEvents($selectedArtistId, $newPageId);
+            }
+
+            Flash::setSuccess('Page created successfully.');
+            header('Location: /cms/page/' . $newPageId, true, 302);
+            exit;
+        } catch (\Throwable $e) {
+            Flash::setErrors(['general' => $e->getMessage()]);
+            Flash::setOld([
+                'page_title' => (string)($_POST['page_title'] ?? ''),
+                'selected_artist_id' => (string)($_POST['selected_artist_id'] ?? ''),
+                'content' => is_array($_POST['content'] ?? null) ? $_POST['content'] : [],
+            ]);
+            header('Location: /cms/page/create/' . urlencode($type), true, 302);
+            exit;
+        }
+    }
+
     // --- existing page edit/update ----
 
     public function edit(int $id): void
     {
         AdminGuard::requireAdmin(true);
 
-        $page = $this->pages->findPageById($id);
+        $page = $this->pageEditor->findPageById($id);
         if ($page === null) {
             http_response_code(404);
             echo 'Page not found.';
@@ -66,7 +187,7 @@ class CMSController
 
         $pageType = (string)($page['Page_Type'] ?? '');
         $builder = $this->pageBuilders->resolveForPageType($pageType);
-        $content = $this->pages->getPageContentById($id);
+        $content = $this->pageEditor->getPageContentById($id);
         $usesSchemaEditor = !$builder instanceof GenericPageBuilder;
         if ($usesSchemaEditor) {
             $content = $builder->normalizeInput($content);
@@ -84,7 +205,7 @@ class CMSController
     {
         AdminGuard::requireAdmin(true);
 
-        $page = $this->pages->findPageById($id);
+        $page = $this->pageEditor->findPageById($id);
         if ($page === null) {
             Flash::setErrors(['general' => 'Page not found.']);
             header('Location: /cms', true, 302);
@@ -106,11 +227,10 @@ class CMSController
                 $typeMap = $_POST['types'] ?? [];
                 $normalized = $this->contentService->normalizeContent($contentInput, is_array($typeMap) ? $typeMap : []);
             } else {
-                $contentInput = $this->applySchemaUploads($builder->editorSchema(), $contentInput, $pageType);
-                $normalized = $builder->normalizeInput($contentInput);
+                $normalized = $this->pageEditor->normalizeSchemaInput($builder, $pageType, $contentInput, $_FILES, $this->uploads);
             }
 
-            $this->pages->savePageContentById($id, $normalized);
+            $this->pageEditor->savePageContentById($id, $normalized);
 
             Flash::setSuccess('Page content updated successfully.');
         } catch (\Throwable $e) {
@@ -121,113 +241,39 @@ class CMSController
         exit;
     }
 
-    /** @param array<int, array<string, mixed>> $schema */
-    private function applySchemaUploads(array $schema, array $contentInput, string $pageType): array
+    public function delete(int $id): void
     {
-        foreach ($schema as $section) {
-            foreach (($section['fields'] ?? []) as $field) {
-                if (!is_array($field) || !isset($field['key'])) {
-                    continue;
-                }
+        AdminGuard::requireAdmin(true);
 
-                $key = (string)$field['key'];
-                $contentInput[$key] = $this->applyFieldUploads($field, $contentInput[$key] ?? null, [$key], $pageType);
+        try {
+            Csrf::assertPost();
+
+            $deleted = $this->pageEditor->deletePageById($id);
+            if (!$deleted) {
+                Flash::setErrors(['general' => 'Page not found or could not be deleted.']);
+            } else {
+                Flash::setSuccess('Page deleted successfully.');
             }
+        } catch (\Throwable $e) {
+            Flash::setErrors(['general' => $e->getMessage()]);
         }
 
-        return $contentInput;
+        header('Location: /cms/pages', true, 302);
+        exit;
     }
 
-    private function applyFieldUploads(array $field, mixed $value, array $path, string $pageType): mixed
+    private function resolveSelectedArtistName(int $artistId): ?string
     {
-        $type = (string)($field['type'] ?? 'text');
-
-        if ($type === 'image') {
-            return $this->applyImageUpload($field, $value, $path, $pageType);
+        if ($artistId <= 0) {
+            return null;
         }
 
-        if ($type === 'object') {
-            $value = is_array($value) ? $value : [];
-            foreach (($field['fields'] ?? []) as $childField) {
-                if (!is_array($childField) || !isset($childField['key'])) {
-                    continue;
-                }
-
-                $childKey = (string)$childField['key'];
-                $value[$childKey] = $this->applyFieldUploads($childField, $value[$childKey] ?? null, [...$path, $childKey], $pageType);
-            }
-            return $value;
+        $artist = $this->artists->findArtist($artistId);
+        if ($artist === null) {
+            return null;
         }
 
-        if ($type === 'repeater') {
-            $items = is_array($value) ? array_values($value) : [];
-            $itemType = (string)($field['itemType'] ?? 'object');
-
-            foreach ($items as $index => $item) {
-                $itemPath = [...$path, (string)$index];
-
-                if ($itemType === 'image') {
-                    $itemField = is_array($field['itemField'] ?? null) ? $field['itemField'] : ['type' => 'image', 'storage' => 'string'];
-                    $items[$index] = $this->applyFieldUploads($itemField, $item, $itemPath, $pageType);
-                    continue;
-                }
-
-                if ($itemType === 'text') {
-                    continue;
-                }
-
-                $itemArray = is_array($item) ? $item : [];
-                foreach (($field['fields'] ?? []) as $childField) {
-                    if (!is_array($childField) || !isset($childField['key'])) {
-                        continue;
-                    }
-
-                    $childKey = (string)$childField['key'];
-                    $itemArray[$childKey] = $this->applyFieldUploads($childField, $itemArray[$childKey] ?? null, [...$itemPath, $childKey], $pageType);
-                }
-                $items[$index] = $itemArray;
-            }
-
-            return $items;
-        }
-
-        return $value;
-    }
-
-    private function applyImageUpload(array $field, mixed $value, array $path, string $pageType): mixed
-    {
-        $storage = (string)($field['storage'] ?? 'object');
-        $currentPath = '';
-        $meta = [];
-
-        if ($storage === 'string') {
-            $currentPath = is_scalar($value) ? trim((string)$value) : '';
-        } elseif (is_array($value)) {
-            $meta = $value;
-            $currentPath = trim((string)($value['src'] ?? ''));
-        } elseif (is_scalar($value)) {
-            $currentPath = trim((string)$value);
-        }
-
-        $uploadField = CmsForm::uploadFieldName($path);
-        if (isset($_FILES[$uploadField]) && is_array($_FILES[$uploadField]) && (int)($_FILES[$uploadField]['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
-            $folder = $this->slug($pageType);
-            $storedPath = $this->uploads->storeImage($_FILES[$uploadField], 'page', $folder, null, false, $currentPath);
-            $currentPath = $storedPath;
-        }
-
-        if ($storage === 'string') {
-            return $currentPath;
-        }
-
-        $meta['src'] = $currentPath;
-        return $meta;
-    }
-
-    private function slug(string $value): string
-    {
-        $value = strtolower(trim($value));
-        $value = preg_replace('~[^a-z0-9_-]+~', '-', $value) ?? $value;
-        return trim($value, '-') ?: 'page';
+        $name = trim((string)$artist->name);
+        return $name !== '' ? $name : null;
     }
 }

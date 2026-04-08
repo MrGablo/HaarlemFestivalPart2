@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Cms\Controllers;
 
-use App\Cms\Services\CmsEventService;
+use App\Services\EventService;
 use App\Utils\AdminGuard;
 use App\Utils\Csrf;
 use App\Utils\Flash;
@@ -12,11 +12,11 @@ use App\Utils\Session;
 
 final class CMSEventController
 {
-    private CmsEventService $service;
+    private EventService $service;
 
     public function __construct()
     {
-        $this->service = new CmsEventService();
+        $this->service = new EventService();
         Session::ensureStarted();
     }
 

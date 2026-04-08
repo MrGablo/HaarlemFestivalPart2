@@ -45,4 +45,10 @@ final class PageBuilderRegistry
     {
         return $this->genericBuilder;
     }
+
+    /** @return array<string, PageViewModelBuilderInterface> */
+    public function all(): array
+    {
+        return $this->buildersByPageType;
+    }
 }

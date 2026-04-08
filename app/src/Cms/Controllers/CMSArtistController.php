@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Cms\Controllers;
 
 use App\Models\Artist;
-use App\Cms\Services\CmsArtistService;
+use App\Services\ArtistService;
 use App\Utils\AdminGuard;
 use App\Utils\Csrf;
 use App\Utils\Flash;
@@ -13,11 +13,11 @@ use App\Utils\Session;
 
 final class CMSArtistController
 {
-    private CmsArtistService $service;
+    private ArtistService $service;
 
     public function __construct()
     {
-        $this->service = new CmsArtistService();
+        $this->service = new ArtistService();
 
         Session::ensureStarted();
     }

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Cms\Services;
+namespace App\Services;
 
 use App\Models\JazzEvent;
 use App\Repositories\ArtistRepository;
@@ -10,7 +10,7 @@ use App\Repositories\JazzEventRepository;
 use App\Repositories\PageRepository;
 use App\Repositories\VenueRepository;
 
-class CmsJazzEventService
+class JazzEventService
 {
     public function __construct(
         private JazzEventRepository $events = new JazzEventRepository(),
@@ -19,11 +19,31 @@ class CmsJazzEventService
         private VenueRepository $venues = new VenueRepository()
     ) {}
 
-    public function allEvents(): array { return $this->events->getAllJazzEvents(); }
-    public function allArtists(): array { return $this->artists->getAllArtists(); }
-    public function allPages(): array { return $this->pages->getAllPages(); }
-    public function allVenues(): array { return $this->venues->getAllVenues(); }
-    public function findEvent(int $id): ?JazzEvent { return $this->events->findJazzEventById($id); }
+    public function allEvents(): array
+    {
+        return $this->events->getAllJazzEvents();
+    }
+
+    public function allArtists(): array
+    {
+        return $this->artists->getAllArtists();
+    }
+
+    public function allPages(): array
+    {
+        return $this->pages->getAllPages();
+    }
+
+    public function allVenues(): array
+    {
+        return $this->venues->getAllVenues();
+    }
+
+    public function findEvent(int $id): ?JazzEvent
+    {
+        return $this->events->findJazzEventById($id);
+    }
+
     public function hydrateEventFromInput(JazzEvent $event, array $input): void
     {
         $event->title = $this->requireText($input, 'title', 'Title');
@@ -45,10 +65,30 @@ class CmsJazzEventService
         $event->page_id = $this->parseOptionalPositiveInt((string)($input['page_id'] ?? ''), 'Page ID');
     }
 
-    public function createEvent(JazzEvent $event): int { return $this->events->createJazzEvent($event); }
-    public function updateEvent(JazzEvent $event): void { $this->events->updateJazzEvent($event); }
-    public function deleteEvent(int $id): bool { return $this->events->deleteJazzEventById($id); }
-    public function artistExists(int $id): bool { return $this->artists->findArtistById($id) !== null; }
+    public function createEvent(JazzEvent $event): int
+    {
+        return $this->events->createJazzEvent($event);
+    }
+
+    public function updateEvent(JazzEvent $event): void
+    {
+        $this->events->updateJazzEvent($event);
+    }
+
+    public function deleteEvent(int $id): bool
+    {
+        return $this->events->deleteJazzEventById($id);
+    }
+
+    public function artistExists(int $id): bool
+    {
+        return $this->artists->findArtistById($id) !== null;
+    }
+
+    public function assignPageToArtistEvents(int $artistId, int $pageId): void
+    {
+        $this->events->assignPageToArtistEvents($artistId, $pageId);
+    }
 
     private function requireText(array $input, string $key, string $label): string
     {
