@@ -40,22 +40,24 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 // safely define nav function so it doesn't break if header is included twice
 if (!function_exists('getNavClass')) {
     function getNavClass($path, $currentPath, $matchPrefix = false) {
-        $baseClasses = 'no-underline font-bold text-base py-2.5 px-[18px] transition-all duration-200 rounded-[25px]';
+        $baseClasses = 'no-underline font-bold text-base py-2.5 px-5 transition-all duration-200 rounded-full';
         $isActive = ($currentPath === $path) || ($matchPrefix && $path !== '/' && strpos($currentPath, $path . '/') === 0);
         return $isActive 
-            ? $baseClasses . ' bg-[#2F80ED] text-white shadow-[0_4px_10px_rgba(47,128,237,0.3)]' 
-            : $baseClasses . ' text-black hover:bg-[#f5f5f5]';
+            ? $baseClasses . ' bg-blue-600 text-white shadow-md shadow-blue-500/30' 
+            : $baseClasses . ' text-black hover:bg-gray-100';
     }
 }
 ?>
 
-<header class="bg-gradient-to-r from-[#2F80ED] to-white lg:bg-none lg:bg-white border-b border-[#f0f0f0] font-sans sticky top-0 z-50">
-    <div class="mx-auto flex max-w-[1200px] items-stretch justify-between pl-5 lg:px-5">
-        <a href="/" class="flex items-center py-[15px]">
+<script src="https://cdn.tailwindcss.com"></script>
+
+<header class="bg-gradient-to-r from-blue-600 to-white lg:bg-none lg:bg-white border-b border-gray-100 font-sans sticky top-0 z-30">
+    <div class="mx-auto flex max-w-6xl items-stretch justify-between pl-5 lg:px-5">
+        <a href="/" class="flex items-center py-4">
             <img src="/assets/svg/logo.svg" alt="Haarlem Festival" class="block h-10 brightness-0 invert lg:brightness-100 lg:invert-0 transition-all">
         </a>
 
-        <nav class="hidden lg:flex items-center gap-[10px] py-[15px]">
+        <nav class="hidden lg:flex items-center gap-3 py-4">
             <a href="/" class="<?= getNavClass('/', $currentPath) ?>">Home</a>
             <a href="/dance" class="<?= getNavClass('/dance', $currentPath) ?>">Dance</a>
             <a href="/jazz" class="<?= getNavClass('/jazz', $currentPath, true) ?>">Jazz</a>
@@ -66,13 +68,13 @@ if (!function_exists('getNavClass')) {
 
             <button type="button" class="js-cart-toggle relative ml-2 p-2 hover:bg-gray-100 rounded-full cursor-pointer border-0 bg-transparent">
                 <img src="/assets/img/headerfooter/cart.svg" alt="Cart" class="h-6 w-6">
-                <span class="absolute -top-2 -right-2 flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 border-white bg-[#E63946] text-[0.7rem] font-bold text-white">
+                <span class="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-red-600 text-xs font-bold text-white">
                     <?= (int)$headerCartCount ?>
                 </span>
             </button>
 
             <?php if ($headerIsLoggedIn): ?>
-                <a class="flex items-center gap-2 font-bold px-3 py-2 rounded-[25px] hover:bg-gray-100" href="/account/manage">
+                <a class="flex items-center gap-2 font-bold px-3 py-2 rounded-full hover:bg-gray-100" href="/account/manage">
                     <img class="h-8 w-8 rounded-full object-cover" src="<?= htmlspecialchars($headerProfilePicturePath) ?>" alt="User">
                 </a>
                 <a href="/logout" class="<?= getNavClass('/logout', $currentPath) ?>">Logout</a>
@@ -92,11 +94,11 @@ if (!function_exists('getNavClass')) {
         <div class="flex lg:hidden items-stretch">
             <button type="button" class="js-cart-toggle relative px-4 flex items-center border-0 bg-transparent cursor-pointer">
                 <img src="/assets/img/headerfooter/cart.svg" alt="Cart" class="h-7 w-7 drop-shadow-md lg:drop-shadow-none">
-                <span class="absolute top-[18px] right-[8px] flex h-[18px] w-[18px] items-center justify-center rounded-full bg-[#E63946] text-[0.7rem] font-bold text-white shadow-sm">
+                <span class="absolute top-4 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white shadow-sm">
                     <?= (int)$headerCartCount ?>
                 </span>
             </button>
-            <button id="mobileMenuBtn" class="bg-[#2F80ED] px-5 flex items-center justify-center text-white cursor-pointer border-0 transition-colors hover:bg-blue-600">
+            <button id="mobileMenuBtn" class="bg-blue-600 px-5 flex items-center justify-center text-white cursor-pointer border-0 transition-colors hover:bg-blue-700">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                 </svg>
@@ -104,9 +106,9 @@ if (!function_exists('getNavClass')) {
         </div>
     </div>
 
-    <div id="mobileMenuBackdrop" class="hidden fixed inset-0 z-[90] bg-black/40 backdrop-blur-sm transition-opacity"></div>
+    <div id="mobileMenuBackdrop" class="hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity"></div>
 
-    <div id="mobileMenu" class="fixed top-0 right-0 h-full w-[280px] sm:w-[320px] z-[100] bg-white p-6 flex flex-col transform translate-x-full transition-transform duration-300 ease-in-out shadow-2xl overflow-y-auto">
+    <div id="mobileMenu" class="fixed top-0 right-0 h-full w-72 sm:w-80 z-50 bg-white p-6 flex flex-col transform translate-x-full transition-transform duration-300 ease-in-out shadow-2xl overflow-y-auto">
         <div class="flex justify-between items-center mb-8">
             <img src="/assets/svg/logo.svg" alt="Logo" class="h-10">
             <button id="closeMenuBtn" class="text-4xl text-gray-500 hover:text-black leading-none pb-2">&times;</button>
@@ -118,8 +120,8 @@ if (!function_exists('getNavClass')) {
             <a href="/yummy">Yummy</a>
             <a href="/history">History</a>
             <a href="/stories">Stories</a>
-            <a href="/program" class="text-[#2F80ED]">Program</a>
-            <hr class="border-[#f0f0f0] my-2">
+            <a href="/program" class="text-blue-600">Program</a>
+            <hr class="border-gray-100 my-2">
             
             <?php if ($headerIsLoggedIn): ?>
                 <a href="/account/manage">Account</a>
@@ -129,7 +131,7 @@ if (!function_exists('getNavClass')) {
             <?php endif; ?>
 
             <?php if ($headerIsAdmin || $headerIsStaff): ?>
-                <hr class="border-[#f0f0f0] my-2">
+                <hr class="border-gray-100 my-2">
                 <?php if ($headerIsAdmin): ?>
                     <a href="/cms" class="text-emerald-600">CMS</a>
                 <?php endif; ?>
