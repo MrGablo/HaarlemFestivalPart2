@@ -239,7 +239,6 @@ class PaymentRepository extends Repository
                 COALESCE(j.start_date, d.start_date, y.start_time, s.start_date) AS event_start_time,
                 CASE
                     WHEN LOWER(TRIM(e.event_type)) = 'dance' THEN {$danceVenueName}
-                    WHEN LOWER(TRIM(e.event_type)) = 'stories' THEN COALESCE(TRIM(s.location), '')
                     ELSE COALESCE(NULLIF(TRIM(v.name), ''), '')
                 END AS venue_name,
                 COALESCE(j.price, d.price, y.price, s.price, p.base_price, 0) AS price
