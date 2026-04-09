@@ -98,6 +98,15 @@
                     'href' => '/cms/passes',
                     'label' => 'Open',
                 ],
+                [ 
+                    'id' => 9,
+                    'title' => 'Tickets',
+                    'type' => 'tickets',
+                    'updated' => '-',
+                    'created' => '-',
+                    'href' => '/cms/tickets',
+                    'label' => 'Open',
+                ],
                 [
                     'id' => 10,
                     'title' => 'Stories Events',
@@ -105,7 +114,7 @@
                     'updated' => '-',
                     'created' => '-',
                     'href' => '/cms/events/stories',
-                    'label' => 'Open',
+                   
                 ],
             ];
             ?>

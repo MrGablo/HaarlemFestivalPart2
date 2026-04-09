@@ -3,10 +3,12 @@
 declare(strict_types=1);
 
 /** @var int $eventId */
+$cartCsrfToken = \App\Utils\Csrf::token('cart_csrf_token');
 
 ?>
 <?php if ($eventId > 0): ?>
   <form method="POST" action="/order/item/add" class="ticket-form shrink-0">
+    <input type="hidden" name="_csrf" value="<?= htmlspecialchars($cartCsrfToken, ENT_QUOTES, 'UTF-8') ?>">
     <input type="hidden" name="event_id" value="<?= $eventId ?>">
     <button
       type="submit"

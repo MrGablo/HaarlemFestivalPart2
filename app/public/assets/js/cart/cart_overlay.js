@@ -9,10 +9,13 @@
     var cartPayForm = document.getElementById('cartPayForm');
     var cartActionFlash = document.getElementById('cartActionFlash');
     var cartActionFlashTimer = null;
+    var cartCsrfToken = '';
 
     if (!toggleBtn || !overlay || !backdrop || !closeBtn || !cartBody || !cartTotalValue || !cartBadge) {
         return;
     }
+
+    cartCsrfToken = String(cartBody.dataset.cartCsrfToken || '');
 
     function escapeHtml(value) {
         return String(value)
@@ -52,6 +55,9 @@
                     '</div>',
                     '<div class="flex items-center gap-2">',
                         '<form method="POST" action="/order/item/remove">',
+                            (cartCsrfToken !== ''
+                                ? '<input type="hidden" name="_csrf" value="' + escapeHtml(cartCsrfToken) + '">'
+                                : ''),
                             '<input type="hidden" name="order_item_id" value="' + orderItemId + '">',
                             '<button type="submit" class="cursor-pointer rounded-lg border border-[#9f9f9f] bg-[#f3f3f3] px-[10px] py-[6px] font-bold text-[#111] transition-colors duration-200 hover:bg-[#e8e8e8] disabled:cursor-wait disabled:opacity-60">Remove</button>',
                         '</form>',
@@ -254,6 +260,9 @@
         var body = new FormData();
         body.append('order_item_id', String(orderItemId));
         body.append('quantity', String(nextQuantity));
+        if (cartCsrfToken !== '') {
+            body.append('_csrf', cartCsrfToken);
+        }
 
         fetch('/order/item/quantity', {
             method: 'POST',
