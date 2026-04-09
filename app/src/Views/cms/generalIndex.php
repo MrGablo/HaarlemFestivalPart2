@@ -55,6 +55,15 @@
                 ],
                 [
                     'id' => 4,
+                    'title' => 'History Events',
+                    'type' => 'history_events',
+                    'updated' => '-',
+                    'created' => '-',
+                    'href' => '/cms/events/history',
+                    'label' => 'Open',
+                ],
+                [
+                    'id' => 5,
                     'title' => 'Artists',
                     'type' => 'artists',
                     'updated' => '-',
@@ -63,7 +72,7 @@
                     'label' => 'Open',
                 ],
                 [
-                    'id' => 5,
+                    'id' => 6,
                     'title' => 'Users',
                     'type' => 'users',
                     'updated' => '-',
@@ -72,7 +81,7 @@
                     'label' => 'Open',
                 ],
                 [
-                    'id' => 6,
+                    'id' => 7,
                     'title' => 'Venues',
                     'type' => 'venues',
                     'updated' => '-',
@@ -81,7 +90,7 @@
                     'label' => 'Open',
                 ],
                 [
-                    'id' => 7,
+                    'id' => 8,
                     'title' => 'Orders',
                     'type' => 'orders',
                     'updated' => '-',
@@ -90,7 +99,7 @@
                     'label' => 'Open',
                 ],
                 [
-                    'id' => 8,
+                    'id' => 9,
                     'title' => 'Passes',
                     'type' => 'passes',
                     'updated' => '-',

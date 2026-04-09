@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\DanceEvent;
 use App\Models\Event;
 use App\Models\GenericEvent;
+use App\Models\HistoryEvent;
 use App\Models\JazzEvent;
 use App\Models\YummyEvent;
 
@@ -18,6 +19,7 @@ class EventModelBuilderService
             'jazz' => $this->buildJazzEvent($row),
             'yummy' => $this->buildYummyEvent($row),
             'dance' => $this->buildDanceEvent($row),
+            'history' => $this->buildHistoryEvent($row),
             default => $this->buildGenericEvent($row),
         };
     }
@@ -36,6 +38,11 @@ class EventModelBuilderService
     private function buildYummyEvent(array $row): YummyEvent
     {
         return new YummyEvent($row);
+    }
+
+    private function buildHistoryEvent(array $row): HistoryEvent
+    {
+        return new HistoryEvent($row);
     }
 
     private function buildGenericEvent(array $row): GenericEvent

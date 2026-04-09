@@ -40,7 +40,8 @@ class ProgramController
             foreach ($pendingOrder->items as $item) {
                 $unitPrice = $item->getUnitPrice();
                 $qty = (int)$item->quantity;
-                $subtotal += $unitPrice * $qty;
+                $lineTotal = $item->getTotalPrice();
+                $subtotal += $lineTotal;
                 $unpaidEvents[] = [
                     'orderId' => $pendingOrder->order_id,
                     'orderItemId' => (int)$item->order_item_id,
@@ -49,7 +50,7 @@ class ProgramController
                     'location' => (string)$item->getLocation(),
                     'quantity' => $qty,
                     'unitPrice' => $unitPrice,
-                    'totalPrice' => $unitPrice * $qty,
+                    'totalPrice' => $lineTotal,
                     'eventId' => (int)($item->event?->event_id ?? 0),
                 ];
             }
