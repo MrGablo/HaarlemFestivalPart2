@@ -107,9 +107,12 @@ class PaymentService
             return;
         }
 
-        $this->repo->markOrderAsPaid($orderId, $userId);
-
         $items = $this->repo->getOrderItemsByOrderId($orderId);
+        if ($items === []) {
+            throw new \RuntimeException('Payment: cannot fulfil order ' . $orderId . ' because it has no order items.');
+        }
+
+        $this->repo->markOrderAsPaid($orderId, $userId);
         foreach ($items as $item) {
             $orderItemId = (int)($item['order_item_id'] ?? 0);
             $eventId = (int)($item['event_id'] ?? 0);
@@ -164,16 +167,19 @@ class PaymentService
     {
         $recipient = $this->repo->getOrderDeliveryRecipient($orderId, $userId);
         if (!is_array($recipient)) {
+            error_log('Ticket delivery skipped for order ' . $orderId . ': recipient not found.');
             return;
         }
 
         $email = trim((string)($recipient['email'] ?? ''));
         if ($email === '') {
+            error_log('Ticket delivery skipped for order ' . $orderId . ': recipient email is empty.');
             return;
         }
 
         $tickets = $this->repo->getIssuedTicketsForOrder($orderId);
         if ($tickets === []) {
+            error_log('Ticket delivery skipped for order ' . $orderId . ': no issued tickets found.');
             return;
         }
 
