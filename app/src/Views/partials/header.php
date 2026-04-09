@@ -62,16 +62,8 @@ if (!function_exists('getNavClass')) {
             <a href="/dance" class="<?= getNavClass('/dance', $currentPath) ?>">Dance</a>
             <a href="/jazz" class="<?= getNavClass('/jazz', $currentPath, true) ?>">Jazz</a>
             <a href="/yummy" class="<?= getNavClass('/yummy', $currentPath) ?>">Yummy</a>
-            <a href="/history" class="<?= getNavClass('/history', $currentPath) ?>">History</a>
-<<<<<<< header-footer
             <a href="/stories" class="<?= getNavClass('/stories', $currentPath) ?>">Stories</a>
-            <a href="/program" class="<?= getNavClass('/program', $currentPath) ?>">Program</a>
-
-            <button type="button" class="js-cart-toggle relative ml-2 p-2 hover:bg-gray-100 rounded-full cursor-pointer border-0 bg-transparent">
-                <img src="/assets/img/headerfooter/cart.svg" alt="Cart" class="h-6 w-6">
-                <span class="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-red-600 text-xs font-bold text-white">
-                    <?= (int)$headerCartCount ?>
-=======
+            <a href="/history" class="<?= getNavClass('/history', $currentPath) ?>">History</a>
             <a href="/program" class="<?= getNavClass('/program', $currentPath) ?>">Program</a>
 
             <button
@@ -89,7 +81,6 @@ if (!function_exists('getNavClass')) {
                         class="absolute -top-2 -right-2 flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 border-white bg-[#E63946] text-[0.7rem] font-bold text-white">
                         <?= (int) $headerCartCount ?>
                     </span>
->>>>>>> Development
                 </span>
             </button>
 
