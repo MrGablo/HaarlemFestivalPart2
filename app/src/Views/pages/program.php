@@ -147,6 +147,7 @@ $subtotal = (float)($subtotal ?? 0);
             <a href="/" class="inline-block rounded-lg border-0 bg-[#2F80ED] px-7 py-3.5 text-sm font-bold uppercase tracking-wide text-white no-underline transition hover:bg-[#1c6ddb]">Add more events</a>
             <?php if (!empty($unpaidEvents)): ?>
                 <form action="/payment/checkout" method="POST" class="inline m-0">
+                    <input type="hidden" name="_csrf" value="<?= htmlspecialchars(\App\Utils\Csrf::token('payment_csrf_token'), ENT_QUOTES, 'UTF-8') ?>">
                     <button type="submit" class="cursor-pointer rounded-lg border-0 bg-[#2F80ED] px-7 py-3.5 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-[#1c6ddb]">Pay unpaid cart</button>
                 </form>
             <?php endif; ?>

@@ -5,6 +5,7 @@ namespace App\Cms\Controllers;
 use App\Cms\PageBuilder\Builders\GenericPageBuilder;
 use App\Cms\PageBuilder\PageBuilderRegistry;
 use App\Cms\Services\CmsContentService;
+use App\Cms\Services\CmsNavigationService;
 use App\Cms\Services\CmsPageEditorService;
 use App\Services\ArtistService;
 use App\Services\JazzEventService;
@@ -17,11 +18,13 @@ use App\Utils\Session;
 class CMSController
 {
     /** @var array<int, string> */
-    private const CREATABLE_PAGE_TYPES = ['Jazz_Detail_Page', 'Yummy_Detail_Page'];
+    private const CREATABLE_PAGE_TYPES = ['Jazz_Detail_Page', 'Yummy_Detail_Page', 'Yummy_Detail_Page'];
+    
 
     private ArtistService $artists;
     private CmsContentService $contentService;
     private JazzEventService $jazzEvents;
+    private CmsNavigationService $navigation;
     private CmsPageEditorService $pageEditor;
     private PageBuilderRegistry $pageBuilders;
     private UploadService $uploads;
@@ -31,6 +34,7 @@ class CMSController
         $this->artists = new ArtistService();
         $this->contentService = new CmsContentService();
         $this->jazzEvents = new JazzEventService();
+        $this->navigation = new CmsNavigationService();
         $this->pageEditor = new CmsPageEditorService();
         $this->pageBuilders = new PageBuilderRegistry();
         $this->uploads = new UploadService();
@@ -53,6 +57,7 @@ class CMSController
     public function generalIndex(): void
     {
         AdminGuard::requireAdmin(true);
+        $modules = $this->navigation->overviewItems();
         $errors = Flash::getErrors();
         $flashSuccess = Flash::getSuccess();
 
