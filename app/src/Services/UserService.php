@@ -3,22 +3,75 @@
 namespace App\Services;
 
 use App\Models\UserModel;
+use App\Models\UserRole;
 use App\Repositories\UserRepository;
 
 class UserService
 {
     private UserRepository $users; //change name to user repository 
     private EmailService $emails;
+    private UploadService $uploads;
 
     public function __construct()
     {
         $this->users = new UserRepository();
         $this->emails = new EmailService();
+        $this->uploads = new UploadService();
     }
 
     public function getAccountById(int $userId): ?UserModel
     {
         return $this->users->getUserById($userId);
+    }
+
+    public function searchUsers(string $search = '', string $roleFilter = '', string $sortColumn = 'name', string $sortDirection = 'ASC'): array
+    {
+        $users = $this->users->getAllUsers();
+
+        $users = $this->filterUsers($users, $search, $roleFilter);
+        $users = $this->sortUsers($users, $sortColumn, $sortDirection);
+
+        return $users;
+    }
+
+    public function findUser(int $id): ?UserModel
+    {
+        return $this->users->getUserById($id);
+    }
+
+    public function createUser(UserModel $user): int
+    {
+        $existingEmail = $this->users->findByEmail($user->email);
+        if ($existingEmail !== null) {
+            throw new \RuntimeException('A user with this email already exists.');
+        }
+
+        $existingUsername = $this->users->findByUserName($user->userName);
+        if ($existingUsername !== null) {
+            throw new \RuntimeException('This username is already taken. Please choose another one.');
+        }
+
+        return $this->users->createUser($user);
+    }
+
+    public function updateUser(int $id, UserModel $user): bool
+    {
+        $existingEmail = $this->users->findByEmail($user->email);
+        if ($existingEmail !== null && $existingEmail->id !== $id) {
+            throw new \RuntimeException('A user with this email already exists.');
+        }
+
+        return $this->users->updateUser($id, $user);
+    }
+
+    public function deleteUser(int $id): bool
+    {
+        return $this->users->deleteUser($id);
+    }
+
+    public function getAllRoles(): array
+    {
+        return array_map(fn(UserRole $role) => $role->value, UserRole::cases());
     }
 
     public function updateAccount(int $userId, array $data, array $files = []): void
@@ -107,55 +160,72 @@ class UserService
 
     private function resolveProfilePicturePath(array $data, array $files, ?string $currentPath): ?string
     {
-        // 1) Prefer uploaded file if present
         if (isset($files['profilePicture']) && is_array($files['profilePicture'])) {
             $file = $files['profilePicture'];
 
             if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
-                $tmpName = (string)($file['tmp_name'] ?? '');
-
-                // Extra safety: ensure it is a real uploaded file
-                if ($tmpName === '' || !is_uploaded_file($tmpName)) {
-                    throw new \Exception('Upload failed (invalid temp file).');
-                }
-
-                $originalName = (string)($file['name'] ?? 'profile-picture');
-                $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
-
-                if (!in_array($extension, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true)) {
-                    throw new \Exception('Invalid profile picture file type.');
-                }
-
-                // Ensure target directory exists
-                $targetDir = __DIR__ . '/../../public/assets/img/profiles';
-                if (!is_dir($targetDir) && !mkdir($targetDir, 0775, true) && !is_dir($targetDir)) {
-                    throw new \Exception('Unable to create profile image directory.');
-                }
-
-                // 2) Deterministic filename based on file contents (prevents duplicates)
-                $hash = hash_file('sha256', $tmpName);
-                $fileName = $hash . '.' . $extension;
-
-                $targetPath = $targetDir . '/' . $fileName;
-
-                // If this exact image already exists, do not store a duplicate
-                if (!file_exists($targetPath)) {
-                    if (!move_uploaded_file($tmpName, $targetPath)) {
-                        throw new \Exception('Failed to upload profile picture.');
-                    }
-                }
-
-                // Store path for DB / rendering
-                return '/assets/img/profiles/' . $fileName;
+                return '/' . $this->uploads->storeImage($file, 'profiles', 'users', null, false, $currentPath);
             }
         }
 
-        // 3) Otherwise allow URL/path override if user typed one
-        if (!empty($data['profilePicturePath'])) {
-            return trim((string)$data['profilePicturePath']);
+        return $currentPath;
+    }
+
+    private function filterUsers(array $users, string $search, string $roleFilter): array
+    {
+        if ($search === '' && $roleFilter === '') {
+            return $users;
         }
 
-        // 4) Otherwise keep current
-        return $currentPath;
+        $search = strtolower($search);
+        return array_filter($users, function (UserModel $user) use ($search, $roleFilter) {
+            if ($roleFilter !== '' && $user->role->value !== $roleFilter) {
+                return false;
+            }
+
+            if ($search !== '') {
+                $matchSearch = str_contains(strtolower($user->firstName), $search)
+                    || str_contains(strtolower($user->lastName), $search)
+                    || str_contains(strtolower($user->userName), $search)
+                    || str_contains(strtolower($user->email), $search);
+
+                if (!$matchSearch) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
+    }
+
+    private function sortUsers(array $users, string $sortColumn, string $sortDirection): array
+    {
+        $directionMult = strtoupper($sortDirection) === 'DESC' ? -1 : 1;
+
+        usort($users, function (UserModel $a, UserModel $b) use ($sortColumn, $directionMult) {
+            $valA = match ($sortColumn) {
+                'id' => $a->id,
+                'created_at' => $a->created_at ?? '',
+                'email' => strtolower($a->email),
+                'first_name' => strtolower($a->firstName),
+                'last_name' => strtolower($a->lastName),
+                'user_name' => strtolower($a->userName),
+                default => strtolower($a->firstName . ' ' . $a->lastName),
+            };
+
+            $valB = match ($sortColumn) {
+                'id' => $b->id,
+                'created_at' => $b->created_at ?? '',
+                'email' => strtolower($b->email),
+                'first_name' => strtolower($b->firstName),
+                'last_name' => strtolower($b->lastName),
+                'user_name' => strtolower($b->userName),
+                default => strtolower($b->firstName . ' ' . $b->lastName),
+            };
+
+            return ($valA <=> $valB) * $directionMult;
+        });
+
+        return $users;
     }
 }

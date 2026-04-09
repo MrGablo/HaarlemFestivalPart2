@@ -73,4 +73,23 @@ class EventRepository extends Repository
 
         return $stmt->rowCount() > 0;
     }
+
+    public function decrementAvailabilityByOne(int $eventId): bool
+    {
+        if ($eventId <= 0) {
+            return false;
+        }
+
+        $pdo = $this->getConnection();
+
+        $stmt = $pdo->prepare('
+            UPDATE Event
+            SET availability = availability - 1
+            WHERE event_id = :id
+              AND availability > 0
+        ');
+        $stmt->execute([':id' => $eventId]);
+
+        return $stmt->rowCount() > 0;
+    }
 }

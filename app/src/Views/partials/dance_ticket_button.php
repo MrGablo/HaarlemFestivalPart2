@@ -18,8 +18,10 @@ declare(strict_types=1);
 <?php else: ?>
   <button
     type="button"
-    class="dance-add-placeholder flex h-dance-btn w-dance-btn shrink-0 cursor-pointer items-center justify-center gap-2 rounded border border-dance-accent bg-dance-accent-soft text-base font-bold text-dance-on-dark transition hover:bg-dance-accent-hover hover:-translate-y-px"
-    aria-label="Add to cart (not yet available)"
+    disabled
+    class="flex h-dance-btn w-dance-btn shrink-0 cursor-not-allowed items-center justify-center gap-2 rounded border border-dance-accent bg-dance-accent-soft text-base font-bold text-dance-on-dark opacity-75"
+    aria-label="Add to cart (unavailable)"
+    aria-disabled="true"
   >
     <span class="inline-block h-dance-icon w-dance-icon" aria-hidden="true"></span> ADD
   </button>

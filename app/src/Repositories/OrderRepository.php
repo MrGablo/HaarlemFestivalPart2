@@ -507,4 +507,22 @@ class OrderRepository extends Repository implements IOrderRepository
 
         return $tableAlias . '.' . $column;
     }
+
+    /**
+     * Return all orders (any status) for a given user, newest first.
+     */
+    public function findOrdersByUserId(int $userId): array
+    {
+        $stmt = $this->getConnection()->prepare(
+            'SELECT order_id, user_id, order_status, created_at
+               FROM `orders`
+              WHERE user_id = :user_id
+              ORDER BY created_at DESC, order_id DESC'
+        );
+
+        $stmt->execute([':user_id' => $userId]);
+        $rows = $stmt->fetchAll();
+
+        return is_array($rows) ? $rows : [];
+    }
 }

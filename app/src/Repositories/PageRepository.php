@@ -143,4 +143,61 @@ class PageRepository extends Repository implements IPageRepository
             ':id' => $pageId,
         ]);
     }
+
+    public function createPage(string $pageTitle, string $pageType, array $content): int
+    {
+        $pdo = $this->getConnection();
+
+        $json = json_encode($content, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($json === false) {
+            throw new \RuntimeException('Failed to encode page content to JSON.');
+        }
+
+        $insert = $pdo->prepare(
+            "
+            INSERT INTO Page (Page_Title, Page_Type, Content, Created_At, Updated_At)
+            VALUES (:title, :type, :content, NOW(), NULL)
+            "
+        );
+
+        $insert->execute([
+            ':title' => trim($pageTitle),
+            ':type' => trim($pageType),
+            ':content' => $json,
+        ]);
+
+        return (int)$pdo->lastInsertId();
+    }
+
+    public function deletePageById(int $pageId): bool
+    {
+        $pdo = $this->getConnection();
+        $pdo->beginTransaction();
+
+        try {
+            $clearArtist = $pdo->prepare(
+                'UPDATE Artist
+                 SET page_id = NULL,
+                     updated_at = CURRENT_TIMESTAMP
+                 WHERE page_id = :id'
+            );
+            $clearArtist->execute([':id' => $pageId]);
+
+            $clearJazzEvents = $pdo->prepare(
+                'UPDATE JazzEvent
+                 SET page_id = NULL
+                 WHERE page_id = :id'
+            );
+            $clearJazzEvents->execute([':id' => $pageId]);
+
+            $delete = $pdo->prepare('DELETE FROM Page WHERE Page_ID = :id LIMIT 1');
+            $delete->execute([':id' => $pageId]);
+
+            $pdo->commit();
+            return $delete->rowCount() > 0;
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
+    }
 }

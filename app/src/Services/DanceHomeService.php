@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Cms\PageBuilder\Builders\DanceHomePageBuilder;
+use App\Cms\PageBuilder\Content\DanceHomePageContentViewModel;
 use App\Repositories\DanceHomeRepository;
 use App\Repositories\Interfaces\IPageRepository;
 use App\Utils\Media;
@@ -27,35 +29,23 @@ final class DanceHomeService
         ['name' => 'NICKY ROMERO', 'image' => 'assets/img/dance-assets/dj-nicky-romero.png'],
     ];
 
-    private const DEFAULT_HERO_SUBTITLE_LINES = [
-        'Discover Haarlem\'s vibrant nightlife',
-        'Experience top international DJs',
-        'Celebrate dance culture in the heart of the city',
-    ];
-
-    private const DEFAULT_INTRO_PARAS = [
-        'The Dance Event is where Haarlem truly comes alive. As the sun goes down, the city switches into a completely different mode — neon lights, deep bass, and a crowd that\'s ready to move. World-class DJs, immersive light shows, and the city\'s vibrant nightlife all come together to create nights that feel electric.',
-        'Here, it doesn\'t matter if you\'re a die-hard rave lover or someone who\'s just curious about the scene. Maybe you come for the heavy drops, maybe for the atmosphere, or maybe you just want to dance with friends until your legs can\'t keep up — either way, you\'ll fit right in.',
-        'Across the festival\'s 3 days, Haarlem transforms into a playground for rhythmic energy: back-to-back DJ sets, intimate experimental sessions, and massive stages that pull you in with sound you can feel straight in your chest.',
-        'So dive into the lights, join the crowd, and let yourself get carried by the rhythm. This is Dance — where excitement, connection, and pure nightlife energy meet.',
-    ];
-
     public function __construct(
         private IPageRepository $pageRepo,
         private DanceHomeRepository $danceRepo,
+        private DanceHomePageBuilder $builder = new DanceHomePageBuilder(),
     ) {}
 
     public function buildViewModel(): DanceHomePageViewModel
     {
-        $content = $this->pageRepo->getPageContentByType('Dance_Homepage');
+        /** @var DanceHomePageContentViewModel $page */
+        $page = $this->builder->buildViewModel(
+            $this->pageRepo->getPageContentByType($this->builder->pageType())
+        );
 
-        $hero = $content['hero'] ?? [];
-        $intro = $content['intro'] ?? [];
-        if (!is_array($intro)) {
-            $intro = [];
-        }
-        $lineup = $content['lineup'] ?? [];
-        $timetableCms = $content['timetable'] ?? [];
+        $hero = $page->hero;
+        $intro = $page->intro;
+        $lineup = $page->lineup;
+        $timetableCms = $page->timetable;
 
         $heroBg = $this->normaliseAsset(
             Media::image($hero['background_image'] ?? null)['src'],
@@ -69,25 +59,10 @@ final class DanceHomeService
         $heroTitle = (string) ($hero['title'] ?? 'HAARLEM DANCE EVENT');
         $parts = preg_match('/^(.+?)\s+(.+)$/', $heroTitle, $m) ? [$m[1], $m[2]] : [$heroTitle, ''];
 
-        $subtitleHtml = $hero['subtitle_html'] ?? null;
-        $subtitleLines = $hero['subtitle'] ?? null;
-        $subtitleMode = 'default';
-        if (is_string($subtitleHtml) && $subtitleHtml !== '') {
-            $subtitleMode = 'html';
-        } elseif (is_array($subtitleLines) && $subtitleLines !== []) {
-            $subtitleMode = 'lines';
-        }
+        $subtitleHtml = is_string($hero['subtitle_html'] ?? null) ? $hero['subtitle_html'] : '';
+        $bodyHtml = is_string($intro['body_html'] ?? null) ? $intro['body_html'] : '';
 
-        $bodyHtml = $intro['body_html'] ?? null;
-        $paras = $intro['paragraphs'] ?? null;
-        $introBodyMode = 'default';
-        if (is_string($bodyHtml) && $bodyHtml !== '') {
-            $introBodyMode = 'html';
-        } elseif (is_array($paras) && $paras !== []) {
-            $introBodyMode = 'paragraphs';
-        }
-
-        $stats = $intro['stats'] ?? $hero['stats'] ?? ['3 days', '6 DJs', '2490 min'];
+        $stats = $intro['stats'] ?? [];
         $stats = is_array($stats) ? $stats : [];
 
         $rows = $this->danceRepo->findDanceTimetableRows();
@@ -116,18 +91,13 @@ final class DanceHomeService
             [
                 'titleLine1' => $parts[0],
                 'titleLine2' => $parts[1],
-                'subtitleMode' => $subtitleMode,
-                'subtitleHtml' => is_string($subtitleHtml) ? $subtitleHtml : '',
-                'subtitleLines' => is_array($subtitleLines) ? array_map('strval', $subtitleLines) : [],
-                'defaultSubtitleLines' => self::DEFAULT_HERO_SUBTITLE_LINES,
+                'subtitleHtml' => $subtitleHtml,
                 'primaryButtonLabel' => (string) ($hero['primary_button']['label'] ?? 'Buy ticket'),
                 'stripText' => (string) ($hero['strip_text'] ?? 'HAARLEM FESTIVAL DANCE'),
             ],
             [
                 'kicker' => (string) ($intro['kicker'] ?? 'Let Haarlem\'s music welcome you in'),
-                'bodyMode' => $introBodyMode,
-                'bodyHtml' => is_string($bodyHtml) ? $bodyHtml : '',
-                'paragraphs' => is_array($paras) ? array_map('strval', $paras) : self::DEFAULT_INTRO_PARAS,
+                'bodyHtml' => $bodyHtml,
                 'sideImageAlt' => (string) (Media::image($intro['side_image'] ?? null)['alt'] ?: 'Dance event'),
                 'statsLine' => $statsLine,
             ],
@@ -152,6 +122,7 @@ final class DanceHomeService
     {
         $allAccess = null;
         $dayOrder = [];
+        $dayLabels = [];
         $passByDay = [];
         $sessionsByDay = [];
 
@@ -180,26 +151,28 @@ final class DanceHomeService
                 continue;
             }
 
-            $day = (string) ($r['day_display_label'] ?? '');
-            if ($day === '') {
+            $dayMeta = $this->resolveDayMeta($r);
+            if ($dayMeta === null) {
                 continue;
             }
-            if (!in_array($day, $dayOrder, true)) {
-                $dayOrder[] = $day;
+            $dayKey = $dayMeta['key'];
+            if (!in_array($dayKey, $dayOrder, true)) {
+                $dayOrder[] = $dayKey;
             }
+            $dayLabels[$dayKey] = $dayMeta['label'];
             if ($kind === 'day_pass') {
-                $passByDay[$day] = $r;
+                $passByDay[$dayKey] = $r;
             } elseif ($kind === 'session') {
-                $sessionsByDay[$day][] = $r;
+                $sessionsByDay[$dayKey][] = $r;
             }
         }
 
         $days = [];
-        foreach ($dayOrder as $dayLabel) {
-            $pass = $passByDay[$dayLabel] ?? null;
+        foreach ($dayOrder as $dayKey) {
+            $pass = $passByDay[$dayKey] ?? null;
             $passEid = $pass !== null ? (int) ($pass['event_id'] ?? 0) : 0;
             $days[] = [
-                'dayLabel' => $dayLabel,
+                'dayLabel' => (string) ($dayLabels[$dayKey] ?? $dayKey),
                 'passLabel' => $pass !== null
                     ? (string) ($pass['title'] ?? 'DAY PASS')
                     : 'DAY PASS',
@@ -207,7 +180,7 @@ final class DanceHomeService
                     ? $this->formatEuro((float) ($pass['price'] ?? 0))
                     : '',
                 'passEventId' => $passEid,
-                'sessions' => $this->mapSessions($sessionsByDay[$dayLabel] ?? []),
+                'sessions' => $this->mapSessions($sessionsByDay[$dayKey] ?? []),
             ];
         }
 
@@ -222,13 +195,21 @@ final class DanceHomeService
     {
         $out = [];
         foreach ($sessionRows as $r) {
-            $start = (string) ($r['session_start'] ?? '');
-            $end = (string) ($r['session_end'] ?? '');
+            $start = $this->formatSessionTimeValue($r['session_start'] ?? null);
+            $end = $this->formatSessionTimeValue($r['session_end'] ?? null);
+            $timeRange = '';
+            if ($start !== '' && $end !== '') {
+                $timeRange = $start . ' - ' . $end;
+            } elseif ($start !== '') {
+                $timeRange = $start;
+            } elseif ($end !== '') {
+                $timeRange = $end;
+            }
             $out[] = [
                 'title' => (string) ($r['title'] ?? ''),
                 'tag' => (string) ($r['session_tag'] ?? ''),
                 'tagSpecial' => !empty($r['tag_special']),
-                'timeRange' => $start !== '' || $end !== '' ? $start . ' - ' . $end : '',
+                'timeRange' => $timeRange,
                 'venueName' => (string) ($r['location_name'] ?? ''),
                 'priceLabel' => $this->formatEuro((float) ($r['price'] ?? 0)),
                 'eventId' => (int) ($r['event_id'] ?? 0),
@@ -252,7 +233,15 @@ final class DanceHomeService
     private function normaliseAsset(string $path, string $fallback): string
     {
         $path = trim($path);
-        if ($path === '' || strpos($path, 'assets/img/dance-assets/') !== 0) {
+        if ($path === '') {
+            return $fallback;
+        }
+
+        if (strpos($path, 'assets/img/page/') === 0) {
+            return $path;
+        }
+
+        if (strpos($path, 'assets/img/dance-assets/') !== 0) {
             return $fallback;
         }
         $base = basename($path);
@@ -263,6 +252,7 @@ final class DanceHomeService
     /** @return list<array{name: string, imageSrc: string, alt: string}> */
     private function buildLineupArtistsFromDatabase(array $lineup): array
     {
+        $dbArtists = $this->danceRepo->findDanceLineupArtists(6);
         $dbHeadlines = $this->danceRepo->findDanceLineupHeadlines(6);
         $cycle = array_column(self::DEFAULT_LINEUP, 'image');
         $n = count($cycle);
@@ -271,7 +261,50 @@ final class DanceHomeService
             $n = 1;
         }
 
+        if ($dbArtists !== []) {
+            $out = [];
+            foreach ($dbArtists as $i => $artist) {
+                $artistName = trim((string) ($artist['name'] ?? ''));
+                if ($artistName === '') {
+                    continue;
+                }
+                $out[] = [
+                    'name' => mb_strtoupper($artistName, 'UTF-8'),
+                    'imageSrc' => $cycle[$i % $n],
+                    'alt' => $artistName,
+                ];
+            }
+            if ($out !== []) {
+                return $out;
+            }
+        }
+
         if ($dbHeadlines !== []) {
+            $artistNames = [];
+            foreach ($dbHeadlines as $h) {
+                foreach ($this->extractArtistNames((string) ($h['title'] ?? '')) as $artistName) {
+                    if (!in_array($artistName, $artistNames, true)) {
+                        $artistNames[] = $artistName;
+                    }
+                    if (count($artistNames) >= 6) {
+                        break 2;
+                    }
+                }
+            }
+
+            if ($artistNames !== []) {
+                $out = [];
+                foreach ($artistNames as $i => $artistName) {
+                    $out[] = [
+                        'name' => mb_strtoupper($artistName, 'UTF-8'),
+                        'imageSrc' => $cycle[$i % $n],
+                        'alt' => $artistName,
+                    ];
+                }
+
+                return $out;
+            }
+
             $out = [];
             foreach ($dbHeadlines as $i => $h) {
                 $title = trim($h['title']);
@@ -289,6 +322,36 @@ final class DanceHomeService
         }
 
         return $this->buildLineupFromCmsOrDefaults($lineup);
+    }
+
+    /** @return list<string> */
+    private function extractArtistNames(string $rawTitle): array
+    {
+        $title = trim($rawTitle);
+        if ($title === '') {
+            return [];
+        }
+
+        // Remove day/time hints often present in event titles.
+        $title = (string) preg_replace('/\s*\([^)]*\)\s*/', ' ', $title);
+        $title = (string) preg_replace('/\s+-\s+/', ' / ', $title);
+        $title = (string) preg_replace('/\s+&\s+/i', ' / ', $title);
+        $title = (string) preg_replace('/\s+b2b\s+/i', ' / ', $title);
+
+        $parts = preg_split('/\s*\/\s*/', $title) ?: [];
+        $out = [];
+        foreach ($parts as $part) {
+            $name = trim((string) preg_replace('/\s+/', ' ', $part));
+            if ($name === '') {
+                continue;
+            }
+            if (preg_match('/^(all[\s-]*access|day\s*pass)$/i', $name) === 1) {
+                continue;
+            }
+            $out[] = $name;
+        }
+
+        return $out;
     }
 
     /**
@@ -330,9 +393,9 @@ final class DanceHomeService
         $venues = [];
         foreach ($rows as $r) {
             $kind = (string) ($r['row_kind'] ?? '');
-            $day = trim((string) ($r['day_display_label'] ?? ''));
-            if ($day !== '' && ($kind === 'session' || $kind === 'day_pass' || $kind === 'all_access')) {
-                $daysSeen[$day] = true;
+            $dayMeta = $this->resolveDayMeta($r);
+            if ($dayMeta !== null && ($kind === 'session' || $kind === 'day_pass' || $kind === 'all_access')) {
+                $daysSeen[$dayMeta['key']] = true;
             }
             if ($kind === 'session') {
                 ++$sessions;
@@ -354,8 +417,12 @@ final class DanceHomeService
     {
         $ordered = [];
         foreach ($rows as $r) {
-            $d = trim((string) ($r['day_display_label'] ?? ''));
-            if ($d !== '' && !in_array($d, $ordered, true)) {
+            $dayMeta = $this->resolveDayMeta($r);
+            if ($dayMeta === null) {
+                continue;
+            }
+            $d = $dayMeta['label'];
+            if (!in_array($d, $ordered, true)) {
                 $ordered[] = $d;
             }
         }
@@ -367,6 +434,76 @@ final class DanceHomeService
         }
 
         return $ordered[0] . ' → ' . $ordered[count($ordered) - 1];
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @return array{key: string, label: string}|null
+     */
+    private function resolveDayMeta(array $row): ?array
+    {
+        $rawLabel = trim((string) ($row['day_display_label'] ?? ''));
+        $dayDate = $this->parseDateTimeValue($row['session_start'] ?? null)
+            ?? $this->parseDateTimeValue($row['session_end'] ?? null)
+            ?? $this->parseDateTimeValue($rawLabel);
+
+        if ($dayDate instanceof \DateTimeImmutable) {
+            return [
+                'key' => $dayDate->format('Y-m-d'),
+                'label' => $dayDate->format('l F jS'),
+            ];
+        }
+
+        if ($rawLabel === '') {
+            return null;
+        }
+
+        return ['key' => $rawLabel, 'label' => $rawLabel];
+    }
+
+    private function formatSessionTimeValue(mixed $value): string
+    {
+        $dt = $this->parseDateTimeValue($value);
+        if ($dt instanceof \DateTimeImmutable) {
+            return $dt->format('H:i');
+        }
+
+        if (!is_scalar($value)) {
+            return '';
+        }
+        $text = trim((string) $value);
+        if ($text === '') {
+            return '';
+        }
+        if (preg_match('/^\d{2}:\d{2}(:\d{2})?$/', $text) === 1) {
+            return substr($text, 0, 5);
+        }
+
+        return $text;
+    }
+
+    private function parseDateTimeValue(mixed $value): ?\DateTimeImmutable
+    {
+        if ($value instanceof \DateTimeImmutable) {
+            return $value;
+        }
+        if ($value instanceof \DateTimeInterface) {
+            return \DateTimeImmutable::createFromInterface($value);
+        }
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $text = trim((string) $value);
+        if ($text === '') {
+            return null;
+        }
+
+        try {
+            return new \DateTimeImmutable($text);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /**

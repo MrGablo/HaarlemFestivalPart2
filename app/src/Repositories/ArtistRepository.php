@@ -73,4 +73,19 @@ class ArtistRepository extends Repository implements IArtistRepository
 
         return $stmt->rowCount() > 0;
     }
+
+    public function assignPageToArtist(int $artistId, int $pageId): void
+    {
+        $stmt = $this->getConnection()->prepare(
+            'UPDATE Artist
+             SET page_id = :page_id,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE artist_id = :artist_id'
+        );
+
+        $stmt->execute([
+            ':page_id' => $pageId,
+            ':artist_id' => $artistId,
+        ]);
+    }
 }
