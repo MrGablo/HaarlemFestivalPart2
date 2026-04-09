@@ -149,6 +149,12 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     $r->addRoute('GET',  '/cms/orders/{id:\\d+}', ['App\Cms\Controllers\CMSOrderController', 'edit']);
     $r->addRoute('POST', '/cms/orders/{id:\\d+}', ['App\Cms\Controllers\CMSOrderController', 'update']);
 
+    // CMS stories routes (admin only
+    $r->addRoute('GET',  '/cms/events/stories', ['App\Cms\Controllers\CMSStoriesEventController', 'index']);
+    $r->addRoute('GET',  '/cms/events/stories/{id:\d+}', ['App\Cms\Controllers\CMSStoriesEventController', 'edit']);
+    $r->addRoute('POST', '/cms/events/stories/{id:\d+}', ['App\Cms\Controllers\CMSStoriesEventController', 'update']);
+    $r->addRoute('POST', '/cms/events/stories/{id:\d+}/delete', ['App\Cms\Controllers\CMSStoriesEventController', 'delete']);
+ 
     // Jazz CMS routes (admin only)
     $r->addRoute('GET',  '/cms/events/jazz', ['App\Cms\Controllers\CMSJazzController', 'index']);
     $r->addRoute('GET',  '/cms/events/jazz/create', ['App\Cms\Controllers\CMSJazzController', 'createForm']);
