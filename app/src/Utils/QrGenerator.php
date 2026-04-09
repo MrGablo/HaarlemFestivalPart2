@@ -18,16 +18,27 @@ class QrGenerator
      */
     public static function generate(string $data): string
     {
+        return self::renderSvg($data, true);
+    }
+
+    public static function generateSvgMarkup(string $data): string
+    {
+        return self::renderSvg($data, false);
+    }
+
+    private static function renderSvg(string $data, bool $outputBase64): string
+    {
         if (empty(trim($data))) {
             throw new InvalidArgumentException('QR code data cannot be empty.');
         }
 
         $qrcode = new QRCode([
-            'version'         => -1,               // -1 is the v6 equivalent for auto-detecting the version size
+            'version'         => -1,
             'outputInterface' => QRMarkupSVG::class,
-            'eccLevel'        => 'L',              // v6 allows simple strings for ECC level
+            'eccLevel'        => 'L',
             'scale'           => 5,
-            'outputBase64'    => true,             // Ensures we get a data URI string back instead of raw bytes
+            'outputBase64'    => $outputBase64,
+            'svgAddXmlHeader' => false,
         ]);
 
         return $qrcode->render($data);

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Repositories\OrderRepository;
 use App\Repositories\PaymentRepository;
+use App\Utils\QrGenerator;
 
 /**
  * Handles Stripe checkout session creation and webhook processing.
@@ -13,13 +14,20 @@ class PaymentService
 {
     private PaymentRepository $repo;
     private TicketService $ticketService;
-    private OrderService $orderService;
+    private EmailService $emailService;
+    private TicketPdfGenerator $ticketPdfGenerator;
 
-    public function __construct(PaymentRepository $repo, ?TicketService $ticketService = null, ?OrderService $orderService = null)
+    public function __construct(
+        PaymentRepository $repo,
+        ?TicketService $ticketService = null,
+        ?EmailService $emailService = null,
+        ?TicketPdfGenerator $ticketPdfGenerator = null
+    )
     {
         $this->repo = $repo;
         $this->ticketService = $ticketService ?? new TicketService();
-        $this->orderService = $orderService ?? new OrderService(new OrderRepository(), new EventModelBuilderService());
+        $this->emailService = $emailService ?? new EmailService();
+        $this->ticketPdfGenerator = $ticketPdfGenerator ?? new TicketPdfGenerator();
     }
 
     /**
@@ -112,6 +120,8 @@ class PaymentService
             $this->ticketService->createTicketsForOrderItem($orderItemId, $userId, $eventId, $quantity, $passDate);
         }
 
+        $this->sendTicketDeliveryEmail($orderId, $userId);
+
         error_log("Payment OK: order=$orderId user=$userId");
     }
 
@@ -145,5 +155,71 @@ class PaymentService
         }
 
         return $key;
+    }
+
+    private function sendTicketDeliveryEmail(int $orderId, int $userId): void
+    {
+        $recipient = $this->repo->getOrderDeliveryRecipient($orderId, $userId);
+        if (!is_array($recipient)) {
+            return;
+        }
+
+        $email = trim((string)($recipient['email'] ?? ''));
+        if ($email === '') {
+            return;
+        }
+
+        $tickets = $this->repo->getIssuedTicketsForOrder($orderId);
+        if ($tickets === []) {
+            return;
+        }
+
+        foreach ($tickets as &$ticket) {
+            $qr = trim((string)($ticket['qr'] ?? ''));
+            $ticket['qr_svg'] = '';
+
+            if ($qr === '') {
+                continue;
+            }
+
+            try {
+                $ticket['qr_svg'] = QrGenerator::generateSvgMarkup($qr);
+            } catch (\Throwable $e) {
+                error_log('Ticket QR generation failed for order ' . $orderId . ': ' . $e->getMessage());
+            }
+        }
+        unset($ticket);
+
+        $firstName = trim((string)($recipient['first_name'] ?? 'Festival guest'));
+        $lastName = trim((string)($recipient['last_name'] ?? ''));
+        $orderNumber = sprintf('HF-%06d', $orderId);
+
+        $pdfPath = '';
+
+        try {
+            $pdfPath = $this->ticketPdfGenerator->generateTicketsPdf(
+                $orderNumber,
+                trim($firstName . ' ' . $lastName),
+                $tickets
+            );
+
+            $sent = $this->emailService->sendTicketDelivery(
+                $email,
+                $firstName !== '' ? $firstName : 'Festival guest',
+                $orderNumber,
+                $pdfPath,
+                $tickets
+            );
+
+            if (!$sent) {
+                error_log('Ticket delivery email was not sent for order ' . $orderId);
+            }
+        } catch (\Throwable $e) {
+            error_log('Ticket delivery preparation failed for order ' . $orderId . ': ' . $e->getMessage());
+        } finally {
+            if ($pdfPath !== '' && is_file($pdfPath)) {
+                @unlink($pdfPath);
+            }
+        }
     }
 }
