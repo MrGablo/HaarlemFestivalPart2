@@ -5,6 +5,8 @@ namespace App\Controllers;
 use App\Repositories\PaymentRepository;
 use App\Services\PaymentService;
 use App\Utils\AuthSessionData;
+use App\Utils\Csrf;
+use App\Utils\Flash;
 use App\Utils\Session;
 
 /**
@@ -31,19 +33,21 @@ class PaymentController
     {
         Session::ensureStarted();
 
-        $auth = AuthSessionData::read();
-        if (!is_array($auth)) {
-            header('Location: /login', true, 302);
-            exit;
-        }
-
-        $userId = (int)($auth['userId'] ?? 0);
-        if ($userId <= 0) {
-            header('Location: /program', true, 302);
-            exit;
-        }
-
         try {
+            Csrf::assertPost('payment_csrf_token');
+
+            $auth = AuthSessionData::read();
+            if (!is_array($auth)) {
+                header('Location: /login', true, 302);
+                exit;
+            }
+
+            $userId = (int)($auth['userId'] ?? 0);
+            if ($userId <= 0) {
+                header('Location: /program', true, 302);
+                exit;
+            }
+
             $repo = new PaymentRepository();
             $pendingOrder = $repo->findPendingOrderByUserId($userId);
             $pendingOrderId = (int)($pendingOrder['order_id'] ?? 0);
@@ -54,15 +58,16 @@ class PaymentController
                 'user_id'  => $userId,
                 'order_id' => $pendingOrderId,
             ];
+
+            header('HTTP/1.1 303 See Other');
+            header('Location: ' . $checkoutUrl);
+            exit;
         } catch (\Throwable $e) {
             error_log('Stripe checkout redirect failed: ' . $e->getMessage());
+            Flash::setErrors(['general' => $e->getMessage()]);
             header('Location: /payment/cancel', true, 302);
             exit;
         }
-
-        header('HTTP/1.1 303 See Other');
-        header('Location: ' . $checkoutUrl);
-        exit;
     }
 
     // ---------------------------------------------------------------
@@ -72,41 +77,53 @@ class PaymentController
     // ---------------------------------------------------------------
     public function handleWebhook(): void
     {
-        // Read the raw request body (needed for signature check)
-        $payload   = file_get_contents('php://input');
-        $sigHeader = $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '';
-        $secret    = getenv('STRIPE_WEBHOOK_SECRET') ?: '';
-
-        // Ensure we actually received a payload
-        if ($payload === false) {
-            error_log('Stripe webhook error: failed to read request body.');
-            http_response_code(400);
-            echo 'Invalid payload';
-            exit;
-        }
-
-        // Ensure the webhook secret is configured
-        if ($secret === '') {
-            error_log('Stripe webhook configuration error: STRIPE_WEBHOOK_SECRET is not set.');
-            http_response_code(500);
-            echo 'Webhook configuration error';
-            exit;
-        }
-
-        // Require a signature header
-        if ($sigHeader === '') {
-            error_log('Stripe webhook error: missing Stripe signature header.');
-            http_response_code(400);
-            echo 'Missing signature';
-            exit;
-        }
-
         try {
-            $event = \Stripe\Webhook::constructEvent((string)$payload, $sigHeader, $secret);
+            // Read the raw request body (needed for signature check)
+            $payload   = file_get_contents('php://input');
+            $sigHeader = $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '';
+            $secret    = getenv('STRIPE_WEBHOOK_SECRET') ?: '';
+
+            // Browser-initiated POSTs must pass CSRF; Stripe-signed webhook calls are exempt.
+            if ($sigHeader === '') {
+                Csrf::assertPost('payment_csrf_token');
+            }
+
+            // Ensure we actually received a payload
+            if ($payload === false) {
+                error_log('Stripe webhook error: failed to read request body.');
+                http_response_code(400);
+                echo 'Invalid payload';
+                exit;
+            }
+
+            // Ensure the webhook secret is configured
+            if ($secret === '') {
+                error_log('Stripe webhook configuration error: STRIPE_WEBHOOK_SECRET is not set.');
+                http_response_code(500);
+                echo 'Webhook configuration error';
+                exit;
+            }
+
+            // Require a signature header
+            if ($sigHeader === '') {
+                error_log('Stripe webhook error: missing Stripe signature header.');
+                http_response_code(400);
+                echo 'Missing signature';
+                exit;
+            }
+
+            try {
+                $event = \Stripe\Webhook::constructEvent((string)$payload, $sigHeader, $secret);
+            } catch (\Exception $e) {
+                error_log('Webhook signature verification failed: ' . $e->getMessage());
+                http_response_code(400);
+                echo 'Invalid signature';
+                exit;
+            }
         } catch (\Exception $e) {
-            error_log('Webhook signature verification failed: ' . $e->getMessage());
+            error_log('Webhook request rejected: ' . $e->getMessage());
             http_response_code(400);
-            echo 'Invalid signature';
+            echo 'Invalid request';
             exit;
         }
 

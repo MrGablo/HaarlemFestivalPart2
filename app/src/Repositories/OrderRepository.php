@@ -207,6 +207,9 @@ class OrderRepository extends Repository implements IOrderRepository
             }
 
             $row = $existing->fetch();
+            $currentQuantity = is_array($row) ? (int)($row['quantity'] ?? 0) : 0;
+
+            $this->assertOrderItemAvailability($pdo, $eventId, $currentQuantity + 1);
 
             if (is_array($row)) {
                 $update = $pdo->prepare(
@@ -376,33 +379,51 @@ class OrderRepository extends Repository implements IOrderRepository
 
     public function updateOrderItemQuantity(int $orderId, int $orderItemId, int $quantity): bool
     {
-        $stmt = $this->getConnection()->prepare(
-            'UPDATE `order_items`
-             SET quantity = :quantity
-             WHERE order_id = :order_id AND order_item_id = :order_item_id'
-        );
+        $pdo = $this->getConnection();
+        $pdo->beginTransaction();
 
-        $stmt->execute([
-            ':quantity' => $quantity,
-            ':order_id' => $orderId,
-            ':order_item_id' => $orderItemId,
-        ]);
+        try {
+            $itemStmt = $pdo->prepare(
+                'SELECT event_id
+                   FROM `order_items`
+                  WHERE order_id = :order_id
+                    AND order_item_id = :order_item_id
+                  LIMIT 1
+                  FOR UPDATE'
+            );
+            $itemStmt->execute([
+                ':order_id' => $orderId,
+                ':order_item_id' => $orderItemId,
+            ]);
 
-        if ($stmt->rowCount() > 0) {
+            $eventId = (int)$itemStmt->fetchColumn();
+            if ($eventId <= 0) {
+                $pdo->commit();
+                return false;
+            }
+
+            $this->assertOrderItemAvailability($pdo, $eventId, $quantity);
+
+            $updateStmt = $pdo->prepare(
+                'UPDATE `order_items`
+                 SET quantity = :quantity
+                 WHERE order_id = :order_id
+                   AND order_item_id = :order_item_id'
+            );
+            $updateStmt->execute([
+                ':quantity' => $quantity,
+                ':order_id' => $orderId,
+                ':order_item_id' => $orderItemId,
+            ]);
+
+            $pdo->commit();
             return true;
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
         }
-
-        $existsStmt = $this->getConnection()->prepare(
-            'SELECT 1 FROM `order_items`
-             WHERE order_id = :order_id AND order_item_id = :order_item_id
-             LIMIT 1'
-        );
-        $existsStmt->execute([
-            ':order_id' => $orderId,
-            ':order_item_id' => $orderItemId,
-        ]);
-
-        return (bool)$existsStmt->fetchColumn();
     }
 
     public function countItems(int $orderId): int
@@ -432,6 +453,7 @@ class OrderRepository extends Repository implements IOrderRepository
                 e.event_id,
                 e.title,
                 e.event_type,
+                e.availability,
                 j.start_date,
                 j.end_date,
                 COALESCE(j.venue_id, d.venue_id) AS venue_id,
@@ -506,6 +528,43 @@ class OrderRepository extends Repository implements IOrderRepository
         }
 
         return $tableAlias . '.' . $column;
+    }
+
+    private function assertOrderItemAvailability(\PDO $pdo, int $eventId, int $requestedQuantity): void
+    {
+        if ($requestedQuantity <= 0) {
+            throw new \InvalidArgumentException('Quantity must be positive.');
+        }
+
+        $eventRow = $this->findLockedEventAvailability($pdo, $eventId);
+        if ($eventRow === null) {
+            throw new \RuntimeException('Event not found.');
+        }
+
+        $eventType = strtolower(trim((string)($eventRow['event_type'] ?? '')));
+        if ($eventType === 'pass') {
+            return;
+        }
+
+        $availability = (int)($eventRow['availability'] ?? 0);
+        if ($requestedQuantity > $availability) {
+            throw new \RuntimeException('Not enough seats available for this event.');
+        }
+    }
+
+    private function findLockedEventAvailability(\PDO $pdo, int $eventId): ?array
+    {
+        $stmt = $pdo->prepare(
+            'SELECT event_id, event_type, availability
+               FROM Event
+              WHERE event_id = :event_id
+              LIMIT 1
+              FOR UPDATE'
+        );
+        $stmt->execute([':event_id' => $eventId]);
+
+        $row = $stmt->fetch();
+        return is_array($row) ? $row : null;
     }
 
     /**

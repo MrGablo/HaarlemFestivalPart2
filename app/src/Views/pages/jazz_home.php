@@ -83,6 +83,7 @@ declare(strict_types=1);
                     </a>
 
                     <form method="POST" action="/order/item/add" class="ticket-form">
+                        <input type="hidden" name="_csrf" value="<?= htmlspecialchars(\App\Utils\Csrf::token('cart_csrf_token'), ENT_QUOTES, 'UTF-8') ?>">
                         <input type="hidden" name="event_id" value="<?= (int)($ev['event_id'] ?? 0) ?>">
                         <button class="mt-[10px] w-full cursor-pointer rounded-[10px] border-0 bg-jazz-accent bg-[#f7c600] px-[14px] py-3 font-extrabold text-jazz-accent-text text-[#111]" type="submit">
                             <?php $price = isset($ev['price']) ? (float)$ev['price'] : 0.0; ?>

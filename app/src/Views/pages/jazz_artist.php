@@ -111,6 +111,7 @@ use App\Utils\Wysiwyg;
                             </div>
 
                             <form method="POST" action="/order/item/add" class="ticket-form flex justify-end max-[1200px]:justify-start">
+                                <input type="hidden" name="_csrf" value="<?= htmlspecialchars(\App\Utils\Csrf::token('cart_csrf_token'), ENT_QUOTES, 'UTF-8') ?>">
                                 <input type="hidden" name="event_id" value="<?= (int)($ev['event_id'] ?? 0) ?>">
                                 <button class="min-w-40 cursor-pointer rounded-xl border-0 bg-jazz-accent bg-[#f7c600] px-[22px] py-3 font-black text-jazz-accent-text text-[#111]" type="submit">
                                     <?php if (isset($ev['price']) && is_numeric($ev['price'])): ?>

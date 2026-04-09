@@ -6,6 +6,7 @@ use App\Repositories\OrderRepository;
 use App\Services\EventModelBuilderService;
 use App\Services\OrderService;
 use App\Utils\AuthSessionData;
+use App\Utils\Csrf;
 use App\Utils\Flash;
 use App\Utils\Session;
 
@@ -32,10 +33,12 @@ class OrderController
             ], 401);
         }
 
-        $eventId = isset($_POST['event_id']) ? (int)$_POST['event_id'] : 0;
-        $passDate = isset($_POST['pass_date']) ? (string)$_POST['pass_date'] : null;
-
         try {
+            Csrf::assertPost('cart_csrf_token');
+
+            $eventId = isset($_POST['event_id']) ? (int)$_POST['event_id'] : 0;
+            $passDate = isset($_POST['pass_date']) ? (string)$_POST['pass_date'] : null;
+
             $order = $this->orderService->addEventToUserPendingOrder($userId, $eventId, $passDate);
             Flash::setSuccess('Ticket added to cart.');
             $this->jsonResponse([
@@ -45,11 +48,12 @@ class OrderController
             ]);
         } catch (\Throwable $e) {
             $message = $e->getMessage();
+            $statusCode = str_contains(strtolower($message), 'form token') ? 400 : 422;
             Flash::setErrors(['general' => $message]);
             $this->jsonResponse([
                 'ok' => false,
                 'message' => $message,
-            ], 422);
+            ], $statusCode);
         }
     }
 
@@ -74,9 +78,10 @@ class OrderController
             exit;
         }
 
-        $orderItemId = isset($_POST['order_item_id']) ? (int)$_POST['order_item_id'] : 0;
-
         try {
+            Csrf::assertPost('cart_csrf_token');
+
+            $orderItemId = isset($_POST['order_item_id']) ? (int)$_POST['order_item_id'] : 0;
             $order = $this->orderService->removeItemFromPendingOrder($userId, $orderItemId);
             Flash::setSuccess('Item removed from cart.');
 
@@ -89,13 +94,14 @@ class OrderController
             }
         } catch (\Throwable $e) {
             $message = $e->getMessage();
+            $statusCode = str_contains(strtolower($message), 'form token') ? 400 : 422;
             Flash::setErrors(['general' => $message]);
 
             if ($this->isAjaxRequest()) {
                 $this->jsonResponse([
                     'ok' => false,
                     'message' => $message,
-                ], 422);
+                ], $statusCode);
             }
         }
 
@@ -123,10 +129,12 @@ class OrderController
             exit;
         }
 
-        $orderItemId = isset($_POST['order_item_id']) ? (int)$_POST['order_item_id'] : 0;
-        $quantity = isset($_POST['quantity']) ? (int)$_POST['quantity'] : 0;
-
         try {
+            Csrf::assertPost('cart_csrf_token');
+
+            $orderItemId = isset($_POST['order_item_id']) ? (int)$_POST['order_item_id'] : 0;
+            $quantity = isset($_POST['quantity']) ? (int)$_POST['quantity'] : 0;
+
             $order = $this->orderService->updateItemQuantityInPendingOrder($userId, $orderItemId, $quantity);
             Flash::setSuccess('Cart quantity updated.');
 
@@ -139,13 +147,14 @@ class OrderController
             }
         } catch (\Throwable $e) {
             $message = $e->getMessage();
+            $statusCode = str_contains(strtolower($message), 'form token') ? 400 : 422;
             Flash::setErrors(['general' => $message]);
 
             if ($this->isAjaxRequest()) {
                 $this->jsonResponse([
                     'ok' => false,
                     'message' => $message,
-                ], 422);
+                ], $statusCode);
             }
         }
 
