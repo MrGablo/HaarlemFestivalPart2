@@ -37,16 +37,16 @@ class PaymentService
     {
         \Stripe\Stripe::setApiKey($this->getStripeSecretKey());
 
-        $pendingOrder = $this->orderService->getPendingOrderForUser($userId);
+        $pendingOrder = $this->repo->findPendingOrderByUserId($userId);
         if ($pendingOrder === null) {
             throw new \RuntimeException('No pending cart found.');
         }
-        $pendingOrderId = (int)($pendingOrder->order_id ?? 0);
+        $pendingOrderId = (int)($pendingOrder['order_id'] ?? 0);
         if ($pendingOrderId <= 0) {
             throw new \RuntimeException('Invalid pending cart.');
         }
 
-        $items = $pendingOrder->items;
+        $items = $this->repo->getPendingOrderItemsWithPricing($pendingOrderId);
         if ($items === []) {
             throw new \RuntimeException('Pending cart is empty.');
         }
