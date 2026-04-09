@@ -49,8 +49,6 @@ if (!function_exists('getNavClass')) {
 }
 ?>
 
-<script src="https://cdn.tailwindcss.com"></script>
-
 <header class="bg-gradient-to-r from-blue-600 to-white lg:bg-none lg:bg-white border-b border-gray-100 font-sans sticky top-0 z-30">
     <div class="mx-auto flex max-w-6xl items-stretch justify-between pl-5 lg:px-5">
         <a href="/" class="flex items-center py-4">

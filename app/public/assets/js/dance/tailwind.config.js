@@ -1,9 +1,11 @@
 /**
- * Shared Tailwind theme for the Dance section (Tailwind CDN).
- * Must load AFTER https://cdn.tailwindcss.com (otherwise `tailwind` is undefined).
+ * Dance theme for Tailwind Play CDN (v3).
+ * Load AFTER https://cdn.tailwindcss.com so `tailwind` exists (see v3 Play CDN docs).
  */
 (function () {
-  if (typeof tailwind === 'undefined') return;
+  if (typeof tailwind === 'undefined') {
+    return;
+  }
   var ctaGlow = '#410000';
   tailwind.config = {
     theme: {
@@ -72,4 +74,7 @@
       },
     },
   };
+  if (typeof tailwind.refresh === 'function') {
+    tailwind.refresh();
+  }
 })();

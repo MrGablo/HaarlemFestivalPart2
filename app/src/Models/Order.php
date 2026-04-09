@@ -9,6 +9,9 @@ class Order
     public OrderStatus $order_status;
     public ?string $created_at;
 
+    /** When set, checkout was started and payment must complete before this time (UTC stored as DB local). */
+    public ?string $payment_deadline_at;
+
     /** @var OrderItem[] */
     public array $items;
 
@@ -18,13 +21,15 @@ class Order
         int $userId,
         OrderStatus $status,
         ?string $createdAt = null,
-        array $items = []
+        array $items = [],
+        ?string $paymentDeadlineAt = null
     ) {
         $this->order_id = $orderId;
         $this->user_id = $userId;
         $this->order_status = $status;
         $this->created_at = $createdAt;
         $this->items = $items;
+        $this->payment_deadline_at = $paymentDeadlineAt;
     }
 
     public function getItemCount(): int

@@ -7,8 +7,7 @@ use App\Repositories\PaymentRepository;
 use App\Utils\QrGenerator;
 
 /**
- * Handles Stripe checkout session creation and webhook processing.
- * Uses Stripe TEST mode only.
+ * Stripe Checkout session creation and fulfilment (success URL + webhook).
  */
 class PaymentService
 {
@@ -40,7 +39,9 @@ class PaymentService
     {
         \Stripe\Stripe::setApiKey($this->getStripeSecretKey());
 
-        $pendingOrder = $this->orderService->getPendingOrderForUser($userId);
+        $this->orderService->expireStaleCheckoutDeadlines();
+
+        $pendingOrder = $this->orderService->getPayablePendingOrderForUser($userId);
         if ($pendingOrder === null) {
             throw new \RuntimeException('No pending cart found.');
         }
@@ -48,6 +49,8 @@ class PaymentService
         if ($pendingOrderId <= 0) {
             throw new \RuntimeException('Invalid pending cart.');
         }
+
+        $this->orderService->markCheckoutStartedIfNeeded($userId, $pendingOrderId);
 
         $items = $pendingOrder->items;
         if ($items === []) {
@@ -98,8 +101,7 @@ class PaymentService
     }
 
     /**
-     * Called from the success page using data stored in the PHP session.
-     * Marks the pending order as payed and creates Ticket rows.
+     * Marks the pending order paid, creates tickets, sends delivery email.
      */
     public function fulfillPendingOrder(int $userId, int $orderId): void
     {
@@ -107,7 +109,13 @@ class PaymentService
             return;
         }
 
-        $this->repo->markOrderAsPaid($orderId, $userId);
+        $marked = $this->repo->markOrderAsPaid($orderId, $userId);
+        if (!$marked) {
+            if ($this->repo->isOrderPaid($orderId)) {
+                return;
+            }
+            throw new \RuntimeException('Payment: could not mark order ' . $orderId . ' as paid.');
+        }
 
         $items = $this->repo->getOrderItemsByOrderId($orderId);
         foreach ($items as $item) {
@@ -124,8 +132,6 @@ class PaymentService
         }
 
         $this->sendTicketDeliveryEmail($orderId, $userId);
-
-        error_log("Payment OK: order=$orderId user=$userId");
     }
 
     /**
@@ -149,6 +155,8 @@ class PaymentService
      */
     public function handleCheckoutCompleted(object $session): void
     {
+        $this->orderService->expireStaleCheckoutDeadlines();
+
         $this->assertSessionIsPaid($session);
 
         $metadata = $session->metadata ?? null;
@@ -161,9 +169,19 @@ class PaymentService
             );
         }
 
+        if ($this->repo->isOrderPaid($pendingOrderId)) {
+            return;
+        }
+
+        if ($this->repo->getOrderDeliveryRecipient($pendingOrderId, $userId) === null) {
+            throw new \RuntimeException(
+                'Payment: order ' . $pendingOrderId . ' not found for user_id=' . $userId
+            );
+        }
+
         $pendingOrder = $this->repo->findPendingOrderByUserId($userId);
         if (!is_array($pendingOrder)) {
-            throw new \RuntimeException('Payment: no pending order found for user_id=' . $userId);
+            throw new \RuntimeException('Payment: no payable pending order for user_id=' . $userId);
         }
 
         $pendingOrderIdInDb = (int)($pendingOrder['order_id'] ?? 0);

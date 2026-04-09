@@ -32,6 +32,87 @@ class OrderService
         return $this->buildOrderFromRow($orderRow);
     }
 
+    /**
+     * Cart or checkout-in-progress order (used for checkout URL, header cart count).
+     */
+    public function getPayablePendingOrderForUser(int $userId): ?Order
+    {
+        if ($userId <= 0) {
+            return null;
+        }
+
+        $orderRow = $this->orderRepository->findPayablePendingOrderByUserId($userId);
+        if ($orderRow === null) {
+            return null;
+        }
+
+        return $this->buildOrderFromRow($orderRow);
+    }
+
+    /**
+     * User clicked Pay: order is held until payment_deadline_at.
+     */
+    public function getAwaitingPaymentOrderForUser(int $userId): ?Order
+    {
+        if ($userId <= 0) {
+            return null;
+        }
+
+        $orderRow = $this->orderRepository->findAwaitingPaymentOrderByUserId($userId);
+        if ($orderRow === null) {
+            return null;
+        }
+
+        return $this->buildOrderFromRow($orderRow);
+    }
+
+    public function expireStaleCheckoutDeadlines(): void
+    {
+        $this->orderRepository->cancelExpiredPendingPaymentOrders();
+    }
+
+    public function cancelAwaitingPaymentOrderForUser(int $userId, int $orderId): void
+    {
+        $this->assertPositiveId($userId, 'user id');
+        $this->assertPositiveId($orderId, 'order id');
+
+        if (!$this->orderRepository->cancelAwaitingPaymentOrderForUser($userId, $orderId)) {
+            throw new \RuntimeException(
+                'Unable to cancel this checkout. It may already be paid, cancelled, or not waiting for payment.'
+            );
+        }
+    }
+
+    public function markCheckoutStartedIfNeeded(int $userId, int $orderId): void
+    {
+        if ($userId <= 0 || $orderId <= 0) {
+            return;
+        }
+
+        $this->orderRepository->ensurePaymentDeadlineFromFirstCheckout($orderId, $userId);
+    }
+
+    /**
+     * @return Order[]
+     */
+    public function getCancelledOrdersWithItemsForUser(int $userId): array
+    {
+        if ($userId <= 0) {
+            return [];
+        }
+
+        $rows = $this->orderRepository->findCancelledOrdersByUserId($userId);
+        $orders = [];
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $orders[] = $this->buildOrderFromRow($row);
+        }
+
+        return $orders;
+    }
+
     public function addEventToUserPendingOrder(int $userId, int $eventId, int $quantity = 1, ?string $passDate = null): Order
     {
         $this->assertPositiveId($userId, 'user id');
@@ -60,6 +141,12 @@ class OrderService
 
         $passDate = $this->normalizePassDate($passDate);
         $effectivePassDate = null;
+
+        if ($this->orderRepository->findAwaitingPaymentOrderByUserId($userId) !== null) {
+            throw new \RuntimeException(
+                'You already have a checkout in progress. Open My Program to pay within 24 hours, or use Cancel checkout there to stop the order and add items again. Otherwise wait until it expires.'
+            );
+        }
 
         $passService = $this->passService ?? new PassService(new PassRepository());
         $pass = $passService->findActivePassProductByEventId($eventId);
@@ -258,16 +345,24 @@ class OrderService
         }
 
         $statusRaw = strtolower((string)($orderRow['order_status'] ?? 'pending'));
-        $status = $statusRaw === OrderStatus::PAYED->value
-            ? OrderStatus::PAYED
-            : OrderStatus::PENDING;
+        $status = match ($statusRaw) {
+            OrderStatus::PAYED->value => OrderStatus::PAYED,
+            OrderStatus::CANCELLED->value => OrderStatus::CANCELLED,
+            default => OrderStatus::PENDING,
+        };
+
+        $deadlineRaw = $orderRow['payment_deadline_at'] ?? null;
+        $deadline = $deadlineRaw !== null && $deadlineRaw !== ''
+            ? (string)$deadlineRaw
+            : null;
 
         return new Order(
             $orderId,
             $userId,
             $status,
             isset($orderRow['created_at']) ? (string)$orderRow['created_at'] : null,
-            $items
+            $items,
+            $deadline
         );
     }
 

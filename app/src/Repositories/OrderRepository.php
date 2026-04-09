@@ -13,9 +13,11 @@ class OrderRepository extends Repository implements IOrderRepository
     public function findPendingOrderByUserId(int $userId): ?array
     {
         $stmt = $this->getConnection()->prepare(
-            'SELECT order_id, user_id, order_status, created_at
+            'SELECT order_id, user_id, order_status, created_at, payment_deadline_at
                FROM `orders`
-             WHERE user_id = :user_id AND order_status = :status
+             WHERE user_id = :user_id
+               AND order_status = :status
+               AND payment_deadline_at IS NULL
              ORDER BY created_at DESC
              LIMIT 1'
         );
@@ -27,6 +29,126 @@ class OrderRepository extends Repository implements IOrderRepository
 
         $row = $stmt->fetch();
         return is_array($row) ? $row : null;
+    }
+
+    public function findPayablePendingOrderByUserId(int $userId): ?array
+    {
+        $stmt = $this->getConnection()->prepare(
+            'SELECT order_id, user_id, order_status, created_at, payment_deadline_at
+               FROM `orders`
+             WHERE user_id = :user_id
+               AND order_status = :status
+               AND (
+                    payment_deadline_at IS NULL
+                    OR payment_deadline_at > NOW()
+                   )
+             ORDER BY created_at DESC
+             LIMIT 1'
+        );
+
+        $stmt->execute([
+            ':user_id' => $userId,
+            ':status' => 'pending',
+        ]);
+
+        $row = $stmt->fetch();
+        return is_array($row) ? $row : null;
+    }
+
+    public function findAwaitingPaymentOrderByUserId(int $userId): ?array
+    {
+        $stmt = $this->getConnection()->prepare(
+            'SELECT order_id, user_id, order_status, created_at, payment_deadline_at
+               FROM `orders`
+             WHERE user_id = :user_id
+               AND order_status = :status
+               AND payment_deadline_at IS NOT NULL
+               AND payment_deadline_at > NOW()
+             ORDER BY created_at DESC
+             LIMIT 1'
+        );
+
+        $stmt->execute([
+            ':user_id' => $userId,
+            ':status' => 'pending',
+        ]);
+
+        $row = $stmt->fetch();
+        return is_array($row) ? $row : null;
+    }
+
+    public function cancelExpiredPendingPaymentOrders(): int
+    {
+        $stmt = $this->getConnection()->prepare(
+            'UPDATE `orders`
+             SET order_status = :cancelled,
+                 payment_deadline_at = NULL
+             WHERE order_status = :pending
+               AND payment_deadline_at IS NOT NULL
+               AND payment_deadline_at < NOW()'
+        );
+        $stmt->execute([
+            ':cancelled' => 'cancelled',
+            ':pending' => 'pending',
+        ]);
+
+        return $stmt->rowCount();
+    }
+
+    public function cancelAwaitingPaymentOrderForUser(int $userId, int $orderId): bool
+    {
+        $stmt = $this->getConnection()->prepare(
+            'UPDATE `orders`
+             SET order_status = :cancelled,
+                 payment_deadline_at = NULL
+             WHERE order_id = :order_id
+               AND user_id = :user_id
+               AND order_status = :pending
+               AND payment_deadline_at IS NOT NULL'
+        );
+        $stmt->execute([
+            ':cancelled' => 'cancelled',
+            ':pending' => 'pending',
+            ':order_id' => $orderId,
+            ':user_id' => $userId,
+        ]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    public function ensurePaymentDeadlineFromFirstCheckout(int $orderId, int $userId): void
+    {
+        $stmt = $this->getConnection()->prepare(
+            'UPDATE `orders`
+             SET payment_deadline_at = DATE_ADD(NOW(), INTERVAL 24 HOUR)
+             WHERE order_id = :order_id
+               AND user_id = :user_id
+               AND order_status = :pending
+               AND payment_deadline_at IS NULL'
+        );
+        $stmt->execute([
+            ':order_id' => $orderId,
+            ':user_id' => $userId,
+            ':pending' => 'pending',
+        ]);
+    }
+
+    public function findCancelledOrdersByUserId(int $userId): array
+    {
+        $stmt = $this->getConnection()->prepare(
+            'SELECT order_id, user_id, order_status, created_at, payment_deadline_at
+               FROM `orders`
+             WHERE user_id = :user_id
+               AND order_status = :cancelled
+             ORDER BY created_at DESC, order_id DESC'
+        );
+        $stmt->execute([
+            ':user_id' => $userId,
+            ':cancelled' => 'cancelled',
+        ]);
+        $rows = $stmt->fetchAll();
+
+        return is_array($rows) ? $rows : [];
     }
 
     public function getAllOrdersWithSummary(): array
@@ -606,7 +728,7 @@ class OrderRepository extends Repository implements IOrderRepository
     public function findOrdersByUserId(int $userId): array
     {
         $stmt = $this->getConnection()->prepare(
-            'SELECT order_id, user_id, order_status, created_at
+            'SELECT order_id, user_id, order_status, created_at, payment_deadline_at
                FROM `orders`
               WHERE user_id = :user_id
               ORDER BY created_at DESC, order_id DESC'

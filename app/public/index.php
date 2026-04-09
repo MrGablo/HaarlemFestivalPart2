@@ -17,37 +17,6 @@ use App\Utils\Session;
 Env::load();
 
 /**
- * Serve static assets for /dance when all requests hit this front controller (e.g. Aiven).
- * GET /dance/assets/... -> serve from app/public/assets/... (CSS, images, etc.)
- */
-$uri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
-$uri = strtok($uri, '?');
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && strpos($uri, '/dance/assets/') === 0) {
-    $assetPath = substr($uri, strlen('/dance/assets/'));
-    $assetPath = str_replace(['..', "\0"], '', $assetPath);
-    $file = __DIR__ . '/assets/' . $assetPath;
-    if (is_file($file)) {
-        $fileReal = realpath($file);
-        $assetsDirReal = realpath(__DIR__ . '/assets');
-
-        if ($fileReal !== false && $assetsDirReal !== false && str_starts_with($fileReal, $assetsDirReal)) {
-            $mimes = [
-                'png' => 'image/png', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'gif' => 'image/gif',
-                'webp' => 'image/webp', 'svg' => 'image/svg+xml', 'ico' => 'image/x-icon',
-                'css' => 'text/css', 'js' => 'application/javascript', 'woff2' => 'font/woff2', 'woff' => 'font/woff',
-            ];
-            $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
-            if (isset($mimes[$ext])) {
-                header('Content-Type: ' . $mimes[$ext]);
-            }
-            header('Content-Length: ' . filesize($file));
-            readfile($file);
-            return;
-        }
-    }
-}
-
-/**
  * Define the routes for the application.
  */
 $dispatcher = simpleDispatcher(function (RouteCollector $r) {
@@ -69,6 +38,7 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
 
     // Personal Program (My Program) page
     $r->addRoute('GET', '/program', ['App\Controllers\ProgramController', 'show']);
+    $r->addRoute('POST', '/program/cancel-awaiting-payment', ['App\Controllers\ProgramController', 'cancelAwaitingPayment']);
     
     //Yummy Festival routes
     $r->addRoute('GET', '/yummy', ['App\Controllers\YummyController', 'home']);

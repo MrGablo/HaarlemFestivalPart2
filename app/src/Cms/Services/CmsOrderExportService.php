@@ -135,7 +135,7 @@ final class CmsOrderExportService
 
             if ($status === 'payed') {
                 $totals['payed'] += $amount;
-            } else {
+            } elseif ($status === 'pending') {
                 $totals['pending'] += $amount;
             }
 
