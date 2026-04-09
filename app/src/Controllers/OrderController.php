@@ -4,18 +4,23 @@ namespace App\Controllers;
 
 use App\Repositories\OrderRepository;
 use App\Services\EventModelBuilderService;
+use App\Services\HistoryBookingPricingService;
 use App\Services\OrderService;
 use App\Utils\AuthSessionData;
+use App\Utils\Csrf;
+use App\Utils\CsrfException;
 use App\Utils\Flash;
 use App\Utils\Session;
 
 class OrderController
 {
     private OrderService $orderService;
+    private HistoryBookingPricingService $historyPricingService;
 
     public function __construct()
     {
         $this->orderService = new OrderService(new OrderRepository(), new EventModelBuilderService());
+        $this->historyPricingService = new HistoryBookingPricingService();
     }
 
     public function addItem(): void
@@ -32,17 +37,27 @@ class OrderController
             ], 401);
         }
 
-        $eventId = isset($_POST['event_id']) ? (int)$_POST['event_id'] : 0;
-        $passDate = isset($_POST['pass_date']) ? (string)$_POST['pass_date'] : null;
-
         try {
-            $order = $this->orderService->addEventToUserPendingOrder($userId, $eventId, $passDate);
+            Csrf::assertPost('cart_csrf_token');
+
+            $eventId = isset($_POST['event_id']) ? (int)$_POST['event_id'] : 0;
+            $quantity = isset($_POST['quantity']) ? (int)$_POST['quantity'] : 1;
+            $passDate = isset($_POST['pass_date']) ? (string)$_POST['pass_date'] : null;
+
+            $order = $this->orderService->addEventToUserPendingOrder($userId, $eventId, $quantity, $passDate);
             Flash::setSuccess('Ticket added to cart.');
             $this->jsonResponse([
                 'ok' => true,
                 'message' => 'Ticket added to cart.',
                 'cart' => $this->buildCartPayload($order),
             ]);
+        } catch (CsrfException $e) {
+            $message = $e->getMessage();
+            Flash::setErrors(['general' => $message]);
+            $this->jsonResponse([
+                'ok' => false,
+                'message' => $message,
+            ], 400);
         } catch (\Throwable $e) {
             $message = $e->getMessage();
             Flash::setErrors(['general' => $message]);
@@ -74,9 +89,10 @@ class OrderController
             exit;
         }
 
-        $orderItemId = isset($_POST['order_item_id']) ? (int)$_POST['order_item_id'] : 0;
-
         try {
+            Csrf::assertPost('cart_csrf_token');
+
+            $orderItemId = isset($_POST['order_item_id']) ? (int)$_POST['order_item_id'] : 0;
             $order = $this->orderService->removeItemFromPendingOrder($userId, $orderItemId);
             Flash::setSuccess('Item removed from cart.');
 
@@ -86,6 +102,16 @@ class OrderController
                     'message' => 'Item removed from cart.',
                     'cart' => $this->buildCartPayload($order),
                 ]);
+            }
+        } catch (CsrfException $e) {
+            $message = $e->getMessage();
+            Flash::setErrors(['general' => $message]);
+
+            if ($this->isAjaxRequest()) {
+                $this->jsonResponse([
+                    'ok' => false,
+                    'message' => $message,
+                ], 400);
             }
         } catch (\Throwable $e) {
             $message = $e->getMessage();
@@ -123,10 +149,12 @@ class OrderController
             exit;
         }
 
-        $orderItemId = isset($_POST['order_item_id']) ? (int)$_POST['order_item_id'] : 0;
-        $quantity = isset($_POST['quantity']) ? (int)$_POST['quantity'] : 0;
-
         try {
+            Csrf::assertPost('cart_csrf_token');
+
+            $orderItemId = isset($_POST['order_item_id']) ? (int)$_POST['order_item_id'] : 0;
+            $quantity = isset($_POST['quantity']) ? (int)$_POST['quantity'] : 0;
+
             $order = $this->orderService->updateItemQuantityInPendingOrder($userId, $orderItemId, $quantity);
             Flash::setSuccess('Cart quantity updated.');
 
@@ -136,6 +164,16 @@ class OrderController
                     'message' => 'Cart quantity updated.',
                     'cart' => $this->buildCartPayload($order),
                 ]);
+            }
+        } catch (CsrfException $e) {
+            $message = $e->getMessage();
+            Flash::setErrors(['general' => $message]);
+
+            if ($this->isAjaxRequest()) {
+                $this->jsonResponse([
+                    'ok' => false,
+                    'message' => $message,
+                ], 400);
             }
         } catch (\Throwable $e) {
             $message = $e->getMessage();
@@ -214,6 +252,9 @@ class OrderController
                 'quantity' => (int)$item->quantity,
                 'unitPrice' => (float)$item->getUnitPrice(),
                 'unitPriceLabel' => number_format($item->getUnitPrice(), 2),
+                'totalPrice' => (float)$item->getTotalPrice(),
+                'totalPriceLabel' => number_format($item->getTotalPrice(), 2),
+                'maxQuantity' => strtolower((string)($item->event?->event_type ?? '')) === 'history' ? $this->historyPricingService->maxTicketsPerOrder() : 99,
             ];
         }
 

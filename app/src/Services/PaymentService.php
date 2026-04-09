@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Repositories\OrderRepository;
 use App\Repositories\PaymentRepository;
+use App\Utils\QrGenerator;
 
 /**
  * Handles Stripe checkout session creation and webhook processing.
@@ -12,11 +14,23 @@ class PaymentService
 {
     private PaymentRepository $repo;
     private TicketService $ticketService;
+    private EmailService $emailService;
+    private TicketPdfGenerator $ticketPdfGenerator;
+    private OrderService $orderService;
 
-    public function __construct(PaymentRepository $repo, ?TicketService $ticketService = null)
+    public function __construct(
+        PaymentRepository $repo,
+        ?TicketService $ticketService = null,
+        ?EmailService $emailService = null,
+        ?TicketPdfGenerator $ticketPdfGenerator = null,
+        ?OrderService $orderService = null
+    )
     {
         $this->repo = $repo;
         $this->ticketService = $ticketService ?? new TicketService();
+        $this->emailService = $emailService ?? new EmailService();
+        $this->ticketPdfGenerator = $ticketPdfGenerator ?? new TicketPdfGenerator();
+        $this->orderService = $orderService ?? new OrderService(new OrderRepository(), new EventModelBuilderService());
     }
 
     /**
@@ -26,26 +40,26 @@ class PaymentService
     {
         \Stripe\Stripe::setApiKey($this->getStripeSecretKey());
 
-        $pendingOrder = $this->repo->findPendingOrderByUserId($userId);
+        $pendingOrder = $this->orderService->getPendingOrderForUser($userId);
         if ($pendingOrder === null) {
             throw new \RuntimeException('No pending cart found.');
         }
-        $pendingOrderId = (int)($pendingOrder['order_id'] ?? 0);
+        $pendingOrderId = (int)($pendingOrder->order_id ?? 0);
         if ($pendingOrderId <= 0) {
             throw new \RuntimeException('Invalid pending cart.');
         }
 
-        $items = $this->repo->getPendingOrderItemsWithPricing($pendingOrderId);
+        $items = $pendingOrder->items;
         if ($items === []) {
             throw new \RuntimeException('Pending cart is empty.');
         }
 
         $lineItems = [];
         foreach ($items as $item) {
-            $eventId = (int)($item['event_id'] ?? 0);
-            $quantity = (int)($item['quantity'] ?? 0);
-            $priceInCents = (int)(((float)($item['price'] ?? 0)) * 100);
-            $eventTitle = (string)($item['title'] ?? 'Event Ticket');
+            $eventId = (int)($item->event_id ?? 0);
+            $quantity = (int)($item->quantity ?? 0);
+            $priceInCents = (int)round(((float)$item->getUnitPrice()) * 100);
+            $eventTitle = (string)($item->event?->title ?? 'Event Ticket');
             if ($eventId <= 0 || $quantity <= 0 || $priceInCents <= 0) {
                 throw new \RuntimeException('Invalid pending cart item data.');
             }
@@ -108,6 +122,8 @@ class PaymentService
 
             $this->ticketService->createTicketsForOrderItem($orderItemId, $userId, $eventId, $quantity, $passDate);
         }
+
+        $this->sendTicketDeliveryEmail($orderId, $userId);
 
         error_log("Payment OK: order=$orderId user=$userId");
     }
@@ -183,5 +199,71 @@ class PaymentService
         }
 
         return $key;
+    }
+
+    private function sendTicketDeliveryEmail(int $orderId, int $userId): void
+    {
+        $recipient = $this->repo->getOrderDeliveryRecipient($orderId, $userId);
+        if (!is_array($recipient)) {
+            return;
+        }
+
+        $email = trim((string)($recipient['email'] ?? ''));
+        if ($email === '') {
+            return;
+        }
+
+        $tickets = $this->repo->getIssuedTicketsForOrder($orderId);
+        if ($tickets === []) {
+            return;
+        }
+
+        foreach ($tickets as &$ticket) {
+            $qr = trim((string)($ticket['qr'] ?? ''));
+            $ticket['qr_svg'] = '';
+
+            if ($qr === '') {
+                continue;
+            }
+
+            try {
+                $ticket['qr_svg'] = QrGenerator::generateSvgMarkup($qr);
+            } catch (\Throwable $e) {
+                error_log('Ticket QR generation failed for order ' . $orderId . ': ' . $e->getMessage());
+            }
+        }
+        unset($ticket);
+
+        $firstName = trim((string)($recipient['first_name'] ?? 'Festival guest'));
+        $lastName = trim((string)($recipient['last_name'] ?? ''));
+        $orderNumber = sprintf('HF-%06d', $orderId);
+
+        $pdfPath = '';
+
+        try {
+            $pdfPath = $this->ticketPdfGenerator->generateTicketsPdf(
+                $orderNumber,
+                trim($firstName . ' ' . $lastName),
+                $tickets
+            );
+
+            $sent = $this->emailService->sendTicketDelivery(
+                $email,
+                $firstName !== '' ? $firstName : 'Festival guest',
+                $orderNumber,
+                $pdfPath,
+                $tickets
+            );
+
+            if (!$sent) {
+                error_log('Ticket delivery email was not sent for order ' . $orderId);
+            }
+        } catch (\Throwable $e) {
+            error_log('Ticket delivery preparation failed for order ' . $orderId . ': ' . $e->getMessage());
+        } finally {
+            if ($pdfPath !== '' && is_file($pdfPath)) {
+                @unlink($pdfPath);
+            }
+        }
     }
 }

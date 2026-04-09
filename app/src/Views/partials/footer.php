@@ -32,12 +32,12 @@
         <div class="flex-1 min-w-[200px]">
             <h3 class="text-[1.2rem] font-extrabold mb-[25px] text-black">Quick Menu</h3>
             <ul class="list-none p-0 m-0">
-                <li class="mb-3"><a href="#" class="no-underline text-gray-800 text-base font-normal transition-colors duration-200 hover:text-[#2F80ED] hover:underline">Home</a></li>
-                <li class="mb-3"><a href="#" class="no-underline text-gray-800 text-base font-normal transition-colors duration-200 hover:text-[#2F80ED] hover:underline">Dance!</a></li>
-                <li class="mb-3"><a href="#" class="no-underline text-gray-800 text-base font-normal transition-colors duration-200 hover:text-[#2F80ED] hover:underline">Haarlem Jazz</a></li>
-                <li class="mb-3"><a href="#" class="no-underline text-gray-800 text-base font-normal transition-colors duration-200 hover:text-[#2F80ED] hover:underline">Yummy!</a></li>
-                <li class="mb-3"><a href="#" class="no-underline text-gray-800 text-base font-normal transition-colors duration-200 hover:text-[#2F80ED] hover:underline">Stories in Haarlem</a></li>
-                <li class="mb-3"><a href="#" class="no-underline text-gray-800 text-base font-normal transition-colors duration-200 hover:text-[#2F80ED] hover:underline">A Stroll through History</a></li>
+                <li class="mb-3"><a href="/" class="no-underline text-gray-800 text-base font-normal transition-colors duration-200 hover:text-[#2F80ED] hover:underline">Home</a></li>
+                <li class="mb-3"><a href="/dance" class="no-underline text-gray-800 text-base font-normal transition-colors duration-200 hover:text-[#2F80ED] hover:underline">Dance!</a></li>
+                <li class="mb-3"><a href="/jazz" class="no-underline text-gray-800 text-base font-normal transition-colors duration-200 hover:text-[#2F80ED] hover:underline">Haarlem Jazz</a></li>
+                <li class="mb-3"><a href="/yummy" class="no-underline text-gray-800 text-base font-normal transition-colors duration-200 hover:text-[#2F80ED] hover:underline">Yummy!</a></li>
+                <li class="mb-3"><a href="/stories" class="no-underline text-gray-800 text-base font-normal transition-colors duration-200 hover:text-[#2F80ED] hover:underline">Stories in Haarlem</a></li>
+                <li class="mb-3"><a href="/history" class="no-underline text-gray-800 text-base font-normal transition-colors duration-200 hover:text-[#2F80ED] hover:underline">A Stroll through History</a></li>
             </ul>
         </div>
 

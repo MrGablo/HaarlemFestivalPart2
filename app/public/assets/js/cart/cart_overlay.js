@@ -9,10 +9,13 @@
     var cartPayForm = document.getElementById('cartPayForm');
     var cartActionFlash = document.getElementById('cartActionFlash');
     var cartActionFlashTimer = null;
+    var cartCsrfToken = '';
 
     if (!toggleBtn || !overlay || !backdrop || !closeBtn || !cartBody || !cartTotalValue || !cartBadge) {
         return;
     }
+
+    cartCsrfToken = String(cartBody.dataset.cartCsrfToken || '');
 
     function escapeHtml(value) {
         return String(value)
@@ -32,7 +35,9 @@
         var location = escapeHtml(item.location || '');
         var passDateLabel = escapeHtml(item.passDateLabel || '');
         var quantity = Number(item.quantity || 0);
+        var maxQuantity = Number(item.maxQuantity || 99);
         var unitPriceLabel = escapeHtml(item.unitPriceLabel || Number(item.unitPrice || 0).toFixed(2));
+        var totalPriceLabel = escapeHtml(item.totalPriceLabel || Number(item.totalPrice || 0).toFixed(2));
         var orderItemId = Number(item.orderItemId || 0);
 
         return [
@@ -44,14 +49,17 @@
                     : ''),
                 '<div class="flex items-center justify-between gap-[10px]">',
                     '<div class="inline-flex items-center gap-2">',
-                        '<span class="font-bold text-[#171717]">Qty: ' + quantity + ' x EUR ' + unitPriceLabel + '</span>',
-                        '<div class="inline-flex items-center gap-[6px]" data-cart-qty-controls data-order-item-id="' + orderItemId + '" data-quantity="' + quantity + '">',
+                        '<span class="font-bold text-[#171717]">Qty: ' + quantity + ' x EUR ' + unitPriceLabel + ' · Total EUR ' + totalPriceLabel + '</span>',
+                        '<div class="inline-flex items-center gap-[6px]" data-cart-qty-controls data-order-item-id="' + orderItemId + '" data-quantity="' + quantity + '" data-max-quantity="' + maxQuantity + '">',
                             '<button type="button" class="h-[30px] w-[30px] rounded-lg border border-[#2f80ed] bg-[#2f80ed] font-bold text-white transition-colors duration-200 hover:bg-[#1d6ed8] disabled:cursor-wait disabled:opacity-60" data-cart-qty-button data-direction="decrease" aria-label="Decrease quantity for ' + title + '">-</button>',
-                            '<button type="button" class="h-[30px] w-[30px] rounded-lg border border-[#2f80ed] bg-[#2f80ed] font-bold text-white transition-colors duration-200 hover:bg-[#1d6ed8] disabled:cursor-wait disabled:opacity-60" data-cart-qty-button data-direction="increase" aria-label="Increase quantity for ' + title + '">+</button>',
+                            '<button type="button" class="h-[30px] w-[30px] rounded-lg border border-[#2f80ed] bg-[#2f80ed] font-bold text-white transition-colors duration-200 hover:bg-[#1d6ed8] disabled:cursor-wait disabled:opacity-60" data-cart-qty-button data-direction="increase" ' + (quantity >= maxQuantity ? 'disabled' : '') + ' aria-label="Increase quantity for ' + title + '">+</button>',
                         '</div>',
                     '</div>',
                     '<div class="flex items-center gap-2">',
                         '<form method="POST" action="/order/item/remove">',
+                            (cartCsrfToken !== ''
+                                ? '<input type="hidden" name="_csrf" value="' + escapeHtml(cartCsrfToken) + '">'
+                                : ''),
                             '<input type="hidden" name="order_item_id" value="' + orderItemId + '">',
                             '<button type="submit" class="cursor-pointer rounded-lg border border-[#9f9f9f] bg-[#f3f3f3] px-[10px] py-[6px] font-bold text-[#111] transition-colors duration-200 hover:bg-[#e8e8e8] disabled:cursor-wait disabled:opacity-60">Remove</button>',
                         '</form>',
@@ -241,7 +249,8 @@
             return;
         }
 
-        var nextQuantity = Math.min(99, Math.max(1, currentQuantity + delta));
+        var maxQuantity = Number(controls.dataset.maxQuantity || 99);
+        var nextQuantity = Math.min(maxQuantity, Math.max(1, currentQuantity + delta));
         if (nextQuantity === currentQuantity) {
             return;
         }
@@ -254,6 +263,9 @@
         var body = new FormData();
         body.append('order_item_id', String(orderItemId));
         body.append('quantity', String(nextQuantity));
+        if (cartCsrfToken !== '') {
+            body.append('_csrf', cartCsrfToken);
+        }
 
         fetch('/order/item/quantity', {
             method: 'POST',

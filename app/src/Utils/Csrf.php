@@ -22,7 +22,7 @@ final class Csrf
         $postedToken = (string)($_POST[$field] ?? '');
 
         if ($sessionToken === '' || $postedToken === '' || !hash_equals($sessionToken, $postedToken)) {
-            throw new \RuntimeException('Invalid form token. Please refresh and try again.');
+            throw new CsrfException('Invalid form token. Please refresh and try again.');
         }
     }
 }

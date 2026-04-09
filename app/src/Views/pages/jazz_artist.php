@@ -10,20 +10,21 @@ use App\Utils\Wysiwyg;
 
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($vm->pageTitle) ?></title>
     <script src="/assets/js/jazz/tailwind.config.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="m-0 bg-jazz-dark bg-[#0b0b0b] font-[system-ui,Arial] text-white">
+<body class="m-0 overflow-x-hidden bg-jazz-dark bg-[#0b0b0b] font-[system-ui,Arial] text-white">
     <?php include __DIR__ . '/../partials/header.php'; ?>
 
     <!-- HERO -->
-    <section class="relative min-h-[62vh] bg-cover bg-center"
+    <section class="relative min-h-[62vh] bg-cover bg-center max-[1200px]:min-h-0 max-[1200px]:bg-top"
         style="background-image:url('/<?= htmlspecialchars($vm->coverImage) ?>')">
         <div class="absolute inset-0 bg-gradient-to-r from-black/75 to-black/15"></div>
 
-        <div class="absolute left-20 top-7 z-[4] flex items-center gap-[10px] max-[1200px]:left-6">
+        <div class="absolute left-20 top-7 z-[4] flex items-center gap-[10px] max-[1200px]:left-6 max-[768px]:left-4 max-[768px]:right-4 max-[768px]:top-4 max-[768px]:text-base">
             <a class="font-extrabold text-white no-underline opacity-90" href="<?= htmlspecialchars((string)$vm->breadcrumb['back_href']) ?>">
                 ← <?= htmlspecialchars((string)$vm->breadcrumb['back_label']) ?>
             </a>
@@ -32,13 +33,13 @@ use App\Utils\Wysiwyg;
             <?php endif; ?>
         </div>
 
-        <div class="relative z-[1] max-w-jazz-hero max-w-[980px] px-20 pb-[10px] pt-20 max-[1200px]:px-6">
-            <div class="tracking-[0.2em] opacity-75"><?= htmlspecialchars($vm->kicker) ?></div>
-            <h1 class="mb-4 mt-2 text-[64px] leading-none max-[1200px]:text-[44px]"><?= htmlspecialchars($vm->heroTitle) ?></h1>
-            <div class="mb-4 leading-[1.4] opacity-90"><?= htmlspecialchars($vm->heroSubtitle) ?></div>
+        <div class="relative z-[1] max-w-jazz-hero max-w-[980px] px-20 pb-[10px] pt-20 max-[1200px]:px-6 max-[768px]:px-4 max-[768px]:pt-16">
+            <div class="text-sm tracking-[0.2em] opacity-75 max-[768px]:text-base"><?= htmlspecialchars($vm->kicker) ?></div>
+            <h1 class="mb-4 mt-2 text-[64px] leading-none max-[1200px]:text-[44px] max-[768px]:text-[44px] max-[768px]:leading-[1.05]"><?= htmlspecialchars($vm->heroTitle) ?></h1>
+            <div class="mb-4 max-w-[640px] leading-[1.4] opacity-90 max-[768px]:text-lg max-[768px]:leading-[1.45]"><?= htmlspecialchars($vm->heroSubtitle) ?></div>
         </div>
 
-        <div class="absolute right-[70px] top-[70px] z-[3] grid w-jazz-media w-[360px] gap-[14px] max-[1200px]:static max-[1200px]:mt-[14px] max-[1200px]:w-full">
+        <div class="absolute right-[70px] top-[70px] z-[3] grid w-jazz-media w-[360px] gap-[14px] max-[1200px]:static max-[1200px]:mt-[14px] max-[1200px]:w-full max-[768px]:px-4">
             <?php if (is_array($vm->mainMedia) && !empty($vm->mainMedia['image'])): ?>
                 <div class="overflow-hidden rounded-[14px] bg-white/5 shadow-[0_10px_28px_rgba(0,0,0,.45)]">
                     <img class="block h-[170px] w-full object-cover max-[1200px]:h-[160px]" src="/<?= htmlspecialchars((string)$vm->mainMedia['image']) ?>" alt="">
@@ -46,7 +47,7 @@ use App\Utils\Wysiwyg;
             <?php endif; ?>
 
             <?php if ($vm->secondaryMedia !== []): ?>
-                <div class="grid grid-cols-2 gap-[14px]">
+                <div class="grid grid-cols-2 gap-[14px] max-[768px]:grid-cols-1">
                     <?php foreach ($vm->secondaryMedia as $s): ?>
                         <div class="w-full overflow-hidden rounded-[14px] bg-white/5 shadow-[0_10px_28px_rgba(0,0,0,.45)]">
                             <img class="block h-[140px] w-full object-cover" src="/<?= htmlspecialchars((string)($s['image'] ?? '')) ?>" alt="">
@@ -60,11 +61,11 @@ use App\Utils\Wysiwyg;
         </div>
     </section>
 
-    <section class="px-20 pb-20 pt-6 max-[1200px]:px-6">
+    <section class="px-20 pb-20 pt-6 max-[1200px]:px-6 max-[768px]:px-4 max-[768px]:pb-14">
 
         <!-- TABS -->
-        <div class="mb-[10px] mt-[18px] flex flex-wrap items-center gap-[18px]">
-            <a class="inline-block border-0 bg-transparent px-[6px] py-1 text-lg text-white no-underline <?= $vm->activeTab === 'events' ? 'opacity-100 underline underline-offset-[6px]' : 'opacity-75' ?>"
+        <div class="mb-[10px] mt-[18px] flex flex-wrap items-center gap-[18px] max-[768px]:gap-[10px]">
+            <a class="inline-block border-0 bg-transparent px-[6px] py-1 text-lg text-white no-underline max-[768px]:text-lg <?= $vm->activeTab === 'events' ? 'opacity-100 underline underline-offset-[6px]' : 'opacity-75' ?>"
                 data-active-class="opacity-100 underline underline-offset-[6px]"
                 data-inactive-class="opacity-75"
                 data-artist-tab="events"
@@ -72,7 +73,7 @@ use App\Utils\Wysiwyg;
                 <?= htmlspecialchars((string)$vm->tabLabels['events']) ?>
             </a>
 
-            <a class="inline-block border-0 bg-transparent px-[6px] py-1 text-lg text-white no-underline <?= $vm->activeTab === 'career' ? 'opacity-100 underline underline-offset-[6px]' : 'opacity-75' ?>"
+            <a class="inline-block border-0 bg-transparent px-[6px] py-1 text-lg text-white no-underline max-[768px]:text-lg <?= $vm->activeTab === 'career' ? 'opacity-100 underline underline-offset-[6px]' : 'opacity-75' ?>"
                 data-active-class="opacity-100 underline underline-offset-[6px]"
                 data-inactive-class="opacity-75"
                 data-artist-tab="career"
@@ -80,7 +81,7 @@ use App\Utils\Wysiwyg;
                 <?= htmlspecialchars((string)$vm->tabLabels['career']) ?>
             </a>
 
-            <a class="inline-block border-0 bg-transparent px-[6px] py-1 text-lg text-white no-underline <?= $vm->activeTab === 'album' ? 'opacity-100 underline underline-offset-[6px]' : 'opacity-75' ?>"
+            <a class="inline-block border-0 bg-transparent px-[6px] py-1 text-lg text-white no-underline max-[768px]:text-lg <?= $vm->activeTab === 'album' ? 'opacity-100 underline underline-offset-[6px]' : 'opacity-75' ?>"
                 data-active-class="opacity-100 underline underline-offset-[6px]"
                 data-inactive-class="opacity-75"
                 data-artist-tab="album"
@@ -91,28 +92,29 @@ use App\Utils\Wysiwyg;
 
         <!-- EVENTS -->
         <div class="<?= $vm->activeTab !== 'events' ? 'hidden' : '' ?> mt-[18px]" data-artist-panel="events">
-            <div class="mt-[14px] grid grid-cols-jazz-events-rail grid-cols-[26px_1fr] gap-[22px] max-[1200px]:grid-cols-jazz-events-rail-sm max-[1200px]:grid-cols-[12px_1fr]">
-                <div class="rounded-xl bg-jazz-accent-rail bg-[linear-gradient(180deg,_#f7c600,_rgba(247,198,0,.35))] shadow-[0_10px_28px_rgba(0,0,0,.35)]"></div>
+            <div class="mt-[14px] grid grid-cols-jazz-events-rail grid-cols-[26px_1fr] gap-[22px] max-[1200px]:grid-cols-jazz-events-rail-sm max-[1200px]:grid-cols-[12px_1fr] max-[768px]:grid-cols-1 max-[768px]:gap-[14px]">
+                <div class="rounded-xl bg-jazz-accent-rail bg-[linear-gradient(180deg,_#f7c600,_rgba(247,198,0,.35))] shadow-[0_10px_28px_rgba(0,0,0,.35)] max-[768px]:hidden"></div>
 
                 <div>
                     <?php foreach ($vm->events as $ev): ?>
-                        <div class="my-[22px] grid grid-cols-jazz-event-row grid-cols-[360px_1fr_220px] items-center gap-7 max-[1200px]:grid-cols-1">
+                        <div class="my-[22px] grid grid-cols-jazz-event-row grid-cols-[360px_1fr_220px] items-center gap-7 max-[1200px]:grid-cols-1 max-[768px]:my-[16px] max-[768px]:gap-4">
                             <div class="overflow-hidden rounded-2xl bg-white/5">
-                                <img class="block h-[170px] w-full object-cover" src="/<?= htmlspecialchars((string)($ev['img_background'] ?? '')) ?>"
+                                <img class="block h-[170px] w-full object-cover max-[768px]:h-[160px]" src="/<?= htmlspecialchars((string)($ev['img_background'] ?? '')) ?>"
                                     alt="<?= htmlspecialchars((string)($ev['title'] ?? '')) ?>"
                                     class="block h-[170px] w-full object-cover"
                                     loading="lazy">
                             </div>
 
                             <div>
-                                <div class="mb-[6px] font-extrabold opacity-95"><?= htmlspecialchars((string)($ev['start_label'] ?? '')) ?></div>
-                                <div class="text-[26px] font-black leading-[1.1]"><?= htmlspecialchars((string)($ev['title'] ?? '')) ?></div>
-                                <div class="mt-[6px] font-extrabold opacity-90"><?= htmlspecialchars((string)($ev['location'] ?? '')) ?></div>
+                                <div class="mb-[6px] text-sm font-extrabold opacity-95 max-[768px]:text-base"><?= htmlspecialchars((string)($ev['start_label'] ?? '')) ?></div>
+                                <div class="text-[26px] font-black leading-[1.1] max-[768px]:text-[30px]"><?= htmlspecialchars((string)($ev['title'] ?? '')) ?></div>
+                                <div class="mt-[6px] font-extrabold opacity-90 max-[768px]:text-lg"><?= htmlspecialchars((string)($ev['location'] ?? '')) ?></div>
                             </div>
 
-                            <form method="POST" action="/order/item/add" class="ticket-form flex justify-end max-[1200px]:justify-start">
+                            <form method="POST" action="/order/item/add" class="ticket-form flex justify-end max-[1200px]:justify-start max-[768px]:w-full">
+                                <input type="hidden" name="_csrf" value="<?= htmlspecialchars(\App\Utils\Csrf::token('cart_csrf_token'), ENT_QUOTES, 'UTF-8') ?>">
                                 <input type="hidden" name="event_id" value="<?= (int)($ev['event_id'] ?? 0) ?>">
-                                <button class="min-w-40 cursor-pointer rounded-xl border-0 bg-jazz-accent bg-[#f7c600] px-[22px] py-3 font-black text-jazz-accent-text text-[#111]" type="submit">
+                                <button class="min-w-40 cursor-pointer rounded-xl border-0 bg-jazz-accent bg-[#f7c600] px-[22px] py-3 font-black text-jazz-accent-text text-[#111] max-[768px]:w-full max-[768px]:min-w-0 max-[768px]:py-4 max-[768px]:text-lg" type="submit">
                                     <?php if (isset($ev['price']) && is_numeric($ev['price'])): ?>
                                         <?php $price = (float)$ev['price']; ?>
                                         Ticket: <?= htmlspecialchars(rtrim(rtrim(number_format($price, 2, '.', ''), '0'), '.')) ?>€ p.p
@@ -153,7 +155,7 @@ use App\Utils\Wysiwyg;
 
         <div class="<?= $vm->activeTab !== 'album' ? 'hidden' : '' ?> mt-[18px]" data-artist-panel="album">
             <?php foreach ($vm->albums as $alb): ?>
-                <div class="grid grid-cols-jazz-album grid-cols-[560px_1fr] items-start gap-7 max-[1200px]:grid-cols-1">
+                <div class="grid grid-cols-jazz-album grid-cols-[560px_1fr] items-start gap-7 max-[1200px]:grid-cols-1 max-[768px]:gap-4">
                     <div class="overflow-hidden rounded-2xl">
                         <img class="block w-full" src="/<?= htmlspecialchars((string)$alb['image_src']) ?>"
                             alt="<?= htmlspecialchars((string)$alb['image_alt']) ?>">
@@ -164,21 +166,21 @@ use App\Utils\Wysiwyg;
                     </div>
 
                     <div>
-                        <div class="mb-[6px] font-extrabold opacity-80">Album</div>
-                        <div class="mb-[6px] text-[40px] font-black"><?= htmlspecialchars((string)($alb['artist'] ?? '')) ?></div>
-                        <div class="mb-[10px] text-[28px] font-extrabold opacity-95"><?= htmlspecialchars((string)($alb['title'] ?? '')) ?></div>
+                        <div class="mb-[6px] font-extrabold opacity-80 max-[768px]:text-base">Album</div>
+                        <div class="mb-[6px] text-[40px] font-black max-[768px]:text-[34px]"><?= htmlspecialchars((string)($alb['artist'] ?? '')) ?></div>
+                        <div class="mb-[10px] text-[28px] font-extrabold opacity-95 max-[768px]:text-[26px]"><?= htmlspecialchars((string)($alb['title'] ?? '')) ?></div>
 
                         <?php if (!empty($alb['description_html']) && is_string($alb['description_html'])): ?>
-                            <div class="max-w-jazz-album-text max-w-[860px] leading-[1.6] opacity-90 wysiwyg"><?= Wysiwyg::render($alb['description_html']) ?></div>
+                            <div class="max-w-jazz-album-text max-w-[860px] leading-[1.6] opacity-90 wysiwyg max-[768px]:text-base"><?= Wysiwyg::render($alb['description_html']) ?></div>
                         <?php else: ?>
-                            <p class="max-w-jazz-album-text max-w-[860px] leading-[1.6] opacity-90"><?= htmlspecialchars((string)($alb['description'] ?? '')) ?></p>
+                            <p class="max-w-jazz-album-text max-w-[860px] leading-[1.6] opacity-90 max-[768px]:text-base"><?= htmlspecialchars((string)($alb['description'] ?? '')) ?></p>
                         <?php endif; ?>
                     </div>
                 </div>
             <?php endforeach; ?>
         </div>
 
-        <div class="mt-10 grid grid-cols-[1.3fr_1fr] gap-10 max-[1200px]:grid-cols-1">
+        <div class="mt-10 grid grid-cols-[1.3fr_1fr] gap-10 max-[1200px]:grid-cols-1 max-[768px]:text-base">
             <div>
                 <h3 class="mb-[10px] mt-0"><?= htmlspecialchars($vm->aboutTitle) ?></h3>
 
@@ -204,7 +206,7 @@ use App\Utils\Wysiwyg;
     <button
         id="cartToast"
         type="button"
-        class="hidden fixed bottom-6 right-6 z-[1200] rounded-xl bg-zinc-900 px-4 py-3 text-left text-sm text-white shadow-xl ring-1 ring-white/15 transition hover:bg-zinc-800"
+        class="hidden fixed bottom-6 right-6 z-[1200] rounded-xl bg-zinc-900 px-4 py-3 text-left text-sm text-white shadow-xl ring-1 ring-white/15 transition hover:bg-zinc-800 max-[768px]:bottom-4 max-[768px]:left-4 max-[768px]:right-4"
         aria-live="polite"
     >
         <span class="block font-semibold">Ticket added to cart</span>

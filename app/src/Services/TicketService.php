@@ -45,21 +45,20 @@ class TicketService
 
         for ($i = 0; $i < $quantity; $i++) {
             foreach ($coveredEventIds as $coveredEventId) {
-                try {
-                    $this->ticketRepository->createTicket(
+                $this->ticketRepository->executeInTransaction(function (\PDO $connection) use ($orderItemId, $userId, $coveredEventId): void {
+                    $availabilityUpdated = $this->eventRepository->decrementAvailabilityByOneUsingConnection($connection, $coveredEventId);
+                    if (!$availabilityUpdated) {
+                        throw new \RuntimeException('No availability left for event_id=' . $coveredEventId);
+                    }
+
+                    $this->ticketRepository->createTicketUsingConnection(
+                        $connection,
                         $orderItemId,
                         $userId,
                         $coveredEventId,
                         'TICKET_' . bin2hex(random_bytes(16))
                     );
-
-                    $availabilityUpdated = $this->eventRepository->decrementAvailabilityByOne($coveredEventId);
-                    if (!$availabilityUpdated) {
-                        error_log('Availability decrement failed after ticket creation for event_id=' . $coveredEventId);
-                    }
-                } catch (\Throwable $e) {
-                    error_log('Ticket creation failed: ' . $e->getMessage());
-                }
+                });
             }
         }
     }
