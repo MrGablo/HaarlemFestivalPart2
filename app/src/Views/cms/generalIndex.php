@@ -114,7 +114,7 @@
                     'updated' => '-',
                     'created' => '-',
                     'href' => '/cms/events/stories',
-                   
+                    'label' => 'Open',
                 ],
             ];
             ?>
