@@ -13,11 +13,13 @@ class PaymentService
 {
     private PaymentRepository $repo;
     private TicketService $ticketService;
+    private OrderService $orderService;
 
-    public function __construct(PaymentRepository $repo, ?TicketService $ticketService = null)
+    public function __construct(PaymentRepository $repo, ?TicketService $ticketService = null, ?OrderService $orderService = null)
     {
         $this->repo = $repo;
         $this->ticketService = $ticketService ?? new TicketService();
+        $this->orderService = $orderService ?? new OrderService(new OrderRepository(), new EventModelBuilderService());
     }
 
     /**
@@ -27,8 +29,7 @@ class PaymentService
     {
         \Stripe\Stripe::setApiKey($this->getStripeSecretKey());
 
-        $orderService = new OrderService(new OrderRepository(), new EventModelBuilderService());
-        $pendingOrder = $orderService->getPendingOrderForUser($userId);
+        $pendingOrder = $this->orderService->getPendingOrderForUser($userId);
         if ($pendingOrder === null) {
             throw new \RuntimeException('No pending cart found.');
         }

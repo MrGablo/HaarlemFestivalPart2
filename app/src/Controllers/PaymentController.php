@@ -2,7 +2,10 @@
 
 namespace App\Controllers;
 
+use App\Repositories\OrderRepository;
 use App\Repositories\PaymentRepository;
+use App\Services\EventModelBuilderService;
+use App\Services\OrderService;
 use App\Services\PaymentService;
 use App\Utils\AuthSessionData;
 use App\Utils\Csrf;
@@ -22,7 +25,11 @@ class PaymentController
 
     public function __construct()
     {
-        $this->paymentService = new PaymentService(new PaymentRepository());
+        $this->paymentService = new PaymentService(
+            new PaymentRepository(),
+            null,
+            new OrderService(new OrderRepository(), new EventModelBuilderService())
+        );
     }
 
     // ---------------------------------------------------------------
