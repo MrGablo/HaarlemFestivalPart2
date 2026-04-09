@@ -119,7 +119,7 @@ if (!function_exists('getNavClass')) {
 
     <div id="mobileMenuBackdrop" class="hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity"></div>
 
-    <div id="mobileMenu" class="fixed top-0 right-0 h-full w-72 sm:w-80 z-50 bg-white p-6 flex flex-col transform translate-x-full transition-transform duration-300 ease-in-out shadow-2xl overflow-y-auto">
+    <div id="mobileMenu" class="fixed top-0 right-0 h-full w-72 sm:w-80 z-50 bg-white p-6 text-black flex flex-col transform translate-x-full transition-transform duration-300 ease-in-out shadow-2xl overflow-y-auto">
         <div class="flex justify-between items-center mb-8">
             <img src="/assets/svg/logo.svg" alt="Logo" class="h-10">
             <button id="closeMenuBtn" class="text-4xl text-gray-500 hover:text-black leading-none pb-2">&times;</button>
