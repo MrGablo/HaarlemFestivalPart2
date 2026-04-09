@@ -62,7 +62,7 @@ final class HistoryHomePageBuilder extends AbstractPageViewModelBuilder
             ],
             [
                 'title' => 'Booking',
-                'description' => 'Booking form labels and pricing copy. Schedule rows remain DB-driven from HistoryEvent.',
+                'description' => 'Booking form labels and helper copy. Live single and family prices now come from HistoryEvent records.',
                 'fields' => [
                     [
                         'key' => 'booking',
@@ -84,9 +84,7 @@ final class HistoryHomePageBuilder extends AbstractPageViewModelBuilder
                             ['key' => 'no_events_message', 'type' => 'text', 'label' => 'No Events Message', 'default' => 'No history tours are available right now.'],
                             ['key' => 'slot_count_label', 'type' => 'text', 'label' => 'Slot Count Label', 'default' => 'tour(s) available'],
                             ['key' => 'single_price_label', 'type' => 'text', 'label' => 'Single Price Label', 'default' => 'Single'],
-                            ['key' => 'single_price_value', 'type' => 'text', 'label' => 'Single Price Value', 'default' => '17.50'],
                             ['key' => 'family_price_label', 'type' => 'text', 'label' => 'Family Price Label', 'default' => 'Family (max 4)'],
-                            ['key' => 'family_price_value', 'type' => 'text', 'label' => 'Family Price Value', 'default' => '60'],
                             ['key' => 'selection_help_html', 'type' => 'wysiwyg', 'label' => 'Selection Help'],
                             ['key' => 'availability_note_html', 'type' => 'wysiwyg', 'label' => 'Availability Note'],
                         ],

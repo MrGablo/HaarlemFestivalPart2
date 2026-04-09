@@ -158,6 +158,8 @@ class HistoryHomeService
                 'is_available' => (int)$event->availability > 0,
                 'price' => (float)($event->price ?? 0),
                 'price_label' => number_format((float)($event->price ?? 0), 2),
+                'family_price' => (float)($event->family_price ?? 0),
+                'family_price_label' => number_format((float)($event->family_price ?? 0), 2),
             ];
         }
 

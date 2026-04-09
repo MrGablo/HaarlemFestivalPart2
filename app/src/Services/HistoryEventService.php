@@ -53,6 +53,7 @@ class HistoryEventService
         $event->start_date = $this->normalizeDateTime((string)($input['start_date'] ?? ''));
         $event->location = $this->requireText($input, 'location', 'Location');
         $event->price = $this->parsePrice((string)($input['price'] ?? ''));
+        $event->family_price = $this->parsePrice((string)($input['family_price'] ?? ''), 'Family price');
     }
 
     private function requireText(array $input, string $key, string $label): string
@@ -85,16 +86,16 @@ class HistoryEventService
         return $value;
     }
 
-    private function parsePrice(string $raw): float
+    private function parsePrice(string $raw, string $label = 'Price'): float
     {
         $raw = trim($raw);
         if ($raw === '' || !is_numeric($raw)) {
-            throw new \RuntimeException('Price must be numeric.');
+            throw new \RuntimeException($label . ' must be numeric.');
         }
 
         $price = (float)$raw;
         if ($price < 0) {
-            throw new \RuntimeException('Price cannot be negative.');
+            throw new \RuntimeException($label . ' cannot be negative.');
         }
 
         return $price;

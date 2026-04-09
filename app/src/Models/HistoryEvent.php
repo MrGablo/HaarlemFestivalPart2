@@ -8,6 +8,7 @@ class HistoryEvent extends GenericEvent
 {
     public string $language;
     public string $start_date;
+    public ?float $family_price;
 
     public function __construct(array $row)
     {
@@ -19,5 +20,6 @@ class HistoryEvent extends GenericEvent
 
         $this->language = strtoupper((string)($row['language'] ?? ''));
         $this->start_date = (string)($row['start_date'] ?? '');
+        $this->family_price = isset($row['family_price']) ? (float)$row['family_price'] : null;
     }
 }

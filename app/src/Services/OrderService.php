@@ -301,7 +301,8 @@ class OrderService
         }
 
         $basePrice = $event instanceof \App\Models\GenericEvent ? (float)($event->price ?? 0.0) : 0.0;
-        $pricing = $this->historyPricing()->resolvePricing($basePrice, $quantity);
+        $familyPrice = $event instanceof \App\Models\HistoryEvent ? $event->family_price : null;
+        $pricing = $this->historyPricing()->resolvePricing($basePrice, $familyPrice, $quantity);
 
         return [
             'unit_price_override' => $pricing['unit_price'],

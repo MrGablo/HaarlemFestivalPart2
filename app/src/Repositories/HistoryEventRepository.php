@@ -25,7 +25,8 @@ class HistoryEventRepository extends Repository implements IHistoryEventReposito
                 h.language,
                 h.start_date,
                 h.location,
-                h.price
+                h.price,
+                h.family_price
             FROM Event e
             INNER JOIN HistoryEvent h ON h.event_id = e.event_id
             WHERE e.event_type = 'history'
@@ -53,7 +54,8 @@ class HistoryEventRepository extends Repository implements IHistoryEventReposito
                 h.language,
                 h.start_date,
                 h.location,
-                h.price
+                                h.price,
+                                h.family_price
             FROM Event e
             INNER JOIN HistoryEvent h ON h.event_id = e.event_id
             WHERE e.event_type = 'history'
@@ -88,8 +90,8 @@ class HistoryEventRepository extends Repository implements IHistoryEventReposito
             }
 
             $stmtHistory = $pdo->prepare(
-                "INSERT INTO HistoryEvent (event_id, language, start_date, location, price)
-                 VALUES (:event_id, :language, :start_date, :location, :price)"
+                "INSERT INTO HistoryEvent (event_id, language, start_date, location, price, family_price)
+                 VALUES (:event_id, :language, :start_date, :location, :price, :family_price)"
             );
             $stmtHistory->execute([
                 ':event_id' => $eventId,
@@ -97,6 +99,7 @@ class HistoryEventRepository extends Repository implements IHistoryEventReposito
                 ':start_date' => $event->start_date,
                 ':location' => $event->location,
                 ':price' => $event->price,
+                ':family_price' => $event->family_price,
             ]);
 
             $pdo->commit();
@@ -139,7 +142,8 @@ class HistoryEventRepository extends Repository implements IHistoryEventReposito
                  SET language = :language,
                      start_date = :start_date,
                      location = :location,
-                     price = :price
+                     price = :price,
+                     family_price = :family_price
                  WHERE event_id = :id"
             );
             $stmtHistory->execute([
@@ -147,6 +151,7 @@ class HistoryEventRepository extends Repository implements IHistoryEventReposito
                 ':start_date' => $event->start_date,
                 ':location' => $event->location,
                 ':price' => $event->price,
+                ':family_price' => $event->family_price,
                 ':id' => $event->event_id,
             ]);
 

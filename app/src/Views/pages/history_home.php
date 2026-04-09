@@ -8,8 +8,42 @@ $hero = $vm->hero;
 $overview = $vm->overview;
 $booking = $vm->booking;
 $map = $vm->map;
+$bookingEvents = is_array($vm->bookingEvents ?? null) ? $vm->bookingEvents : [];
 $bookingEventsJson = json_encode($vm->bookingEvents, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
 $bookingEventsJson = is_string($bookingEventsJson) ? $bookingEventsJson : '[]';
+$formatPriceSummary = static function (array $events, string $key, string $fallback): string {
+    $prices = [];
+
+    foreach ($events as $event) {
+        $value = $event[$key] ?? null;
+        if (!is_numeric($value)) {
+            continue;
+        }
+
+        $price = (float)$value;
+        if ($price <= 0) {
+            continue;
+        }
+
+        $prices[] = $price;
+    }
+
+    if ($prices === []) {
+        return $fallback;
+    }
+
+    $min = min($prices);
+    $max = max($prices);
+    $formatted = 'EUR ' . number_format($min, 2);
+
+    if (abs($max - $min) > 0.0001) {
+        return 'From ' . $formatted;
+    }
+
+    return $formatted;
+};
+$singlePriceSummary = $formatPriceSummary($bookingEvents, 'price', 'EUR 17.50');
+$familyPriceSummary = $formatPriceSummary($bookingEvents, 'family_price', 'EUR 60.00');
 ?>
 <!doctype html>
 <html lang="en">
@@ -70,7 +104,6 @@ $bookingEventsJson = is_string($bookingEventsJson) ? $bookingEventsJson : '[]';
                 data-no-events-message="<?= htmlspecialchars((string)($booking['no_events_message'] ?? 'No history tours are available right now.')) ?>"
                 data-reserve-label="<?= htmlspecialchars((string)($booking['reserve_button_label'] ?? 'Reserve now')) ?>"
                 data-slot-count-label="<?= htmlspecialchars((string)($booking['slot_count_label'] ?? 'tour(s) available')) ?>"
-                data-family-price="<?= htmlspecialchars((string)($booking['family_price_value'] ?? '60')) ?>"
                 data-family-size="4">
                 <div class="flex items-center justify-between gap-4">
                     <h2 class="text-3xl font-black"><?= htmlspecialchars((string)($booking['title'] ?? 'Choose your tour')) ?></h2>
@@ -162,8 +195,8 @@ $bookingEventsJson = is_string($bookingEventsJson) ? $bookingEventsJson : '[]';
                 <?php endif; ?>
 
                 <div class="mt-6 flex flex-wrap items-center gap-6 text-sm text-[#444]">
-                    <span><strong><?= htmlspecialchars((string)($booking['single_price_label'] ?? 'Single')) ?>:</strong> <?= htmlspecialchars((string)($booking['single_price_value'] ?? '17.50')) ?></span>
-                    <span><strong><?= htmlspecialchars((string)($booking['family_price_label'] ?? 'Family')) ?>:</strong> <?= htmlspecialchars((string)($booking['family_price_value'] ?? '60')) ?></span>
+                    <span><strong><?= htmlspecialchars((string)($booking['single_price_label'] ?? 'Single')) ?>:</strong> <?= htmlspecialchars($singlePriceSummary) ?></span>
+                    <span><strong><?= htmlspecialchars((string)($booking['family_price_label'] ?? 'Family')) ?>:</strong> <?= htmlspecialchars($familyPriceSummary) ?></span>
                 </div>
                 <?php if (!empty($booking['availability_note_html'])): ?>
                     <div class="mt-4 text-xs leading-6 text-[#666]">
@@ -276,7 +309,6 @@ $bookingEventsJson = is_string($bookingEventsJson) ? $bookingEventsJson : '[]';
             var reserveLabel = root.dataset.reserveLabel || 'Reserve now';
             var slotCountLabel = root.dataset.slotCountLabel || 'tour(s) available';
             var familySize = Number(root.dataset.familySize || 4);
-            var familyPrice = parseMoney(root.dataset.familyPrice || '60');
 
             function parseMoney(value) {
                 var normalized = String(value || '').replace(/[^0-9,.]/g, '');
@@ -287,7 +319,7 @@ $bookingEventsJson = is_string($bookingEventsJson) ? $bookingEventsJson : '[]';
                 }
 
                 var parsed = Number(normalized);
-                return Number.isFinite(parsed) && parsed > 0 ? parsed : 60;
+                return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
             }
 
             function uniqueOptions(list, key, labelKey) {
@@ -433,12 +465,15 @@ $bookingEventsJson = is_string($bookingEventsJson) ? $bookingEventsJson : '[]';
                     return;
                 }
 
-                var effectiveUnitPrice = Number(selected.price || 0);
+                var effectiveUnitPrice = parseMoney(selected.price || 0);
                 var totalPrice = effectiveUnitPrice * state.quantity;
                 var usedFamilyPrice = state.quantity === familySize;
-                if (usedFamilyPrice) {
+                var familyPrice = parseMoney(selected.family_price || 0);
+                if (usedFamilyPrice && familyPrice > 0) {
                     totalPrice = familyPrice;
                     effectiveUnitPrice = familyPrice / familySize;
+                } else {
+                    usedFamilyPrice = false;
                 }
 
                 selectedTour.textContent = selected.full_date_label + ' at ' + selected.time_label + ' (' + selected.language_label + ')';

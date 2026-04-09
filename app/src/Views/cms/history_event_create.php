@@ -36,6 +36,7 @@
             $startDateValue = htmlspecialchars((string)($old['start_date'] ?? ''));
             $locationValue = htmlspecialchars((string)($old['location'] ?? 'Historic city centre'));
             $priceValue = htmlspecialchars((string)($old['price'] ?? '17.50'));
+            $familyPriceValue = htmlspecialchars((string)($old['family_price'] ?? '60.00'));
             ?>
 
             <form method="POST" action="/cms/events/history/create" class="mt-6 space-y-8">
@@ -83,6 +84,12 @@
                         <div>
                             <label class="block text-sm font-medium text-slate-700">Price</label>
                             <input name="price" type="number" min="0" step="0.01" required value="<?= $priceValue ?>"
+                                   class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700">Family price</label>
+                            <input name="family_price" type="number" min="0" step="0.01" required value="<?= $familyPriceValue ?>"
                                    class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
                         </div>
                     </div>

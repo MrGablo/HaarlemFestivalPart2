@@ -44,6 +44,7 @@
                             <th class="px-4 py-3 text-left font-semibold text-slate-700">Location</th>
                             <th class="px-4 py-3 text-left font-semibold text-slate-700">Availability</th>
                             <th class="px-4 py-3 text-left font-semibold text-slate-700">Price</th>
+                            <th class="px-4 py-3 text-left font-semibold text-slate-700">Family Price</th>
                             <th class="px-4 py-3 text-left font-semibold text-slate-700">Actions</th>
                         </tr>
                     </thead>
@@ -51,7 +52,7 @@
                     <tbody class="divide-y divide-slate-100 bg-white">
                         <?php if (empty($events)): ?>
                             <tr>
-                                <td colspan="8" class="px-4 py-6 text-slate-600">No history events found.</td>
+                                <td colspan="9" class="px-4 py-6 text-slate-600">No history events found.</td>
                             </tr>
                         <?php else: ?>
                             <?php foreach ($events as $e): ?>
@@ -63,6 +64,7 @@
                                     <td class="px-4 py-3 text-slate-700"><?= htmlspecialchars((string)$e->location) ?></td>
                                     <td class="whitespace-nowrap px-4 py-3 text-slate-700"><?= (int)$e->availability ?></td>
                                     <td class="whitespace-nowrap px-4 py-3 text-slate-700"><?= htmlspecialchars((string)$e->price) ?></td>
+                                    <td class="whitespace-nowrap px-4 py-3 text-slate-700"><?= htmlspecialchars((string)$e->family_price) ?></td>
                                     <td class="whitespace-nowrap px-4 py-3">
                                         <div class="flex flex-wrap gap-2">
                                             <a href="/cms/events/history/<?= (int)$e->event_id ?>"

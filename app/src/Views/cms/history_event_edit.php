@@ -78,6 +78,12 @@
                             <input name="price" type="number" min="0" step="0.01" required value="<?= htmlspecialchars((string)($event->price ?? 0)) ?>"
                                    class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200">
                         </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700">Family price</label>
+                            <input name="family_price" type="number" min="0" step="0.01" required value="<?= htmlspecialchars((string)($event->family_price ?? 0)) ?>"
+                                   class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200">
+                        </div>
                     </div>
                 </div>
 
