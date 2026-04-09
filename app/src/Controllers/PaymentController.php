@@ -137,19 +137,15 @@ class PaymentController
     {
         Session::ensureStarted();
 
-        $pendingPayment = $_SESSION['pending_payment'] ?? null;
-        if (is_array($pendingPayment)) {
-            unset($_SESSION['pending_payment']);
+        // Keep session cleanup, but never trust it for payment confirmation.
+        unset($_SESSION['pending_payment']);
 
-            $userId  = (int)($pendingPayment['user_id']  ?? 0);
-            $orderId = (int)($pendingPayment['order_id'] ?? 0);
-
-            if ($userId > 0 && $orderId > 0) {
-                try {
-                    $this->paymentService->fulfillPendingOrder($userId, $orderId);
-                } catch (\Throwable $e) {
-                    error_log('Payment success fulfilment error: ' . $e->getMessage());
-                }
+        $sessionId = isset($_GET['session_id']) ? trim((string)$_GET['session_id']) : '';
+        if ($sessionId !== '') {
+            try {
+                $this->paymentService->fulfillPaidCheckoutSessionById($sessionId);
+            } catch (\Throwable $e) {
+                error_log('Payment success fulfilment error: ' . $e->getMessage());
             }
         }
 

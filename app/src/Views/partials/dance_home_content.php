@@ -98,7 +98,7 @@ $intro = $vm->intro;
       <?php endif; ?>
 
       <?php foreach ($vm->timetableDays as $day): ?>
-        <?php /** @var array{dayLabel: string, passLabel: string, passPriceLabel: string, passEventId: int, sessions: list<array{title: string, tag: string, tagSpecial: bool, timeRange: string, venueName: string, priceLabel: string, eventId: int}>} $day */ ?>
+        <?php /** @var array{dayKey: string, dayLabel: string, passLabel: string, passPriceLabel: string, passEventId: int, sessions: list<array{title: string, tag: string, tagSpecial: bool, timeRange: string, venueName: string, priceLabel: string, eventId: int}>} $day */ ?>
         <div class="mb-14">
           <div class="mb-3 pl-5 text-xs font-normal leading-normal text-dance-text"><?= htmlspecialchars($day['dayLabel']) ?></div>
           <div class="mb-3 flex min-h-dance-row items-center gap-4 rounded bg-dance-accent px-4 py-2">

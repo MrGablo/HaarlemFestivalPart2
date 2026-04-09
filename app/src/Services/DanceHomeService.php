@@ -172,6 +172,7 @@ final class DanceHomeService
             $pass = $passByDay[$dayKey] ?? null;
             $passEid = $pass !== null ? (int) ($pass['event_id'] ?? 0) : 0;
             $days[] = [
+                'dayKey' => (string)$dayKey,
                 'dayLabel' => (string) ($dayLabels[$dayKey] ?? $dayKey),
                 'passLabel' => $pass !== null
                     ? (string) ($pass['title'] ?? 'DAY PASS')

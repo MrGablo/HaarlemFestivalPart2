@@ -27,7 +27,7 @@ final class DanceHomePageViewModel
     /** @var array{label: string, note: string, priceLabel: string, eventId: int}|null */
     public ?array $allAccess;
 
-    /** @var list<array{dayLabel: string, passLabel: string, passPriceLabel: string, passEventId: int, sessions: list<array{title: string, tag: string, tagSpecial: bool, timeRange: string, venueName: string, priceLabel: string, eventId: int}>}> */
+    /** @var list<array{dayKey: string, dayLabel: string, passLabel: string, passPriceLabel: string, passEventId: int, sessions: list<array{title: string, tag: string, tagSpecial: bool, timeRange: string, venueName: string, priceLabel: string, eventId: int}>}> */
     public array $timetableDays;
 
     public bool $timetableHasRows;
@@ -43,7 +43,7 @@ final class DanceHomePageViewModel
      * @param array{kicker: string, bodyHtml: string, sideImageAlt: string, statsLine: string} $intro
      * @param list<array{name: string, imageUrl: string, alt: string}> $lineupArtists
      * @param array{label: string, note: string, priceLabel: string, eventId: int}|null $allAccess
-     * @param list<array{dayLabel: string, passLabel: string, passPriceLabel: string, passEventId: int, sessions: list<array{title: string, tag: string, tagSpecial: bool, timeRange: string, venueName: string, priceLabel: string, eventId: int}>}> $timetableDays
+     * @param list<array{dayKey: string, dayLabel: string, passLabel: string, passPriceLabel: string, passEventId: int, sessions: list<array{title: string, tag: string, tagSpecial: bool, timeRange: string, venueName: string, priceLabel: string, eventId: int}>}> $timetableDays
      */
     public function __construct(
         string $pageTitle,

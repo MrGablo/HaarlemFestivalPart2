@@ -113,22 +113,63 @@ class PaymentService
     }
 
     /**
+     * Retrieves a checkout session from Stripe and fulfils only when paid.
+     */
+    public function fulfillPaidCheckoutSessionById(string $sessionId): void
+    {
+        $sessionId = trim($sessionId);
+        if ($sessionId === '') {
+            throw new \RuntimeException('Payment: missing checkout session id.');
+        }
+
+        \Stripe\Stripe::setApiKey($this->getStripeSecretKey());
+        $session = \Stripe\Checkout\Session::retrieve($sessionId);
+
+        $this->handleCheckoutCompleted($session);
+    }
+
+    /**
      * Called by the webhook after Stripe confirms payment.
      */
     public function handleCheckoutCompleted(object $session): void
     {
-        $userId           = (int) ($session->metadata->user_id ?? 0);
-        $pendingOrderId   = (int) ($session->metadata->pending_order_id ?? 0);
+        $this->assertSessionIsPaid($session);
 
-        if ($userId <= 0) {
-            throw new \RuntimeException('Payment: invalid metadata - user_id=' . $userId);
+        $metadata = $session->metadata ?? null;
+        $userId = (int)($metadata->user_id ?? 0);
+        $pendingOrderId = (int)($metadata->pending_order_id ?? 0);
+
+        if ($userId <= 0 || $pendingOrderId <= 0) {
+            throw new \RuntimeException(
+                'Payment: checkout session metadata incomplete. user_id=' . $userId . ', pending_order_id=' . $pendingOrderId
+            );
         }
 
-        if ($pendingOrderId <= 0) {
-            throw new \RuntimeException('Payment: missing pending_order_id in checkout session metadata.');
+        $pendingOrder = $this->repo->findPendingOrderByUserId($userId);
+        if (!is_array($pendingOrder)) {
+            throw new \RuntimeException('Payment: no pending order found for user_id=' . $userId);
+        }
+
+        $pendingOrderIdInDb = (int)($pendingOrder['order_id'] ?? 0);
+        if ($pendingOrderIdInDb <= 0 || $pendingOrderIdInDb !== $pendingOrderId) {
+            throw new \RuntimeException(
+                'Payment: pending order mismatch. metadata=' . $pendingOrderId . ', db=' . $pendingOrderIdInDb
+            );
         }
 
         $this->fulfillPendingOrder($userId, $pendingOrderId);
+    }
+
+    private function assertSessionIsPaid(object $session): void
+    {
+        $status = (string)($session->status ?? '');
+        $paymentStatus = (string)($session->payment_status ?? '');
+
+        if ($status !== 'complete' || $paymentStatus !== 'paid') {
+            throw new \RuntimeException(
+                "Payment: checkout session is not paid. status={$status}, payment_status={$paymentStatus}"
+            );
+        }
     }
 
     private function getStripeSecretKey(): string

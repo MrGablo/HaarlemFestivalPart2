@@ -134,6 +134,24 @@ final class DanceHomeRepository extends Repository
     }
 
     /** @return array<int, int> */
+    public function getDanceSessionEventIdsByDate(string $isoDate): array
+    {
+        $stmt = $this->getConnection()->prepare(
+            "SELECT d.event_id
+             FROM DanceEvent d
+             INNER JOIN Event e ON e.event_id = d.event_id
+             WHERE e.event_type = 'dance'
+               AND d.row_kind = 'session'
+               AND DATE(COALESCE(d.event_date, d.start_date)) = :pass_date
+             ORDER BY d.sort_order ASC, d.event_id ASC"
+        );
+        $stmt->execute([':pass_date' => $isoDate]);
+        $rows = $stmt->fetchAll();
+
+        return $this->normalizeEventIds(is_array($rows) ? $rows : []);
+    }
+
+    /** @return array<int, int> */
     public function getDanceSessionEventIdsByPassEvent(int $passEventId): array
     {
         try {
@@ -206,6 +224,35 @@ final class DanceHomeRepository extends Repository
         $rows = $stmt ? $stmt->fetchAll() : [];
 
         return $this->normalizeEventIds(is_array($rows) ? $rows : []);
+    }
+
+    /** @return array<int, int> */
+    public function getDanceCoveredSessionEventIdsByEventId(int $eventId): array
+    {
+        if ($eventId <= 0) {
+            return [];
+        }
+
+        $stmt = $this->getConnection()->prepare(
+            "SELECT d.row_kind
+             FROM DanceEvent d
+             INNER JOIN Event e ON e.event_id = d.event_id
+             WHERE d.event_id = :event_id
+               AND e.event_type = 'dance'
+             LIMIT 1"
+        );
+        $stmt->execute([':event_id' => $eventId]);
+        $rowKind = strtolower(trim((string)$stmt->fetchColumn()));
+
+        if ($rowKind === 'all_access') {
+            return $this->getAllDanceSessionEventIds();
+        }
+
+        if ($rowKind === 'day_pass') {
+            return $this->getDanceSessionEventIdsByPassEvent($eventId);
+        }
+
+        return [];
     }
 
     /** @return list<array<string, mixed>>|null */
