@@ -23,7 +23,7 @@
 
             <?php
             // CMS modules shown on the overview page
-
+            
             //update view
             $modules = [
                 [
@@ -98,6 +98,15 @@
                     'href' => '/cms/passes',
                     'label' => 'Open',
                 ],
+                [
+                    'id' => 9,
+                    'title' => 'Tickets',
+                    'type' => 'tickets',
+                    'updated' => '-',
+                    'created' => '-',
+                    'href' => '/cms/tickets',
+                    'label' => 'Open',
+                ],
             ];
             ?>
 
@@ -117,15 +126,19 @@
                     <tbody class="divide-y divide-slate-100 bg-white">
                         <?php foreach ($modules as $m): ?>
                             <tr class="hover:bg-slate-50">
-                                <td class="whitespace-nowrap px-4 py-3 text-slate-700"><?= (int)$m['id'] ?></td>
-                                <td class="whitespace-nowrap px-4 py-3 font-medium text-slate-900"><?= htmlspecialchars((string)$m['title']) ?></td>
-                                <td class="whitespace-nowrap px-4 py-3 text-slate-700"><?= htmlspecialchars((string)$m['type']) ?></td>
-                                <td class="whitespace-nowrap px-4 py-3 text-slate-700"><?= htmlspecialchars((string)$m['updated']) ?></td>
-                                <td class="whitespace-nowrap px-4 py-3 text-slate-700"><?= htmlspecialchars((string)$m['created']) ?></td>
+                                <td class="whitespace-nowrap px-4 py-3 text-slate-700"><?= (int) $m['id'] ?></td>
+                                <td class="whitespace-nowrap px-4 py-3 font-medium text-slate-900">
+                                    <?= htmlspecialchars((string) $m['title']) ?></td>
+                                <td class="whitespace-nowrap px-4 py-3 text-slate-700">
+                                    <?= htmlspecialchars((string) $m['type']) ?></td>
+                                <td class="whitespace-nowrap px-4 py-3 text-slate-700">
+                                    <?= htmlspecialchars((string) $m['updated']) ?></td>
+                                <td class="whitespace-nowrap px-4 py-3 text-slate-700">
+                                    <?= htmlspecialchars((string) $m['created']) ?></td>
                                 <td class="whitespace-nowrap px-4 py-3">
-                                    <a href="<?= htmlspecialchars((string)$m['href']) ?>"
+                                    <a href="<?= htmlspecialchars((string) $m['href']) ?>"
                                         class="inline-flex items-center rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">
-                                        <?= htmlspecialchars((string)$m['label']) ?>
+                                        <?= htmlspecialchars((string) $m['label']) ?>
                                     </a>
                                 </td>
                             </tr>
