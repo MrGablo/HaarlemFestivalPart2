@@ -17,10 +17,14 @@ class YummyDetailPageViewModel
         $this->sessions = $sessions;
         $this->pageTitle = "Yummy Event - " . $event->title;
 
+        $formatPath = function (string $path): string {
+            return $path !== '' ? '/' . ltrim($path, '/') : '';
+        };
+
         $this->pageContent = [
-            'gallery' => array_map(function($img) {
+            'gallery' => array_map(function ($img) use ($formatPath) {
                 return [
-                    'src' => $img['path'] ?? '',
+                    'src' => $formatPath($img['path'] ?? ''),
                     'alt' => $img['caption'] ?? '',
                     'caption' => $img['caption'] ?? ''
                 ];
@@ -28,16 +32,16 @@ class YummyDetailPageViewModel
             'aboutSection' => $pageContent['aboutSection']['descriptionHtml'] ?? '',
             'amuse_bouche' => [
                 'html' => $pageContent['contentSection1']['html'] ?? '',
-                'images' => array_column($pageContent['contentSection1']['images'] ?? [], 'path'),
+                'images' => array_map($formatPath, array_column($pageContent['contentSection1']['images'] ?? [], 'path')),
                 'caption' => $pageContent['contentSection1']['images'][0]['caption'] ?? ''
             ],
             'chef' => [
                 'html' => $pageContent['chefSection']['html'] ?? '',
-                'image' => $pageContent['chefSection']['imagePath'] ?? '',
+                'image' => $formatPath($pageContent['chefSection']['imagePath'] ?? ''),
             ],
             'menu' => [
                 'html' => $pageContent['menuSection']['html'] ?? '',
-                'image' => $pageContent['menuSection']['imagePath'] ?? '',
+                'image' => $formatPath($pageContent['menuSection']['imagePath'] ?? ''),
             ],
             'informationBlock' => $pageContent['informationBlock'] ?? '',
         ];
