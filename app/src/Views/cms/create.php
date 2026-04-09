@@ -119,6 +119,14 @@ $tinyMceApiKey = trim((string)($_ENV['TINYMCE_API_KEY'] ?? $_SERVER['TINYMCE_API
             repeater.addEventListener('click', (event) => {
                 const addButton = event.target.closest('[data-repeater-add]');
                 if (addButton) {
+                    const maxItems = Number(repeater.dataset.maxItems || '0');
+                    const currentItemsCount = items.querySelectorAll('[data-repeater-item]').length;
+
+                    if (maxItems > 0 && currentItemsCount >= maxItems) {
+                        alert('You can only add up to ' + maxItems + ' items.');
+                        return;
+                    }
+
                     const nextIndex = Number(repeater.dataset.nextIndex || '0');
                     const html = template.innerHTML.replaceAll('__INDEX__', String(nextIndex));
                     const wrapper = document.createElement('div');

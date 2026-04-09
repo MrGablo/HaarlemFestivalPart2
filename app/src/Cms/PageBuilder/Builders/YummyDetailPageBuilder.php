@@ -33,7 +33,7 @@ final class YummyDetailPageBuilder extends AbstractPageViewModelBuilder
         return [
             [
                 'title' => 'Hero Section',
-                'description' => 'Image gallery displayed at the top of the restaurant page.',
+                'description' => 'Image gallery displayed at the top of the restaurant page. Limit images up to 3 max.',
                 'fields' => [
                     [
                         'key' => 'heroSection',
@@ -44,6 +44,7 @@ final class YummyDetailPageBuilder extends AbstractPageViewModelBuilder
                                 'type' => 'repeater',
                                 'label' => 'Gallery Images',
                                 'addLabel' => 'Add image',
+                                'maxItems' => 3,
                                 'fields' => [
                                     ['key' => 'path', 'type' => 'image', 'storage' => 'string', 'label' => 'Image'],
                                     ['key' => 'caption', 'type' => 'text', 'label' => 'Caption'],
@@ -68,7 +69,7 @@ final class YummyDetailPageBuilder extends AbstractPageViewModelBuilder
             ],
             [
                 'title' => 'Content Section 1 (Amuse-Bouche)',
-                'description' => 'A descriptive section often used for Amuse-Bouche highlights.',
+                'description' => 'A descriptive section often used for Amuse-Bouche highlights. Limit images up to 2 max.',
                 'fields' => [
                     [
                         'key' => 'contentSection1',
@@ -80,6 +81,7 @@ final class YummyDetailPageBuilder extends AbstractPageViewModelBuilder
                                 'type' => 'repeater',
                                 'label' => 'Images',
                                 'addLabel' => 'Add image',
+                                'maxItems' => 2,
                                 'fields' => [
                                     ['key' => 'path', 'type' => 'image', 'storage' => 'string', 'label' => 'Image'],
                                     ['key' => 'caption', 'type' => 'text', 'label' => 'Caption'],
@@ -105,7 +107,7 @@ final class YummyDetailPageBuilder extends AbstractPageViewModelBuilder
             ],
             [
                 'title' => 'Menu Section',
-                'description' => 'The restaurant menu highlights.',
+                'description' => 'The restaurant menu highlights one menu image max.',
                 'fields' => [
                     [
                         'key' => 'menuSection',
