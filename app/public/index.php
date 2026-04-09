@@ -157,6 +157,15 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     $r->addRoute('POST', '/cms/events/jazz/{id:\\d+}', ['App\Cms\Controllers\CMSJazzController', 'update']);
     $r->addRoute('POST', '/cms/events/jazz/{id:\\d+}/delete', ['App\Cms\Controllers\CMSJazzController', 'delete']);
 
+    // Yummy CMS routes (admin only)
+    $r->addRoute('GET',  '/cms/events/yummy', ['App\Cms\Controllers\CMSYummyController', 'index']);
+    $r->addRoute('GET',  '/cms/events/yummy/create', ['App\Cms\Controllers\CMSYummyController', 'createForm']);
+    $r->addRoute('POST', '/cms/events/yummy/create', ['App\Cms\Controllers\CMSYummyController', 'create']);
+    $r->addRoute('GET',  '/cms/events/yummy/{id:\\d+}', ['App\Cms\Controllers\CMSYummyController', 'edit']);
+    $r->addRoute('POST', '/cms/events/yummy/{id:\\d+}/update', ['App\Cms\Controllers\CMSYummyController', 'update']);
+    $r->addRoute('POST', '/cms/events/yummy/{id:\\d+}/delete', ['App\Cms\Controllers\CMSYummyController', 'delete']);
+
+
     // Venue CMS routes (admin only)
     $r->addRoute('GET',  '/cms/venues', ['App\Cms\Controllers\CMSVenueController', 'index']);
     $r->addRoute('GET',  '/cms/venues/create', ['App\Cms\Controllers\CMSVenueController', 'createForm']);

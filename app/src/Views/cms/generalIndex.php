@@ -55,6 +55,15 @@
                 ],
                 [
                     'id' => 4,
+                    'title' => 'Yummy Events',
+                    'type' => 'yummy_events',
+                    'updated' => '-',
+                    'created' => '-',
+                    'href' => '/cms/events/yummy',
+                    'label' => 'Open',
+                ],
+                [
+                    'id' => 5,
                     'title' => 'Artists',
                     'type' => 'artists',
                     'updated' => '-',
@@ -63,7 +72,7 @@
                     'label' => 'Open',
                 ],
                 [
-                    'id' => 5,
+                    'id' => 6,
                     'title' => 'Users',
                     'type' => 'users',
                     'updated' => '-',
@@ -72,7 +81,7 @@
                     'label' => 'Open',
                 ],
                 [
-                    'id' => 6,
+                    'id' => 7,
                     'title' => 'Venues',
                     'type' => 'venues',
                     'updated' => '-',
@@ -81,7 +90,7 @@
                     'label' => 'Open',
                 ],
                 [
-                    'id' => 7,
+                    'id' => 8,
                     'title' => 'Orders',
                     'type' => 'orders',
                     'updated' => '-',
@@ -90,7 +99,7 @@
                     'label' => 'Open',
                 ],
                 [
-                    'id' => 8,
+                    'id' => 9,
                     'title' => 'Passes',
                     'type' => 'passes',
                     'updated' => '-',
@@ -118,10 +127,14 @@
                         <?php foreach ($modules as $m): ?>
                             <tr class="hover:bg-slate-50">
                                 <td class="whitespace-nowrap px-4 py-3 text-slate-700"><?= (int)$m['id'] ?></td>
-                                <td class="whitespace-nowrap px-4 py-3 font-medium text-slate-900"><?= htmlspecialchars((string)$m['title']) ?></td>
-                                <td class="whitespace-nowrap px-4 py-3 text-slate-700"><?= htmlspecialchars((string)$m['type']) ?></td>
-                                <td class="whitespace-nowrap px-4 py-3 text-slate-700"><?= htmlspecialchars((string)$m['updated']) ?></td>
-                                <td class="whitespace-nowrap px-4 py-3 text-slate-700"><?= htmlspecialchars((string)$m['created']) ?></td>
+                                <td class="whitespace-nowrap px-4 py-3 font-medium text-slate-900">
+                                    <?= htmlspecialchars((string)$m['title']) ?></td>
+                                <td class="whitespace-nowrap px-4 py-3 text-slate-700">
+                                    <?= htmlspecialchars((string)$m['type']) ?></td>
+                                <td class="whitespace-nowrap px-4 py-3 text-slate-700">
+                                    <?= htmlspecialchars((string)$m['updated']) ?></td>
+                                <td class="whitespace-nowrap px-4 py-3 text-slate-700">
+                                    <?= htmlspecialchars((string)$m['created']) ?></td>
                                 <td class="whitespace-nowrap px-4 py-3">
                                     <a href="<?= htmlspecialchars((string)$m['href']) ?>"
                                         class="inline-flex items-center rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">

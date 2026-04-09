@@ -1,12 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Repositories;
 
 use App\Framework\Repository;
 use App\Models\YummyEvent;
+use App\Repositories\Interfaces\IYummyEventRepository;
 use App\Services\EventModelBuilderService;
 
-class YummyEventRepository extends Repository
+class YummyEventRepository extends Repository implements IYummyEventRepository
 {
     private EventModelBuilderService $modelBuilder;
 
@@ -47,7 +50,7 @@ class YummyEventRepository extends Repository
         $pdo = $this->getConnection();
         $stmt = $pdo->prepare("
             SELECT e.event_id, e.title, e.event_type, e.availability,
-                   y.id as yummy_id, y.page_id, y.thumbnail_path, y.cuisine, y.star_rating, y.price
+                   y.id as yummy_id, y.page_id, y.thumbnail_path, y.cuisine, y.star_rating, y.price, y.start_time, y.end_time
             FROM Event e
             INNER JOIN YummyEvent y ON e.event_id = y.event_id
             WHERE e.event_id = :id
@@ -60,7 +63,8 @@ class YummyEventRepository extends Repository
             return null;
         }
 
-        return $this->modelBuilder->buildEventModel($row);
+        $model = $this->modelBuilder->buildEventModel($row);
+        return $model instanceof YummyEvent ? $model : null;
     }
 
     public function getSessionsForYummyEvent(int $eventId): array
@@ -71,7 +75,9 @@ class YummyEventRepository extends Repository
         $stmtTitle->execute(['id' => $eventId]);
         $title = $stmtTitle->fetchColumn();
 
-        if (!$title) return [];
+        if (!$title) {
+            return [];
+        }
 
         $stmt = $pdo->prepare("
             SELECT y.id, y.start_time, y.end_time, e.event_id,
@@ -86,5 +92,146 @@ class YummyEventRepository extends Repository
         $stmt->execute(['title' => $title]);
 
         return $stmt->fetchAll();
+    }
+
+    public function getAllCMSYummyEvents(): array
+    {
+        $pdo = $this->getConnection();
+        $stmt = $pdo->query("
+            SELECT e.event_id, e.title, e.event_type, e.availability,
+                   y.id as yummy_id, y.start_time, y.end_time, y.page_id, y.thumbnail_path, y.cuisine, y.star_rating, y.price
+            FROM Event e
+            INNER JOIN YummyEvent y ON e.event_id = y.event_id
+            WHERE e.event_type = 'yummy'
+            ORDER BY y.start_time ASC
+        ");
+
+        $rows = $stmt->fetchAll() ?: [];
+        $events = [];
+        foreach ($rows as $row) {
+            $events[] = $this->modelBuilder->buildEventModel($row);
+        }
+        return $events;
+    }
+
+    public function findYummyEventById(int $eventId): ?YummyEvent
+    {
+        return $this->getEventDetails($eventId);
+    }
+
+    public function createYummyEvent(YummyEvent $event): int
+    {
+        $pdo = $this->getConnection();
+        $pdo->beginTransaction();
+
+        try {
+            $stmtEvent = $pdo->prepare("
+                INSERT INTO Event (title, event_type, availability)
+                VALUES (:title, 'yummy', :availability)
+            ");
+            $stmtEvent->execute([
+                ':title' => $event->title,
+                ':availability' => $event->availability,
+            ]);
+
+            $eventId = (int)$pdo->lastInsertId();
+            if ($eventId <= 0) {
+                throw new \RuntimeException('Failed to insert parent Event.');
+            }
+
+            $stmtYummy = $pdo->prepare("
+                INSERT INTO YummyEvent (event_id, price, cuisine, start_time, end_time, thumbnail_path, star_rating, page_id)
+                VALUES (:event_id, :price, :cuisine, :start_time, :end_time, :thumbnail_path, :star_rating, :page_id)
+            ");
+
+            $stmtYummy->execute([
+                ':event_id'       => $eventId,
+                ':price'          => $event->price,
+                ':cuisine'        => $event->cuisine,
+                ':start_time'     => $event->start_time,
+                ':end_time'       => $event->end_time,
+                ':thumbnail_path' => $event->thumbnail_path,
+                ':star_rating'    => $event->star_rating,
+                ':page_id'        => $event->page_id,
+            ]);
+
+            $pdo->commit();
+            return $eventId;
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
+    }
+
+    public function updateYummyEvent(YummyEvent $event): void
+    {
+        $pdo = $this->getConnection();
+        $pdo->beginTransaction();
+
+        try {
+            $check = $pdo->prepare("
+                SELECT 1 FROM Event WHERE event_id = :id AND event_type = 'yummy' LIMIT 1
+            ");
+            $check->execute([':id' => $event->event_id]);
+            if (!$check->fetchColumn()) {
+                throw new \RuntimeException('Event not found or is not a yummy event.');
+            }
+
+            $stmt1 = $pdo->prepare("
+                UPDATE Event SET title = :title, availability = :availability WHERE event_id = :id
+            ");
+            $stmt1->execute([
+                ':title' => $event->title,
+                ':availability' => $event->availability,
+                ':id' => $event->event_id,
+            ]);
+
+            $stmt2 = $pdo->prepare("
+                UPDATE YummyEvent
+                SET price = :price,
+                    cuisine = :cuisine,
+                    start_time = :start_time,
+                    end_time = :end_time,
+                    thumbnail_path = :thumbnail_path,
+                    star_rating = :star_rating,
+                    page_id = :page_id
+                WHERE event_id = :id
+            ");
+            $stmt2->execute([
+                ':price'          => $event->price,
+                ':cuisine'        => $event->cuisine,
+                ':start_time'     => $event->start_time,
+                ':end_time'       => $event->end_time,
+                ':thumbnail_path' => $event->thumbnail_path,
+                ':star_rating'    => $event->star_rating,
+                ':page_id'        => $event->page_id,
+                ':id'             => $event->event_id,
+            ]);
+
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
+    }
+
+    public function deleteYummyEventById(int $eventId): bool
+    {
+        $pdo = $this->getConnection();
+        $pdo->beginTransaction();
+
+        try {
+            $del1 = $pdo->prepare("DELETE FROM YummyEvent WHERE event_id = :id");
+            $del1->execute([':id' => $eventId]);
+
+            $del2 = $pdo->prepare("DELETE FROM Event WHERE event_id = :id AND event_type = 'yummy'");
+            $del2->execute([':id' => $eventId]);
+
+            $pdo->commit();
+            return true;
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            return false;
+        }
     }
 }
