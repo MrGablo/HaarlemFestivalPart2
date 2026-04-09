@@ -21,6 +21,24 @@ class PageRepository extends Repository implements IPageRepository
         return is_array($rows) ? $rows : [];
     }
 
+    public function getPagesByType(string $pageType): array
+    {
+        $pdo = $this->getConnection();
+
+        $stmt = $pdo->prepare(
+            "
+            SELECT Page_ID, Page_Title, Page_Type, Content, Updated_At, Created_At
+            FROM Page
+            WHERE Page_Type = :type
+            ORDER BY Page_Title ASC, Page_ID ASC
+            "
+        );
+        $stmt->execute([':type' => $pageType]);
+
+        $rows = $stmt->fetchAll();
+        return is_array($rows) ? $rows : [];
+    }
+
     public function getPageContentByType(string $pageType): array
     {
         $pdo = $this->getConnection();

@@ -49,14 +49,18 @@ class TicketRepository extends Repository
                 oi.order_id,
                 {$eventExpr} AS event_id,
                 e.title,
-                COALESCE(j.price, d.price, p.base_price, 0) AS price,
-                '' AS location
+                     COALESCE(j.price, d.price, h.price, p.base_price, 0) AS price,
+                     CASE
+                          WHEN LOWER(TRIM(e.event_type)) = 'history' THEN COALESCE(h.location, '')
+                          ELSE ''
+                     END AS location
              FROM `Ticket` t
              INNER JOIN `order_items` oi ON oi.order_item_id = t.order_item_id
              INNER JOIN `orders` o ON o.order_id = oi.order_id
              INNER JOIN `Event` e ON e.event_id = {$eventExpr}
              LEFT JOIN `JazzEvent` j ON j.event_id = e.event_id
              LEFT JOIN `DanceEvent` d ON d.event_id = e.event_id
+                 LEFT JOIN `HistoryEvent` h ON h.event_id = e.event_id
              LEFT JOIN `PassEvent` p ON p.event_id = e.event_id
              WHERE o.user_id = :user_id
                AND LOWER(TRIM(o.order_status)) <> :pending_status
@@ -85,11 +89,12 @@ class TicketRepository extends Repository
                 t.is_scanned,
                 e.title AS event_name,
                 e.event_type,
-                COALESCE(j.start_date, d.start_date, y.start_time, s.start_date) AS event_start_time
+                COALESCE(j.start_date, d.start_date, h.start_date, y.start_time, s.start_date) AS event_start_time
             FROM Ticket t
             JOIN order_items oi ON oi.order_item_id = t.order_item_id
             JOIN Event e ON {$eventExpr} = e.event_id
             LEFT JOIN JazzEvent j ON e.event_id = j.event_id
+            LEFT JOIN HistoryEvent h ON e.event_id = h.event_id
             LEFT JOIN YummyEvent y ON e.event_id = y.event_id
             LEFT JOIN StoriesEvent s ON e.event_id = s.event_id
             LEFT JOIN DanceEvent d ON e.event_id = d.event_id

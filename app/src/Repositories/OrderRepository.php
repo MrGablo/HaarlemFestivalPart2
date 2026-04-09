@@ -41,12 +41,13 @@ class OrderRepository extends Repository implements IOrderRepository
                 u.last_name,
                 u.email,
                 COALESCE(SUM(oi.quantity), 0) AS item_count,
-                     COALESCE(SUM(oi.quantity * COALESCE(j.price, d.price, p.base_price, 0)), 0) AS total_amount
+                         COALESCE(SUM(oi.quantity * COALESCE(j.price, d.price, h.price, p.base_price, 0)), 0) AS total_amount
              FROM `orders` o
              LEFT JOIN `User` u ON u.id = o.user_id
              LEFT JOIN `order_items` oi ON oi.order_id = o.order_id
              LEFT JOIN `JazzEvent` j ON j.event_id = oi.event_id
              LEFT JOIN `DanceEvent` d ON d.event_id = oi.event_id
+                     LEFT JOIN `HistoryEvent` h ON h.event_id = oi.event_id
                  LEFT JOIN `PassEvent` p ON p.event_id = oi.event_id
              GROUP BY
                 o.order_id,
@@ -74,12 +75,13 @@ class OrderRepository extends Repository implements IOrderRepository
                 u.last_name,
                 u.email,
                 COALESCE(SUM(oi.quantity), 0) AS item_count,
-                     COALESCE(SUM(oi.quantity * COALESCE(j.price, d.price, p.base_price, 0)), 0) AS total_amount
+                         COALESCE(SUM(oi.quantity * COALESCE(j.price, d.price, h.price, p.base_price, 0)), 0) AS total_amount
              FROM `orders` o
              LEFT JOIN `User` u ON u.id = o.user_id
              LEFT JOIN `order_items` oi ON oi.order_id = o.order_id
              LEFT JOIN `JazzEvent` j ON j.event_id = oi.event_id
              LEFT JOIN `DanceEvent` d ON d.event_id = oi.event_id
+                     LEFT JOIN `HistoryEvent` h ON h.event_id = oi.event_id
                  LEFT JOIN `PassEvent` p ON p.event_id = oi.event_id
              WHERE o.order_id = :order_id
              GROUP BY
@@ -140,12 +142,13 @@ class OrderRepository extends Repository implements IOrderRepository
         return (int)$this->getConnection()->lastInsertId();
     }
 
-    public function addOrIncrementOrderItem(int $orderId, int $eventId, ?string $passDate = null): void
+    public function addOrIncrementOrderItem(int $orderId, int $eventId, int $quantity = 1, ?string $passDate = null): void
     {
         $pdo = $this->getConnection();
         $pdo->beginTransaction();
 
         try {
+            $quantity = max(1, $quantity);
             $passDate = $this->normalizePassDate($passDate);
             $passDateColumn = $this->orderItemsPassDateColumn();
 
@@ -211,10 +214,11 @@ class OrderRepository extends Repository implements IOrderRepository
             if (is_array($row)) {
                 $update = $pdo->prepare(
                     'UPDATE `order_items`
-                     SET quantity = quantity + 1
+                     SET quantity = quantity + :quantity
                      WHERE order_item_id = :order_item_id'
                 );
                 $update->execute([
+                    ':quantity' => $quantity,
                     ':order_item_id' => (int)$row['order_item_id'],
                 ]);
             } else {
@@ -223,32 +227,35 @@ class OrderRepository extends Repository implements IOrderRepository
                         $resolvedPassDate = $passDate ?? '1000-01-01';
                         $insert = $pdo->prepare(
                             'INSERT INTO `order_items` (order_id, event_id, pass_date_key, quantity, created_at)
-                             VALUES (:order_id, :event_id, :pass_date, 1, NOW())'
+                             VALUES (:order_id, :event_id, :pass_date, :quantity, NOW())'
                         );
                         $insert->execute([
                             ':order_id' => $orderId,
                             ':event_id' => $eventId,
                             ':pass_date' => $resolvedPassDate,
+                            ':quantity' => $quantity,
                         ]);
                     } else {
                         $insert = $pdo->prepare(
                             'INSERT INTO `order_items` (order_id, event_id, pass_date, quantity, created_at)
-                             VALUES (:order_id, :event_id, :pass_date, 1, NOW())'
+                             VALUES (:order_id, :event_id, :pass_date, :quantity, NOW())'
                         );
                         $insert->execute([
                             ':order_id' => $orderId,
                             ':event_id' => $eventId,
                             ':pass_date' => $passDate,
+                            ':quantity' => $quantity,
                         ]);
                     }
                 } else {
                     $insert = $pdo->prepare(
                         'INSERT INTO `order_items` (order_id, event_id, quantity, created_at)
-                         VALUES (:order_id, :event_id, 1, NOW())'
+                         VALUES (:order_id, :event_id, :quantity, NOW())'
                     );
                     $insert->execute([
                         ':order_id' => $orderId,
                         ':event_id' => $eventId,
+                        ':quantity' => $quantity,
                     ]);
                 }
             }
@@ -285,18 +292,26 @@ class OrderRepository extends Repository implements IOrderRepository
                 e.event_type AS event_type,
                 j.start_date,
                 j.end_date,
-                COALESCE(j.venue_id, d.venue_id) AS venue_id,
+                 COALESCE(j.venue_id, d.venue_id) AS venue_id,
                 v.name AS venue_name,
                 j.artist_id,
                 a.name AS artist_name,
                 j.img_background,
-                     COALESCE(j.price, d.price, p.base_price, 0) AS price,
+                     COALESCE(j.price, d.price, h.price, p.base_price, 0) AS price,
                 j.page_id,
-                CASE WHEN LOWER(TRIM(e.event_type)) = 'dance' THEN {$danceVenueName} ELSE '' END AS location
+                 h.language,
+                 h.start_date AS history_start_date,
+                 CASE
+                    WHEN LOWER(TRIM(e.event_type)) = 'dance' THEN {$danceVenueName}
+                    WHEN LOWER(TRIM(e.event_type)) = 'history' THEN COALESCE(h.location, '')
+                    ELSE ''
+                 END AS location,
+                 COALESCE(j.start_date, h.start_date) AS start_date
              FROM `order_items` oi
              INNER JOIN Event e ON e.event_id = oi.event_id
              LEFT JOIN JazzEvent j ON j.event_id = e.event_id
              LEFT JOIN DanceEvent d ON d.event_id = e.event_id
+               LEFT JOIN HistoryEvent h ON h.event_id = e.event_id
                  LEFT JOIN PassEvent p ON p.event_id = e.event_id
              LEFT JOIN Artist a ON a.artist_id = j.artist_id
              LEFT JOIN {$vt} v ON v.{$vpk} = j.venue_id
@@ -332,18 +347,26 @@ class OrderRepository extends Repository implements IOrderRepository
                 e.event_type AS event_type,
                 j.start_date,
                 j.end_date,
-                COALESCE(j.venue_id, d.venue_id) AS venue_id,
+                 COALESCE(j.venue_id, d.venue_id) AS venue_id,
                 v.name AS venue_name,
                 j.artist_id,
                 a.name AS artist_name,
                 j.img_background,
-                     COALESCE(j.price, d.price, p.base_price, 0) AS price,
+                     COALESCE(j.price, d.price, h.price, p.base_price, 0) AS price,
                 j.page_id,
-                CASE WHEN LOWER(TRIM(e.event_type)) = 'dance' THEN {$danceVenueName} ELSE '' END AS location
+                 h.language,
+                 h.start_date AS history_start_date,
+                 CASE
+                    WHEN LOWER(TRIM(e.event_type)) = 'dance' THEN {$danceVenueName}
+                    WHEN LOWER(TRIM(e.event_type)) = 'history' THEN COALESCE(h.location, '')
+                    ELSE ''
+                 END AS location,
+                 COALESCE(j.start_date, h.start_date) AS start_date
              FROM `order_items` oi
              INNER JOIN Event e ON e.event_id = oi.event_id
              LEFT JOIN JazzEvent j ON j.event_id = e.event_id
              LEFT JOIN DanceEvent d ON d.event_id = e.event_id
+               LEFT JOIN HistoryEvent h ON h.event_id = e.event_id
                  LEFT JOIN PassEvent p ON p.event_id = e.event_id
              LEFT JOIN Artist a ON a.artist_id = j.artist_id
              LEFT JOIN {$vt} v ON v.{$vpk} = j.venue_id
@@ -439,12 +462,20 @@ class OrderRepository extends Repository implements IOrderRepository
                 j.artist_id,
                 a.name AS artist_name,
                 j.img_background,
-                     COALESCE(j.price, d.price, p.base_price, 0) AS price,
+                     COALESCE(j.price, d.price, h.price, p.base_price, 0) AS price,
                 j.page_id,
-                CASE WHEN LOWER(TRIM(e.event_type)) = 'dance' THEN {$danceVenueName} ELSE '' END AS location
+                h.language,
+                h.start_date AS history_start_date,
+                CASE
+                    WHEN LOWER(TRIM(e.event_type)) = 'dance' THEN {$danceVenueName}
+                    WHEN LOWER(TRIM(e.event_type)) = 'history' THEN COALESCE(h.location, '')
+                    ELSE ''
+                END AS location,
+                COALESCE(j.start_date, h.start_date) AS start_date
              FROM Event e
              LEFT JOIN JazzEvent j ON j.event_id = e.event_id
              LEFT JOIN DanceEvent d ON d.event_id = e.event_id
+             LEFT JOIN HistoryEvent h ON h.event_id = e.event_id
                  LEFT JOIN PassEvent p ON p.event_id = e.event_id
              LEFT JOIN Artist a ON a.artist_id = j.artist_id
              LEFT JOIN {$vt} v ON v.{$vpk} = j.venue_id

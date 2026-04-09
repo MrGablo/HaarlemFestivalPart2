@@ -59,6 +59,10 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
         //Stories routes
     $r->addRoute('GET', '/stories', ['App\Controllers\StoriesController', 'index']);
 
+        // History routes
+        $r->addRoute('GET', '/history', ['App\Controllers\HistoryController', 'home']);
+        $r->addRoute('GET', '/history/detail', ['App\Controllers\HistoryController', 'detail']);
+
     //Jazz Festival routes
     $r->addRoute('GET', '/jazz', ['App\Controllers\JazzController', 'home']);
     $r->addRoute('GET', '/jazz/artist', ['App\Controllers\JazzController', 'artist']);
@@ -156,6 +160,14 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     $r->addRoute('GET',  '/cms/events/jazz/{id:\\d+}', ['App\Cms\Controllers\CMSJazzController', 'edit']);
     $r->addRoute('POST', '/cms/events/jazz/{id:\\d+}', ['App\Cms\Controllers\CMSJazzController', 'update']);
     $r->addRoute('POST', '/cms/events/jazz/{id:\\d+}/delete', ['App\Cms\Controllers\CMSJazzController', 'delete']);
+
+    // History CMS routes (admin only)
+    $r->addRoute('GET',  '/cms/events/history', ['App\Cms\Controllers\CMSHistoryController', 'index']);
+    $r->addRoute('GET',  '/cms/events/history/create', ['App\Cms\Controllers\CMSHistoryController', 'createForm']);
+    $r->addRoute('POST', '/cms/events/history/create', ['App\Cms\Controllers\CMSHistoryController', 'create']);
+    $r->addRoute('GET',  '/cms/events/history/{id:\\d+}', ['App\Cms\Controllers\CMSHistoryController', 'edit']);
+    $r->addRoute('POST', '/cms/events/history/{id:\\d+}', ['App\Cms\Controllers\CMSHistoryController', 'update']);
+    $r->addRoute('POST', '/cms/events/history/{id:\\d+}/delete', ['App\Cms\Controllers\CMSHistoryController', 'delete']);
 
     // Venue CMS routes (admin only)
     $r->addRoute('GET',  '/cms/venues', ['App\Cms\Controllers\CMSVenueController', 'index']);

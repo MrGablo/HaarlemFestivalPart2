@@ -32,7 +32,9 @@
         var location = escapeHtml(item.location || '');
         var passDateLabel = escapeHtml(item.passDateLabel || '');
         var quantity = Number(item.quantity || 0);
+        var maxQuantity = Number(item.maxQuantity || 99);
         var unitPriceLabel = escapeHtml(item.unitPriceLabel || Number(item.unitPrice || 0).toFixed(2));
+        var totalPriceLabel = escapeHtml(item.totalPriceLabel || Number(item.totalPrice || 0).toFixed(2));
         var orderItemId = Number(item.orderItemId || 0);
 
         return [
@@ -44,10 +46,10 @@
                     : ''),
                 '<div class="flex items-center justify-between gap-[10px]">',
                     '<div class="inline-flex items-center gap-2">',
-                        '<span class="font-bold text-[#171717]">Qty: ' + quantity + ' x EUR ' + unitPriceLabel + '</span>',
-                        '<div class="inline-flex items-center gap-[6px]" data-cart-qty-controls data-order-item-id="' + orderItemId + '" data-quantity="' + quantity + '">',
+                        '<span class="font-bold text-[#171717]">Qty: ' + quantity + ' x EUR ' + unitPriceLabel + ' · Total EUR ' + totalPriceLabel + '</span>',
+                        '<div class="inline-flex items-center gap-[6px]" data-cart-qty-controls data-order-item-id="' + orderItemId + '" data-quantity="' + quantity + '" data-max-quantity="' + maxQuantity + '">',
                             '<button type="button" class="h-[30px] w-[30px] rounded-lg border border-[#2f80ed] bg-[#2f80ed] font-bold text-white transition-colors duration-200 hover:bg-[#1d6ed8] disabled:cursor-wait disabled:opacity-60" data-cart-qty-button data-direction="decrease" aria-label="Decrease quantity for ' + title + '">-</button>',
-                            '<button type="button" class="h-[30px] w-[30px] rounded-lg border border-[#2f80ed] bg-[#2f80ed] font-bold text-white transition-colors duration-200 hover:bg-[#1d6ed8] disabled:cursor-wait disabled:opacity-60" data-cart-qty-button data-direction="increase" aria-label="Increase quantity for ' + title + '">+</button>',
+                            '<button type="button" class="h-[30px] w-[30px] rounded-lg border border-[#2f80ed] bg-[#2f80ed] font-bold text-white transition-colors duration-200 hover:bg-[#1d6ed8] disabled:cursor-wait disabled:opacity-60" data-cart-qty-button data-direction="increase" ' + (quantity >= maxQuantity ? 'disabled' : '') + ' aria-label="Increase quantity for ' + title + '">+</button>',
                         '</div>',
                     '</div>',
                     '<div class="flex items-center gap-2">',
@@ -241,7 +243,8 @@
             return;
         }
 
-        var nextQuantity = Math.min(99, Math.max(1, currentQuantity + delta));
+        var maxQuantity = Number(controls.dataset.maxQuantity || 99);
+        var nextQuantity = Math.min(maxQuantity, Math.max(1, currentQuantity + delta));
         if (nextQuantity === currentQuantity) {
             return;
         }

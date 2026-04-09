@@ -41,10 +41,11 @@ $headerCanCheckout = $headerIsLoggedIn && $headerCartItems !== [];
                     <div class="flex items-center justify-between gap-[10px]">
                         <div class="inline-flex items-center gap-2">
                             <span class="font-bold text-[#171717]">
-                                Qty: <?= (int) $item->quantity ?> x EUR <?= number_format($item->getUnitPrice(), 2) ?>
+                                Qty: <?= (int) $item->quantity ?> x EUR <?= number_format($item->getUnitPrice(), 2) ?> · Total EUR <?= number_format($item->getTotalPrice(), 2) ?>
                             </span>
 
-                            <div class="inline-flex items-center gap-[6px]" data-cart-qty-controls data-order-item-id="<?= (int) $item->order_item_id ?>" data-quantity="<?= (int) $item->quantity ?>">
+                            <?php $maxQuantity = strtolower((string)($item->event?->event_type ?? '')) === 'history' ? 4 : 99; ?>
+                            <div class="inline-flex items-center gap-[6px]" data-cart-qty-controls data-order-item-id="<?= (int) $item->order_item_id ?>" data-quantity="<?= (int) $item->quantity ?>" data-max-quantity="<?= $maxQuantity ?>">
                                 <button
                                     type="button"
                                     class="h-[30px] w-[30px] rounded-lg border border-[#2f80ed] bg-[#2f80ed] font-bold text-white transition-colors duration-200 hover:bg-[#1d6ed8] disabled:cursor-wait disabled:opacity-60"
@@ -57,6 +58,7 @@ $headerCanCheckout = $headerIsLoggedIn && $headerCartItems !== [];
                                     class="h-[30px] w-[30px] rounded-lg border border-[#2f80ed] bg-[#2f80ed] font-bold text-white transition-colors duration-200 hover:bg-[#1d6ed8] disabled:cursor-wait disabled:opacity-60"
                                     data-cart-qty-button
                                     data-direction="increase"
+                                    <?= (int)$item->quantity >= $maxQuantity ? 'disabled' : '' ?>
                                     aria-label="Increase quantity for <?= htmlspecialchars((string) ($event?->title ?? 'Event')) ?>"
                                 >+</button>
                             </div>

@@ -33,10 +33,11 @@ class OrderController
         }
 
         $eventId = isset($_POST['event_id']) ? (int)$_POST['event_id'] : 0;
+        $quantity = isset($_POST['quantity']) ? (int)$_POST['quantity'] : 1;
         $passDate = isset($_POST['pass_date']) ? (string)$_POST['pass_date'] : null;
 
         try {
-            $order = $this->orderService->addEventToUserPendingOrder($userId, $eventId, $passDate);
+            $order = $this->orderService->addEventToUserPendingOrder($userId, $eventId, $quantity, $passDate);
             Flash::setSuccess('Ticket added to cart.');
             $this->jsonResponse([
                 'ok' => true,
@@ -214,6 +215,9 @@ class OrderController
                 'quantity' => (int)$item->quantity,
                 'unitPrice' => (float)$item->getUnitPrice(),
                 'unitPriceLabel' => number_format($item->getUnitPrice(), 2),
+                'totalPrice' => (float)$item->getTotalPrice(),
+                'totalPriceLabel' => number_format($item->getTotalPrice(), 2),
+                'maxQuantity' => strtolower((string)($item->event?->event_type ?? '')) === 'history' ? 4 : 99,
             ];
         }
 

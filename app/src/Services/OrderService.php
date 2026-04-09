@@ -14,7 +14,8 @@ class OrderService
     public function __construct(
         private IOrderRepository $orderRepository,
         private EventModelBuilderService $eventBuilder,
-        private ?PassService $passService = null
+        private ?PassService $passService = null,
+        private ?HistoryBookingPricingService $historyPricing = null
     ) {}
 
     public function getPendingOrderForUser(int $userId): ?Order
@@ -31,10 +32,11 @@ class OrderService
         return $this->buildOrderFromRow($orderRow);
     }
 
-    public function addEventToUserPendingOrder(int $userId, int $eventId, ?string $passDate = null): Order
+    public function addEventToUserPendingOrder(int $userId, int $eventId, int $quantity = 1, ?string $passDate = null): Order
     {
         $this->assertPositiveId($userId, 'user id');
         $this->assertPositiveId($eventId, 'event id');
+        $this->assertPositiveId($quantity, 'quantity');
 
         $eventRow = $this->orderRepository->findEventById($eventId);
         if ($eventRow === null) {
@@ -47,7 +49,14 @@ class OrderService
         }
 
         // Validate event type can be mapped before storing the item.
-        $this->eventBuilder->buildEventModel($eventRow);
+        $eventModel = $this->eventBuilder->buildEventModel($eventRow);
+
+        if (strtolower((string)($eventModel->event_type ?? '')) === 'history') {
+            $maxHistoryTickets = $this->historyPricing()->maxTicketsPerOrder();
+            if ($quantity > $maxHistoryTickets) {
+                throw new \RuntimeException('A history booking can contain at most ' . $maxHistoryTickets . ' tickets.');
+            }
+        }
 
         $passDate = $this->normalizePassDate($passDate);
         $effectivePassDate = null;
@@ -91,7 +100,25 @@ class OrderService
             ? $existingOrderId
             : $createdOrderId;
 
-        $this->orderRepository->addOrIncrementOrderItem($orderId, $eventId, $effectivePassDate);
+        if (strtolower((string)($eventModel->event_type ?? '')) === 'history') {
+            $currentQuantity = 0;
+            if ($orderRow !== null) {
+                $existingOrder = $this->buildOrderFromRow($orderRow);
+                foreach ($existingOrder->items as $item) {
+                    if ((int)$item->event_id === $eventId) {
+                        $currentQuantity += max(0, (int)$item->quantity);
+                    }
+                }
+            }
+
+            $nextQuantity = $currentQuantity + $quantity;
+            $maxHistoryTickets = $this->historyPricing()->maxTicketsPerOrder();
+            if ($nextQuantity > $maxHistoryTickets) {
+                throw new \RuntimeException('A history booking can contain at most ' . $maxHistoryTickets . ' tickets.');
+            }
+        }
+
+        $this->orderRepository->addOrIncrementOrderItem($orderId, $eventId, $quantity, $effectivePassDate);
 
         $freshRow = $this->orderRepository->findPendingOrderByUserId($userId);
         if ($freshRow === null) {
@@ -147,6 +174,22 @@ class OrderService
             return null;
         }
 
+        $currentOrder = $this->buildOrderFromRow($orderRow);
+        foreach ($currentOrder->items as $item) {
+            if ((int)$item->order_item_id !== $orderItemId) {
+                continue;
+            }
+
+            if (strtolower((string)($item->event?->event_type ?? '')) === 'history') {
+                $maxHistoryTickets = $this->historyPricing()->maxTicketsPerOrder();
+                if ($quantity > $maxHistoryTickets) {
+                    throw new \RuntimeException('A history booking can contain at most ' . $maxHistoryTickets . ' tickets.');
+                }
+            }
+
+            break;
+        }
+
         $orderId = $this->extractOrderId($orderRow, $userId);
         $updated = $this->orderRepository->updateOrderItemQuantity($orderId, $orderItemId, $quantity);
         if (!$updated) {
@@ -183,6 +226,9 @@ class OrderService
             }
 
             $event = $this->eventBuilder->buildEventModel($row);
+            $quantity = (int)($row['quantity'] ?? 0);
+            $pricing = $this->resolveItemPricing($event, $quantity);
+
             $items[] = new OrderItem(
                 $orderItemId,
                 $rowOrderId,
@@ -190,7 +236,9 @@ class OrderService
                 $quantity,
                 isset($row['pass_date']) ? (string)$row['pass_date'] : null,
                 isset($row['order_item_created_at']) ? (string)$row['order_item_created_at'] : null,
-                $event
+                $event,
+                $pricing['unit_price_override'],
+                $pricing['line_total_override']
             );
         }
 
@@ -240,5 +288,29 @@ class OrderService
         }
 
         return $value;
+    }
+
+    /** @return array{unit_price_override: ?float, line_total_override: ?float} */
+    private function resolveItemPricing(\App\Models\Event $event, int $quantity): array
+    {
+        if (strtolower((string)($event->event_type ?? '')) !== 'history') {
+            return [
+                'unit_price_override' => null,
+                'line_total_override' => null,
+            ];
+        }
+
+        $basePrice = $event instanceof \App\Models\GenericEvent ? (float)($event->price ?? 0.0) : 0.0;
+        $pricing = $this->historyPricing()->resolvePricing($basePrice, $quantity);
+
+        return [
+            'unit_price_override' => $pricing['unit_price'],
+            'line_total_override' => $pricing['total_price'],
+        ];
+    }
+
+    private function historyPricing(): HistoryBookingPricingService
+    {
+        return $this->historyPricing ??= new HistoryBookingPricingService();
     }
 }

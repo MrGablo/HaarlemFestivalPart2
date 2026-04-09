@@ -6,6 +6,8 @@ interface IPageRepository
 {
     public function getAllPages(): array;
 
+    public function getPagesByType(string $pageType): array;
+
     public function getPageContentByType(string $pageType): array;
 
     public function savePageContentByType(string $pageType, array $content, ?string $pageTitle = null): void;

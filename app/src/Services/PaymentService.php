@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Repositories\OrderRepository;
 use App\Repositories\PaymentRepository;
 
 /**
@@ -26,26 +27,27 @@ class PaymentService
     {
         \Stripe\Stripe::setApiKey($this->getStripeSecretKey());
 
-        $pendingOrder = $this->repo->findPendingOrderByUserId($userId);
+        $orderService = new OrderService(new OrderRepository(), new EventModelBuilderService());
+        $pendingOrder = $orderService->getPendingOrderForUser($userId);
         if ($pendingOrder === null) {
             throw new \RuntimeException('No pending cart found.');
         }
-        $pendingOrderId = (int)($pendingOrder['order_id'] ?? 0);
+        $pendingOrderId = (int)($pendingOrder->order_id ?? 0);
         if ($pendingOrderId <= 0) {
             throw new \RuntimeException('Invalid pending cart.');
         }
 
-        $items = $this->repo->getPendingOrderItemsWithPricing($pendingOrderId);
+        $items = $pendingOrder->items;
         if ($items === []) {
             throw new \RuntimeException('Pending cart is empty.');
         }
 
         $lineItems = [];
         foreach ($items as $item) {
-            $eventId = (int)($item['event_id'] ?? 0);
-            $quantity = (int)($item['quantity'] ?? 0);
-            $priceInCents = (int)(((float)($item['price'] ?? 0)) * 100);
-            $eventTitle = (string)($item['title'] ?? 'Event Ticket');
+            $eventId = (int)($item->event_id ?? 0);
+            $quantity = (int)($item->quantity ?? 0);
+            $priceInCents = (int)round(((float)$item->getUnitPrice()) * 100);
+            $eventTitle = (string)($item->event?->title ?? 'Event Ticket');
             if ($eventId <= 0 || $quantity <= 0 || $priceInCents <= 0) {
                 throw new \RuntimeException('Invalid pending cart item data.');
             }
