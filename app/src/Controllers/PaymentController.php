@@ -64,7 +64,7 @@ class PaymentController
             exit;
         } catch (\Throwable $e) {
             error_log('Stripe checkout redirect failed: ' . $e->getMessage());
-            Flash::setErrors(['general' => $e->getMessage()]);
+            Flash::setErrors(['general' => 'Unable to initiate checkout. Please try again.']);
             header('Location: /payment/cancel', true, 302);
             exit;
         }

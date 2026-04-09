@@ -388,8 +388,7 @@ class OrderRepository extends Repository implements IOrderRepository
                    FROM `order_items`
                   WHERE order_id = :order_id
                     AND order_item_id = :order_item_id
-                  LIMIT 1
-                  FOR UPDATE'
+                  LIMIT 1'
             );
             $itemStmt->execute([
                 ':order_id' => $orderId,

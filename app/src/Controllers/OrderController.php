@@ -7,6 +7,7 @@ use App\Services\EventModelBuilderService;
 use App\Services\OrderService;
 use App\Utils\AuthSessionData;
 use App\Utils\Csrf;
+use App\Utils\CsrfException;
 use App\Utils\Flash;
 use App\Utils\Session;
 
@@ -46,14 +47,20 @@ class OrderController
                 'message' => 'Ticket added to cart.',
                 'cart' => $this->buildCartPayload($order),
             ]);
-        } catch (\Throwable $e) {
+        } catch (CsrfException $e) {
             $message = $e->getMessage();
-            $statusCode = str_contains(strtolower($message), 'form token') ? 400 : 422;
             Flash::setErrors(['general' => $message]);
             $this->jsonResponse([
                 'ok' => false,
                 'message' => $message,
-            ], $statusCode);
+            ], 400);
+        } catch (\Throwable $e) {
+            $message = $e->getMessage();
+            Flash::setErrors(['general' => $message]);
+            $this->jsonResponse([
+                'ok' => false,
+                'message' => $message,
+            ], 422);
         }
     }
 
@@ -92,16 +99,25 @@ class OrderController
                     'cart' => $this->buildCartPayload($order),
                 ]);
             }
-        } catch (\Throwable $e) {
+        } catch (CsrfException $e) {
             $message = $e->getMessage();
-            $statusCode = str_contains(strtolower($message), 'form token') ? 400 : 422;
             Flash::setErrors(['general' => $message]);
 
             if ($this->isAjaxRequest()) {
                 $this->jsonResponse([
                     'ok' => false,
                     'message' => $message,
-                ], $statusCode);
+                ], 400);
+            }
+        } catch (\Throwable $e) {
+            $message = $e->getMessage();
+            Flash::setErrors(['general' => $message]);
+
+            if ($this->isAjaxRequest()) {
+                $this->jsonResponse([
+                    'ok' => false,
+                    'message' => $message,
+                ], 422);
             }
         }
 
@@ -145,16 +161,25 @@ class OrderController
                     'cart' => $this->buildCartPayload($order),
                 ]);
             }
-        } catch (\Throwable $e) {
+        } catch (CsrfException $e) {
             $message = $e->getMessage();
-            $statusCode = str_contains(strtolower($message), 'form token') ? 400 : 422;
             Flash::setErrors(['general' => $message]);
 
             if ($this->isAjaxRequest()) {
                 $this->jsonResponse([
                     'ok' => false,
                     'message' => $message,
-                ], $statusCode);
+                ], 400);
+            }
+        } catch (\Throwable $e) {
+            $message = $e->getMessage();
+            Flash::setErrors(['general' => $message]);
+
+            if ($this->isAjaxRequest()) {
+                $this->jsonResponse([
+                    'ok' => false,
+                    'message' => $message,
+                ], 422);
             }
         }
 
