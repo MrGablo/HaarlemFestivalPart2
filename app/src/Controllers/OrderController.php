@@ -6,6 +6,8 @@ use App\Repositories\OrderRepository;
 use App\Services\EventModelBuilderService;
 use App\Services\OrderService;
 use App\Utils\AuthSessionData;
+use App\Utils\Csrf;
+use App\Utils\CsrfException;
 use App\Utils\Flash;
 use App\Utils\Session;
 
@@ -32,10 +34,12 @@ class OrderController
             ], 401);
         }
 
-        $eventId = isset($_POST['event_id']) ? (int)$_POST['event_id'] : 0;
-        $passDate = isset($_POST['pass_date']) ? (string)$_POST['pass_date'] : null;
-
         try {
+            Csrf::assertPost('cart_csrf_token');
+
+            $eventId = isset($_POST['event_id']) ? (int)$_POST['event_id'] : 0;
+            $passDate = isset($_POST['pass_date']) ? (string)$_POST['pass_date'] : null;
+
             $order = $this->orderService->addEventToUserPendingOrder($userId, $eventId, $passDate);
             Flash::setSuccess('Ticket added to cart.');
             $this->jsonResponse([
@@ -43,6 +47,13 @@ class OrderController
                 'message' => 'Ticket added to cart.',
                 'cart' => $this->buildCartPayload($order),
             ]);
+        } catch (CsrfException $e) {
+            $message = $e->getMessage();
+            Flash::setErrors(['general' => $message]);
+            $this->jsonResponse([
+                'ok' => false,
+                'message' => $message,
+            ], 400);
         } catch (\Throwable $e) {
             $message = $e->getMessage();
             Flash::setErrors(['general' => $message]);
@@ -74,9 +85,10 @@ class OrderController
             exit;
         }
 
-        $orderItemId = isset($_POST['order_item_id']) ? (int)$_POST['order_item_id'] : 0;
-
         try {
+            Csrf::assertPost('cart_csrf_token');
+
+            $orderItemId = isset($_POST['order_item_id']) ? (int)$_POST['order_item_id'] : 0;
             $order = $this->orderService->removeItemFromPendingOrder($userId, $orderItemId);
             Flash::setSuccess('Item removed from cart.');
 
@@ -86,6 +98,16 @@ class OrderController
                     'message' => 'Item removed from cart.',
                     'cart' => $this->buildCartPayload($order),
                 ]);
+            }
+        } catch (CsrfException $e) {
+            $message = $e->getMessage();
+            Flash::setErrors(['general' => $message]);
+
+            if ($this->isAjaxRequest()) {
+                $this->jsonResponse([
+                    'ok' => false,
+                    'message' => $message,
+                ], 400);
             }
         } catch (\Throwable $e) {
             $message = $e->getMessage();
@@ -123,10 +145,12 @@ class OrderController
             exit;
         }
 
-        $orderItemId = isset($_POST['order_item_id']) ? (int)$_POST['order_item_id'] : 0;
-        $quantity = isset($_POST['quantity']) ? (int)$_POST['quantity'] : 0;
-
         try {
+            Csrf::assertPost('cart_csrf_token');
+
+            $orderItemId = isset($_POST['order_item_id']) ? (int)$_POST['order_item_id'] : 0;
+            $quantity = isset($_POST['quantity']) ? (int)$_POST['quantity'] : 0;
+
             $order = $this->orderService->updateItemQuantityInPendingOrder($userId, $orderItemId, $quantity);
             Flash::setSuccess('Cart quantity updated.');
 
@@ -136,6 +160,16 @@ class OrderController
                     'message' => 'Cart quantity updated.',
                     'cart' => $this->buildCartPayload($order),
                 ]);
+            }
+        } catch (CsrfException $e) {
+            $message = $e->getMessage();
+            Flash::setErrors(['general' => $message]);
+
+            if ($this->isAjaxRequest()) {
+                $this->jsonResponse([
+                    'ok' => false,
+                    'message' => $message,
+                ], 400);
             }
         } catch (\Throwable $e) {
             $message = $e->getMessage();

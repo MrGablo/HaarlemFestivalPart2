@@ -1,5 +1,7 @@
 <?php
 $headerCartItems = [];
+$cartCsrfToken = \App\Utils\Csrf::token('cart_csrf_token');
+$paymentCsrfToken = \App\Utils\Csrf::token('payment_csrf_token');
 
 if ($headerCartOrder instanceof \App\Models\Order && is_array($headerCartOrder->items)) {
     $headerCartItems = $headerCartOrder->items;
@@ -22,7 +24,13 @@ $headerCanCheckout = $headerIsLoggedIn && $headerCartItems !== [];
         <button type="button" id="cartCloseBtn" class="cursor-pointer border-0 bg-transparent text-[1.2rem] text-[#222]" aria-label="Close cart">x</button>
     </div>
 
-    <div id="cartOverlayBody" class="flex-1 overflow-auto px-[18px] py-[14px]" data-logged-in="<?= $headerIsLoggedIn ? '1' : '0' ?>">
+    <div
+        id="cartOverlayBody"
+        class="flex-1 overflow-auto px-[18px] py-[14px]"
+        data-logged-in="<?= $headerIsLoggedIn ? '1' : '0' ?>"
+        data-cart-csrf-token="<?= htmlspecialchars($cartCsrfToken, ENT_QUOTES, 'UTF-8') ?>"
+        data-payment-csrf-token="<?= htmlspecialchars($paymentCsrfToken, ENT_QUOTES, 'UTF-8') ?>"
+    >
         <?php if (!$headerIsLoggedIn): ?>
             <p class="mt-2 text-[0.95rem] text-[#2f2f2f]">Log in to add tickets to your cart.</p>
         <?php elseif ($headerCartItems === []): ?>
@@ -64,6 +72,7 @@ $headerCanCheckout = $headerIsLoggedIn && $headerCartItems !== [];
 
                         <div class="flex items-center gap-2">
                             <form method="POST" action="/order/item/remove">
+                                <input type="hidden" name="_csrf" value="<?= htmlspecialchars($cartCsrfToken, ENT_QUOTES, 'UTF-8') ?>">
                                 <input type="hidden" name="order_item_id" value="<?= (int) $item->order_item_id ?>">
                                 <button type="submit" class="cursor-pointer rounded-lg border border-[#9f9f9f] bg-[#f3f3f3] px-[10px] py-[6px] font-bold text-[#111] transition-colors duration-200 hover:bg-[#e8e8e8] disabled:cursor-wait disabled:opacity-60">Remove</button>
                             </form>
@@ -81,6 +90,7 @@ $headerCanCheckout = $headerIsLoggedIn && $headerCartItems !== [];
         </p>
 
         <form id="cartPayForm" action="/payment/checkout" method="POST" class="mt-3 <?= $headerCanCheckout ? '' : 'hidden' ?>">
+            <input type="hidden" name="_csrf" value="<?= htmlspecialchars($paymentCsrfToken, ENT_QUOTES, 'UTF-8') ?>">
             <button type="submit" class="w-full cursor-pointer rounded-lg border-0 bg-[#2F80ED] px-5 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-[#1c6ddb]">Pay</button>
         </form>
     </div>

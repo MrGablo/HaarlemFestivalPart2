@@ -11,8 +11,19 @@ class TicketRepository extends Repository
 
     public function createTicket(int $orderItemId, int $userId, int $eventId, string $qr): int
     {
+        return $this->createTicketUsingConnection(
+            $this->getConnection(),
+            $orderItemId,
+            $userId,
+            $eventId,
+            $qr
+        );
+    }
+
+    public function createTicketUsingConnection(\PDO $connection, int $orderItemId, int $userId, int $eventId, string $qr): int
+    {
         if ($this->ticketHasEventIdColumn()) {
-            $stmt = $this->getConnection()->prepare(
+            $stmt = $connection->prepare(
                 'INSERT INTO `Ticket` (order_item_id, user_id, event_id, qr)
                  VALUES (:order_item_id, :user_id, :event_id, :qr)'
             );
@@ -23,7 +34,7 @@ class TicketRepository extends Repository
                 ':qr' => $qr,
             ]);
         } else {
-            $stmt = $this->getConnection()->prepare(
+            $stmt = $connection->prepare(
                 'INSERT INTO `Ticket` (order_item_id, user_id, qr)
                  VALUES (:order_item_id, :user_id, :qr)'
             );
@@ -34,7 +45,23 @@ class TicketRepository extends Repository
             ]);
         }
 
-        return (int)$this->getConnection()->lastInsertId();
+        return (int)$connection->lastInsertId();
+    }
+
+    public function executeInTransaction(callable $callback): void
+    {
+        $pdo = $this->getConnection();
+        $pdo->beginTransaction();
+
+        try {
+            $callback($pdo);
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
     }
 
     public function getPaidTicketsForUser(int $userId): array

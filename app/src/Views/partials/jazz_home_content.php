@@ -11,6 +11,7 @@ $hero = $vm->hero;
 $intro = $vm->intro;
 $dayTicket = $vm->dayTicketPass;
 $bg = Media::image($hero['background_image'] ?? null);
+$cartCsrfToken = \App\Utils\Csrf::token('cart_csrf_token');
 ?>
 
 <section class="relative min-h-[70vh] bg-cover bg-center"
@@ -69,6 +70,7 @@ $bg = Media::image($hero['background_image'] ?? null);
           </button>
         <?php else: ?>
           <form method="POST" action="/order/item/add" class="ticket-form">
+            <input type="hidden" name="_csrf" value="<?= htmlspecialchars($cartCsrfToken, ENT_QUOTES, 'UTF-8') ?>">
             <input type="hidden" name="event_id" value="<?= $eventId ?>">
             <button class="cursor-pointer rounded-[10px] border-0 bg-jazz-accent bg-[#f7c600] px-[18px] py-[10px] font-bold text-jazz-accent-text text-[#111]" type="submit">
               <?= htmlspecialchars((string)($b['label'] ?? '')) ?>
@@ -98,6 +100,7 @@ $bg = Media::image($hero['background_image'] ?? null);
     <p id="jazzPassDayModalEmpty" class="hidden text-sm text-amber-200">No available Jazz dates for this pass right now.</p>
 
     <form id="jazzPassDayForm" method="POST" action="/order/item/add" class="ticket-form hidden">
+      <input type="hidden" name="_csrf" value="<?= htmlspecialchars($cartCsrfToken, ENT_QUOTES, 'UTF-8') ?>">
       <input id="jazzPassDayFormEventId" type="hidden" name="event_id" value="0">
       <input id="jazzPassDayFormDate" type="hidden" name="pass_date" value="">
       <button type="submit" class="hidden">Add</button>
