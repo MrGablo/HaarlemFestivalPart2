@@ -16,18 +16,21 @@ class PaymentService
     private TicketService $ticketService;
     private EmailService $emailService;
     private TicketPdfGenerator $ticketPdfGenerator;
+    private OrderService $orderService;
 
     public function __construct(
         PaymentRepository $repo,
         ?TicketService $ticketService = null,
         ?EmailService $emailService = null,
-        ?TicketPdfGenerator $ticketPdfGenerator = null
+        ?TicketPdfGenerator $ticketPdfGenerator = null,
+        ?OrderService $orderService = null
     )
     {
         $this->repo = $repo;
         $this->ticketService = $ticketService ?? new TicketService();
         $this->emailService = $emailService ?? new EmailService();
         $this->ticketPdfGenerator = $ticketPdfGenerator ?? new TicketPdfGenerator();
+        $this->orderService = $orderService ?? new OrderService(new OrderRepository(), new EventModelBuilderService());
     }
 
     /**
@@ -37,16 +40,16 @@ class PaymentService
     {
         \Stripe\Stripe::setApiKey($this->getStripeSecretKey());
 
-        $pendingOrder = $this->repo->findPendingOrderByUserId($userId);
+        $pendingOrder = $this->orderService->getPendingOrderForUser($userId);
         if ($pendingOrder === null) {
             throw new \RuntimeException('No pending cart found.');
         }
-        $pendingOrderId = (int)($pendingOrder['order_id'] ?? 0);
+        $pendingOrderId = (int)($pendingOrder->order_id ?? 0);
         if ($pendingOrderId <= 0) {
             throw new \RuntimeException('Invalid pending cart.');
         }
 
-        $items = $this->repo->getPendingOrderItemsWithPricing($pendingOrderId);
+        $items = $pendingOrder->items;
         if ($items === []) {
             throw new \RuntimeException('Pending cart is empty.');
         }
