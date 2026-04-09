@@ -2,6 +2,7 @@
 
 use \App\Utils\Session;
 use \App\Utils\AuthSessionData;
+use App\Cms\Services\CmsNavigationService;
 use App\Models\Order;
 use App\Repositories\OrderRepository;
 use App\Services\EventModelBuilderService;
@@ -36,6 +37,14 @@ if ($headerCartOrder instanceof Order) {
 }
 
 $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+$cmsNavigation = [];
+$activeCmsNavKey = null;
+
+if ($headerIsAdmin && ($currentPath === '/cms' || str_starts_with($currentPath, '/cms/'))) {
+    $cmsNavigationService = new CmsNavigationService();
+    $cmsNavigation = $cmsNavigationService->items();
+    $activeCmsNavKey = $cmsNavigationService->activeKey($currentPath);
+}
 
 // safely define nav function so it doesn't break if header is included twice
 if (!function_exists('getNavClass')) {
@@ -45,6 +54,16 @@ if (!function_exists('getNavClass')) {
         return $isActive 
             ? $baseClasses . ' bg-blue-600 text-white shadow-md shadow-blue-500/30' 
             : $baseClasses . ' text-black hover:bg-gray-100';
+    }
+}
+
+if (!function_exists('getCmsNavClass')) {
+    function getCmsNavClass(bool $isActive): string {
+        $baseClasses = 'whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold transition-colors';
+
+        return $isActive
+            ? $baseClasses . ' bg-white text-slate-950'
+            : $baseClasses . ' text-slate-300 hover:bg-slate-800 hover:text-white';
     }
 }
 ?>
@@ -117,7 +136,7 @@ if (!function_exists('getNavClass')) {
 
     <div id="mobileMenuBackdrop" class="hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity"></div>
 
-    <div id="mobileMenu" class="fixed top-0 right-0 h-full w-72 sm:w-80 z-50 bg-white p-6 flex flex-col transform translate-x-full transition-transform duration-300 ease-in-out shadow-2xl overflow-y-auto">
+    <div id="mobileMenu" class="fixed top-0 right-0 h-full w-72 sm:w-80 z-50 bg-white p-6 text-black flex flex-col transform translate-x-full transition-transform duration-300 ease-in-out shadow-2xl overflow-y-auto">
         <div class="flex justify-between items-center mb-8">
             <img src="/assets/svg/logo.svg" alt="Logo" class="h-10">
             <button id="closeMenuBtn" class="text-4xl text-gray-500 hover:text-black leading-none pb-2">&times;</button>
@@ -150,6 +169,21 @@ if (!function_exists('getNavClass')) {
             <?php endif; ?>
         </nav>
     </div>
+
+    <?php if ($cmsNavigation !== []): ?>
+        <div class="border-t border-slate-800 bg-slate-950 text-white">
+            <div class="mx-auto max-w-6xl overflow-x-auto px-4">
+                <nav class="flex min-w-max items-center gap-2 py-3">
+                    <?php foreach ($cmsNavigation as $item): ?>
+                        <?php $isActiveCmsItem = ($activeCmsNavKey === (string) ($item['key'] ?? '')); ?>
+                        <a href="<?= htmlspecialchars((string) ($item['href'] ?? '/cms')) ?>" class="<?= getCmsNavClass($isActiveCmsItem) ?>">
+                            <?= htmlspecialchars((string) ($item['title'] ?? 'CMS')) ?>
+                        </a>
+                    <?php endforeach; ?>
+                </nav>
+            </div>
+        </div>
+    <?php endif; ?>
 </header>
 
 <script>
