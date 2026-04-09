@@ -23,6 +23,8 @@
 
             <?php
             // CMS modules shown on the overview page
+
+            //update view
             $modules = [
                 [
                     'id' => 1,
@@ -85,6 +87,15 @@
                     'updated' => '-',
                     'created' => '-',
                     'href' => '/cms/orders',
+                    'label' => 'Open',
+                ],
+                [
+                    'id' => 8,
+                    'title' => 'Passes',
+                    'type' => 'passes',
+                    'updated' => '-',
+                    'created' => '-',
+                    'href' => '/cms/passes',
                     'label' => 'Open',
                 ],
             ];

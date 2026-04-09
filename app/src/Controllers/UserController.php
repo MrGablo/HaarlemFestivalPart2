@@ -53,9 +53,7 @@ class UserController
             'firstName' => $_POST['firstName'] ?? '',
             'lastName' => $_POST['lastName'] ?? '',
             'email' => $_POST['email'] ?? '',
-            'profilePicturePath' => $_POST['profilePicturePath'] ?? '',
         ]);
-        error_log('FILES profilePicture: ' . json_encode($_FILES['profilePicture'] ?? null));
         try {
             $this->userService->updateAccount($userId, $_POST, $_FILES);
             $updatedUser = $this->userService->getAccountById($userId);

@@ -20,22 +20,9 @@ $bg = Media::image($hero['background_image'] ?? null);
     <div class="tracking-[0.2em] opacity-75"><?= htmlspecialchars((string)($hero['kicker'] ?? '')) ?></div>
     <h1 class="mb-4 mt-2 text-[64px] leading-none max-[1200px]:text-[44px]"><?= htmlspecialchars((string)($hero['title'] ?? '')) ?></h1>
 
-    <?php
-    // NEW (WYSIWYG)
-    $subtitleHtml = $hero['subtitle_html'] ?? null;
-    // OLD (fallback)
-    $subtitleArr = $hero['subtitle'] ?? null;
-    ?>
-
-    <?php if (is_string($subtitleHtml) && $subtitleHtml !== ''): ?>
+    <?php if (is_string($hero['subtitle_html'] ?? null) && $hero['subtitle_html'] !== ''): ?>
       <div class="mb-4 leading-[1.4] opacity-90 wysiwyg">
-        <?= Wysiwyg::render($subtitleHtml) ?>
-      </div>
-    <?php elseif (is_array($subtitleArr) && !empty($subtitleArr)): ?>
-      <div class="mb-4 leading-[1.4] opacity-90">
-        <?php foreach ($subtitleArr as $line): ?>
-          <div><?= htmlspecialchars((string)$line) ?></div>
-        <?php endforeach; ?>
+        <?= Wysiwyg::render((string)$hero['subtitle_html']) ?>
       </div>
     <?php endif; ?>
 
@@ -50,21 +37,10 @@ $bg = Media::image($hero['background_image'] ?? null);
   <div>
     <h2><?= htmlspecialchars((string)($intro['heading'] ?? '')) ?></h2>
 
-    <?php
-    // NEW (WYSIWYG)
-    $bodyHtml = $intro['body_html'] ?? null;
-    // OLD (fallback)
-    $paras = $intro['paragraphs'] ?? null;
-    ?>
-
-    <?php if (is_string($bodyHtml) && $bodyHtml !== ''): ?>
+    <?php if (is_string($intro['body_html'] ?? null) && $intro['body_html'] !== ''): ?>
       <div class="max-w-jazz-text max-w-[820px] opacity-90 wysiwyg">
-        <?= Wysiwyg::render($bodyHtml) ?>
+        <?= Wysiwyg::render((string)$intro['body_html']) ?>
       </div>
-    <?php elseif (is_array($paras) && !empty($paras)): ?>
-      <?php foreach ($paras as $p): ?>
-        <p class="max-w-jazz-text max-w-[820px] opacity-90"><?= htmlspecialchars((string)$p) ?></p>
-      <?php endforeach; ?>
     <?php endif; ?>
   </div>
 </section>

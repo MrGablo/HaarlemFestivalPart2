@@ -21,4 +21,10 @@ interface IJazzEventRepository
 
     /** @return JazzEvent[] */
     public function getJazzEventsByPageId(int $pageId): array;
+
+    /** @return array<int, int> */
+    public function getJazzEventIdsByDate(string $isoDate): array;
+
+    /** @return array<int, int> */
+    public function getAllJazzEventIds(): array;
 }

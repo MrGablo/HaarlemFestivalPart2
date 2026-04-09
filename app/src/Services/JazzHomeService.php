@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Cms\PageBuilder\Builders\JazzHomePageBuilder;
+use App\Cms\PageBuilder\Content\JazzHomePageContentViewModel;
 use App\Models\JazzEvent;
 use App\Repositories\Interfaces\IPageRepository;
 use App\Repositories\Interfaces\IJazzEventRepository;
@@ -14,26 +16,30 @@ class JazzHomeService
         private IPageRepository $pageRepo,
         private IJazzEventRepository $eventRepo,
         private IVenueRepository $venueRepo,
-        private PassService $passService
+        private PassService $passService,
+        private JazzHomePageBuilder $builder = new JazzHomePageBuilder()
     ) {}
 
     public function getJazzHomePageViewModel(): JazzHomePageViewModel
     {
-        $content = $this->pageRepo->getPageContentByType('Jazz_Homepage');
+        /** @var JazzHomePageContentViewModel $page */
+        $page = $this->builder->buildViewModel(
+            $this->pageRepo->getPageContentByType($this->builder->pageType())
+        );
 
         /** @var JazzEvent[] $eventsRaw */
         $eventsRaw = $this->eventRepo->getAllJazzEvents();
 
         $events = array_map([$this, 'mapEvent'], $eventsRaw);
 
-        $hero = is_array($content['hero'] ?? null) ? $content['hero'] : [];
-        $intro = is_array($content['intro'] ?? null) ? $content['intro'] : [];
-        $dayTicketPassContent = is_array($content['day_ticket_pass'] ?? null) ? $content['day_ticket_pass'] : [];
+        $hero = $page->hero;
+        $intro = $page->intro;
+        $dayTicketPassContent = $page->dayTicketPass;
         $dayTicketPass = [
             'title' => (string)($dayTicketPassContent['title'] ?? 'Day Ticket Pass'),
             'buttons' => $this->passService->getPassButtonsForFestivalType('jazz'),
         ];
-        $schedule = is_array($content['schedule'] ?? null) ? $content['schedule'] : [];
+        $schedule = $page->schedule;
         $filters = is_array($schedule['filters'] ?? null) ? $schedule['filters'] : [];
 
         $venues = $this->venueRepo->getAllVenues();
