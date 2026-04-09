@@ -100,6 +100,109 @@ class EmailService
         return $this->sendWithAttachments($email, $subject, $body, $attachments);
     }
 
+    public function sendTicketDelivery(
+        string $email,
+        string $firstName,
+        string $orderNumber,
+        string $ticketPdfPath,
+        array $tickets
+    ): bool {
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return false;
+        }
+
+        try {
+            $mailer = $this->createMailer();
+            $mailer->addAddress($email);
+            $mailer->isHTML(true);
+            $mailer->Subject = "Your Haarlem Festival tickets (Order {$orderNumber})";
+
+            $htmlTickets = [];
+            $textTickets = [];
+
+            foreach ($tickets as $index => $ticket) {
+                $ticketId = (int)($ticket['ticket_id'] ?? 0);
+                $title = htmlspecialchars((string)($ticket['title'] ?? 'Festival Ticket'), ENT_QUOTES, 'UTF-8');
+                $startsAt = trim((string)($ticket['event_start_time'] ?? ''));
+                $venue = trim((string)($ticket['venue_name'] ?? ''));
+                $qr = trim((string)($ticket['qr'] ?? ''));
+                $qrSvg = (string)($ticket['qr_svg'] ?? '');
+                $cid = 'ticket-qr-' . ($ticketId > 0 ? (string)$ticketId : (string)$index);
+
+                if ($qrSvg !== '') {
+                    $mailer->addStringEmbeddedImage(
+                        $qrSvg,
+                        $cid,
+                        'ticket-' . ($ticketId > 0 ? (string)$ticketId : (string)$index) . '.svg',
+                        PHPMailer::ENCODING_BASE64,
+                        'image/svg+xml'
+                    );
+                    $mailer->addStringAttachment(
+                        $qrSvg,
+                        'ticket-' . ($ticketId > 0 ? (string)$ticketId : (string)$index) . '-qr.svg',
+                        PHPMailer::ENCODING_BASE64,
+                        'image/svg+xml'
+                    );
+                }
+
+                $details = [];
+                if ($startsAt !== '') {
+                    $details[] = htmlspecialchars($startsAt, ENT_QUOTES, 'UTF-8');
+                }
+                if ($venue !== '') {
+                    $details[] = htmlspecialchars($venue, ENT_QUOTES, 'UTF-8');
+                }
+
+                $htmlTickets[] = '<div style="margin:0 0 24px;padding:20px;border:1px solid #d6dee8;border-radius:12px;background:#f9fbfd;">'
+                    . '<h2 style="margin:0 0 8px;font-size:18px;line-height:1.4;color:#111827;">' . $title . '</h2>'
+                    . '<p style="margin:0 0 8px;font-size:14px;line-height:1.5;color:#4b5563;">Ticket #' . $ticketId . '</p>'
+                    . (!empty($details)
+                        ? '<p style="margin:0 0 12px;font-size:14px;line-height:1.5;color:#4b5563;">' . implode(' | ', $details) . '</p>'
+                        : '')
+                    . ($qrSvg !== ''
+                        ? '<img src="cid:' . htmlspecialchars($cid, ENT_QUOTES, 'UTF-8') . '" alt="QR code for ticket ' . $ticketId . '" style="display:block;width:220px;height:220px;background:#ffffff;border:1px solid #d6dee8;border-radius:8px;padding:8px;">'
+                        : '')
+                    . '<p style="margin:12px 0 0;font-size:13px;line-height:1.5;color:#6b7280;">Ticket code: ' . htmlspecialchars($qr, ENT_QUOTES, 'UTF-8') . '</p>'
+                    . '</div>';
+
+                $textTicket = "- {$title} (Ticket #{$ticketId})";
+                if ($startsAt !== '') {
+                    $textTicket .= "\n  Starts: {$startsAt}";
+                }
+                if ($venue !== '') {
+                    $textTicket .= "\n  Venue: {$venue}";
+                }
+                if ($qr !== '') {
+                    $textTicket .= "\n  Ticket code: {$qr}";
+                }
+                $textTickets[] = $textTicket;
+            }
+
+            $mailer->Body = '<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#111827;">'
+                . '<p style="margin:0 0 16px;">Hi ' . htmlspecialchars($firstName, ENT_QUOTES, 'UTF-8') . ',</p>'
+                . '<p style="margin:0 0 16px;">Thank you for your payment. Your ticket PDF is attached below, and each QR code is included in this e-mail for quick entry at the venue.</p>'
+                . '<p style="margin:0 0 20px;"><strong>Order number:</strong> ' . htmlspecialchars($orderNumber, ENT_QUOTES, 'UTF-8') . '</p>'
+                . implode('', $htmlTickets)
+                . '<p style="margin:24px 0 0;">Enjoy the festival!<br>Haarlem Festival</p>'
+                . '</div>';
+            $mailer->AltBody = "Hi {$firstName},\n\n"
+                . "Thank you for your payment. Your ticket PDF is attached to this email.\n"
+                . "Order number: {$orderNumber}\n\n"
+                . implode("\n\n", $textTickets)
+                . "\n\nEnjoy the festival!\nHaarlem Festival";
+
+            if ($ticketPdfPath !== '' && is_file($ticketPdfPath) && is_readable($ticketPdfPath)) {
+                $mailer->addAttachment($ticketPdfPath, 'tickets.pdf');
+            }
+
+            $mailer->send();
+            return true;
+        } catch (\Throwable $e) {
+            error_log('Ticket delivery email failed: ' . $e->getMessage());
+            return false;
+        }
+    }
+
     private function sendPlainText(string $to, string $subject, string $message): bool
     {
         if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
@@ -109,6 +212,7 @@ class EmailService
         try {
             $mailer = $this->createMailer();
             $mailer->addAddress($to);
+            $mailer->isHTML(false);
             $mailer->Subject = $subject;
             $mailer->Body = $message;
             $mailer->send();
@@ -128,6 +232,7 @@ class EmailService
         try {
             $mailer = $this->createMailer();
             $mailer->addAddress($to);
+            $mailer->isHTML(false);
             $mailer->Subject = $subject;
             $mailer->Body = $message;
 
@@ -174,7 +279,6 @@ class EmailService
         }
 
         $mailer->setFrom($this->fromAddress, $this->fromName);
-        $mailer->isHTML(false);
 
         return $mailer;
     }
