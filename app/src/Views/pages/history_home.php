@@ -9,6 +9,7 @@ $overview = $vm->overview;
 $booking = $vm->booking;
 $map = $vm->map;
 $bookingEvents = is_array($vm->bookingEvents ?? null) ? $vm->bookingEvents : [];
+$cartCsrfToken = \App\Utils\Csrf::token('cart_csrf_token');
 $bookingEventsJson = json_encode($vm->bookingEvents, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
 $bookingEventsJson = is_string($bookingEventsJson) ? $bookingEventsJson : '[]';
 $formatPriceSummary = static function (array $events, string $key, string $fallback): string {
@@ -180,6 +181,7 @@ $familyPriceSummary = $formatPriceSummary($bookingEvents, 'family_price', 'EUR 6
                     </div>
 
                     <form method="POST" action="/order/item/add" class="ticket-form mt-6" data-history-booking-form>
+                        <input type="hidden" name="_csrf" value="<?= htmlspecialchars($cartCsrfToken, ENT_QUOTES, 'UTF-8') ?>">
                         <input type="hidden" name="event_id" value="" data-history-event-id>
                         <input type="hidden" name="quantity" value="1" data-history-quantity>
                         <button type="submit" class="w-full cursor-pointer rounded-full border-0 bg-[#7e8552] px-6 py-4 text-sm font-bold uppercase tracking-[0.18em] text-white transition hover:bg-[#697043] disabled:cursor-not-allowed disabled:bg-[#b4b29f]" data-history-submit>
