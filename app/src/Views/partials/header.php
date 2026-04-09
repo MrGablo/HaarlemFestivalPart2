@@ -13,6 +13,8 @@ $authPayload = AuthSessionData::read();
 
 $headerIsLoggedIn = isset($isLoggedIn) ? (bool) $isLoggedIn : ($authPayload !== null);
 $headerProfilePicturePath = (string) ($profilePicturePath ?? ($authPayload['profilePicturePath'] ?? '/assets/img/default-user.png'));
+$headerIsAdmin = strtolower((string) ($authPayload['userRole'] ?? '')) === 'admin';
+$headerIsStaff = in_array(strtolower((string) ($authPayload['userRole'] ?? '')), ['admin', 'employee'], true);
 
 // get cart order if logged in
 $headerCartOrder = null;
@@ -77,6 +79,14 @@ if (!function_exists('getNavClass')) {
             <?php else: ?>
                 <a href="/login" class="<?= getNavClass('/login', $currentPath) ?>">Login</a>
             <?php endif; ?>
+
+            <?php if ($headerIsAdmin): ?>
+                <a href="/cms" class="<?= getNavClass('/cms', $currentPath) ?>">CMS</a>
+            <?php endif; ?>
+
+            <?php if ($headerIsStaff): ?>
+                <a href="/scanner" class="<?= getNavClass('/scanner', $currentPath) ?>">Scanner</a>
+            <?php endif; ?>
         </nav>
 
         <div class="flex lg:hidden items-stretch">
@@ -110,11 +120,22 @@ if (!function_exists('getNavClass')) {
             <a href="/stories">Stories</a>
             <a href="/program" class="text-[#2F80ED]">Program</a>
             <hr class="border-[#f0f0f0] my-2">
+            
             <?php if ($headerIsLoggedIn): ?>
                 <a href="/account/manage">Account</a>
                 <a href="/logout" class="text-red-500">Logout</a>
             <?php else: ?>
                 <a href="/login">Login</a>
+            <?php endif; ?>
+
+            <?php if ($headerIsAdmin || $headerIsStaff): ?>
+                <hr class="border-[#f0f0f0] my-2">
+                <?php if ($headerIsAdmin): ?>
+                    <a href="/cms" class="text-emerald-600">CMS</a>
+                <?php endif; ?>
+                <?php if ($headerIsStaff): ?>
+                    <a href="/scanner" class="text-emerald-600">Scanner</a>
+                <?php endif; ?>
             <?php endif; ?>
         </nav>
     </div>
