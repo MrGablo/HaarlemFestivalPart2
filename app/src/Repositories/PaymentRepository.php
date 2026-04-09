@@ -241,7 +241,7 @@ class PaymentRepository extends Repository
                     WHEN LOWER(TRIM(e.event_type)) = 'dance' THEN {$danceVenueName}
                     ELSE COALESCE(NULLIF(TRIM(v.name), ''), '')
                 END AS venue_name,
-                COALESCE(j.price, d.price, p.base_price, 0) AS price
+                COALESCE(j.price, d.price, y.price, s.price, p.base_price, 0) AS price
              FROM `Ticket` t
              INNER JOIN `order_items` oi ON oi.order_item_id = t.order_item_id
              INNER JOIN `Event` e ON e.event_id = COALESCE(t.event_id, oi.event_id)
