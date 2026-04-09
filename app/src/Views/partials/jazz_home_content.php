@@ -14,29 +14,29 @@ $bg = Media::image($hero['background_image'] ?? null);
 $cartCsrfToken = \App\Utils\Csrf::token('cart_csrf_token');
 ?>
 
-<section class="relative min-h-[70vh] bg-cover bg-center"
+<section class="relative min-h-[70vh] bg-cover bg-center max-[768px]:min-h-[46vh]"
   style="background-image:url('/<?= htmlspecialchars($bg['src']) ?>')">
   <div class="absolute inset-0 bg-gradient-to-r from-black/75 to-black/15"></div>
-  <div class="relative z-[1] max-w-jazz-hero-content max-w-[900px] px-20 pb-10 pt-20 max-[1200px]:px-6">
-    <div class="tracking-[0.2em] opacity-75"><?= htmlspecialchars((string)($hero['kicker'] ?? '')) ?></div>
-    <h1 class="mb-4 mt-2 text-[64px] leading-none max-[1200px]:text-[44px]"><?= htmlspecialchars((string)($hero['title'] ?? '')) ?></h1>
+  <div class="relative z-[1] max-w-jazz-hero-content max-w-[900px] px-20 pb-10 pt-20 max-[1200px]:px-6 max-[768px]:px-4 max-[768px]:pb-8 max-[768px]:pt-16">
+    <div class="text-sm tracking-[0.2em] opacity-75 max-[768px]:text-base"><?= htmlspecialchars((string)($hero['kicker'] ?? '')) ?></div>
+    <h1 class="mb-4 mt-2 text-[64px] leading-none max-[1200px]:text-[44px] max-[768px]:text-[44px] max-[768px]:leading-[1.05]"><?= htmlspecialchars((string)($hero['title'] ?? '')) ?></h1>
 
     <?php if (is_string($hero['subtitle_html'] ?? null) && $hero['subtitle_html'] !== ''): ?>
-      <div class="mb-4 leading-[1.4] opacity-90 wysiwyg">
+      <div class="mb-4 max-w-[640px] text-base leading-[1.4] opacity-90 wysiwyg max-[768px]:text-lg max-[768px]:leading-[1.45]">
         <?= Wysiwyg::render((string)$hero['subtitle_html']) ?>
       </div>
     <?php endif; ?>
 
     <!-- Scroll button (uses JS). href in JSON stays as fallback -->
-    <button class="cursor-pointer rounded-lg border-0 bg-jazz-button-dark bg-[#2b2b2b] px-4 py-[10px] text-white" type="button" data-scroll-target="#dayTicket">
+    <button class="cursor-pointer rounded-lg border-0 bg-jazz-button-dark bg-[#2b2b2b] px-4 py-[10px] text-white max-[768px]:w-full max-[768px]:max-w-[280px] max-[768px]:py-3 max-[768px]:text-lg" type="button" data-scroll-target="#dayTicket">
       <?= htmlspecialchars((string)($hero['primary_button']['label'] ?? 'Buy ticket')) ?>
     </button>
   </div>
 </section>
 
-<section class="max-w-jazz-intro max-w-[1000px] px-20 py-10 max-[1200px]:px-6">
+<section class="max-w-jazz-intro max-w-[1000px] px-20 py-10 max-[1200px]:px-6 max-[768px]:px-4 max-[768px]:py-8">
   <div>
-    <h2><?= htmlspecialchars((string)($intro['heading'] ?? '')) ?></h2>
+    <h2 class="text-[42px] leading-tight max-[1200px]:text-[34px] max-[768px]:text-[36px]"><?= htmlspecialchars((string)($intro['heading'] ?? '')) ?></h2>
 
     <?php if (is_string($intro['body_html'] ?? null) && $intro['body_html'] !== ''): ?>
       <div class="max-w-jazz-text max-w-[820px] opacity-90 wysiwyg">
@@ -46,8 +46,8 @@ $cartCsrfToken = \App\Utils\Csrf::token('cart_csrf_token');
   </div>
 </section>
 
-<section id="dayTicket" class="px-20 pb-[10px] pt-[30px] text-center max-[1200px]:px-6">
-  <h2><?= htmlspecialchars((string)($dayTicket['title'] ?? 'Day Ticket Pass')) ?></h2>
+<section id="dayTicket" class="px-20 pb-[10px] pt-[30px] text-center max-[1200px]:px-6 max-[768px]:px-4">
+  <h2 class="text-[42px] leading-tight max-[1200px]:text-[34px] max-[768px]:text-[36px]"><?= htmlspecialchars((string)($dayTicket['title'] ?? 'Day Ticket Pass')) ?></h2>
 
   <?php if (!empty($dayTicket['buttons']) && is_array($dayTicket['buttons'])): ?>
     <div class="my-3 flex flex-wrap justify-center gap-[10px]">
@@ -60,7 +60,7 @@ $cartCsrfToken = \App\Utils\Csrf::token('cart_csrf_token');
         ?>
         <?php if ($requiresDaySelection): ?>
           <button
-            class="pass-day-picker-btn cursor-pointer rounded-[10px] border-0 bg-jazz-accent bg-[#f7c600] px-[18px] py-[10px] font-bold text-jazz-accent-text text-[#111]"
+            class="pass-day-picker-btn cursor-pointer rounded-[10px] border-0 bg-jazz-accent bg-[#f7c600] px-[18px] py-[10px] font-bold text-jazz-accent-text text-[#111] max-[768px]:w-full max-[768px]:py-3 max-[768px]:text-lg"
             type="button"
             data-event-id="<?= $eventId ?>"
             data-pass-label="<?= htmlspecialchars((string)($b['label'] ?? 'Day Pass')) ?>"
@@ -69,10 +69,10 @@ $cartCsrfToken = \App\Utils\Csrf::token('cart_csrf_token');
             <?= htmlspecialchars((string)($b['label'] ?? '')) ?>
           </button>
         <?php else: ?>
-          <form method="POST" action="/order/item/add" class="ticket-form">
+          <form method="POST" action="/order/item/add" class="ticket-form max-[768px]:w-full">
             <input type="hidden" name="_csrf" value="<?= htmlspecialchars($cartCsrfToken, ENT_QUOTES, 'UTF-8') ?>">
             <input type="hidden" name="event_id" value="<?= $eventId ?>">
-            <button class="cursor-pointer rounded-[10px] border-0 bg-jazz-accent bg-[#f7c600] px-[18px] py-[10px] font-bold text-jazz-accent-text text-[#111]" type="submit">
+            <button class="cursor-pointer rounded-[10px] border-0 bg-jazz-accent bg-[#f7c600] px-[18px] py-[10px] font-bold text-jazz-accent-text text-[#111] max-[768px]:w-full max-[768px]:py-3 max-[768px]:text-lg" type="submit">
               <?= htmlspecialchars((string)($b['label'] ?? '')) ?>
             </button>
           </form>
@@ -81,19 +81,19 @@ $cartCsrfToken = \App\Utils\Csrf::token('cart_csrf_token');
     </div>
   <?php endif; ?>
 
-  <a class="mt-[10px] inline-block text-white no-underline opacity-90" href="#schedule">
+  <a class="mt-[10px] inline-block text-white no-underline opacity-90 max-[768px]:text-base" href="#schedule">
     <?= htmlspecialchars($vm->scheduleTitle) ?>
   </a>
 </section>
 
 <div id="jazzPassDayModal" class="fixed inset-0 z-[1300] hidden items-center justify-center bg-black/70 px-4">
-  <div class="w-full max-w-[540px] rounded-2xl bg-[#111] p-6 text-left text-white ring-1 ring-white/10">
+  <div class="w-full max-w-[540px] rounded-2xl bg-[#111] p-6 text-left text-white ring-1 ring-white/10 max-[768px]:p-4">
     <div class="mb-4 flex items-start justify-between gap-3">
       <div>
-        <h3 class="text-2xl font-bold">Choose Jazz Day</h3>
+        <h3 class="text-2xl font-bold max-[768px]:text-xl">Choose Jazz Day</h3>
         <p id="jazzPassDayModalSubtitle" class="mt-1 text-sm opacity-85">Select the date for your day pass.</p>
       </div>
-      <button id="jazzPassDayModalClose" type="button" class="rounded-md border border-white/20 px-3 py-1 text-sm hover:bg-white/10">Close</button>
+      <button id="jazzPassDayModalClose" type="button" class="rounded-md border border-white/20 px-3 py-1 text-sm hover:bg-white/10 max-[768px]:px-2 max-[768px]:py-1 max-[768px]:text-xs">Close</button>
     </div>
 
     <div id="jazzPassDayModalDates" class="flex flex-wrap gap-2"></div>
