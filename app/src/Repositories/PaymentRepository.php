@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Framework\Repository;
+use App\Support\VenueSchemaHelper;
 
 /**
  * Simple repository for Stripe payment flow.
@@ -190,6 +191,69 @@ class PaymentRepository extends Repository
                 {$passDateExpr} AS pass_date
              FROM `order_items` oi
                  WHERE order_id = :order_id"
+        );
+        $stmt->execute([':order_id' => $orderId]);
+        $rows = $stmt->fetchAll();
+
+        return is_array($rows) ? $rows : [];
+    }
+
+    public function getOrderDeliveryRecipient(int $orderId, int $userId): ?array
+    {
+        $stmt = $this->getConnection()->prepare(
+            'SELECT
+                o.order_id,
+                o.user_id,
+                u.first_name,
+                u.last_name,
+                u.email
+             FROM `orders` o
+             INNER JOIN `User` u ON u.id = o.user_id
+             WHERE o.order_id = :order_id
+               AND o.user_id = :user_id
+             LIMIT 1'
+        );
+        $stmt->execute([
+            ':order_id' => $orderId,
+            ':user_id' => $userId,
+        ]);
+        $row = $stmt->fetch();
+
+        return is_array($row) ? $row : null;
+    }
+
+    public function getIssuedTicketsForOrder(int $orderId): array
+    {
+        $pdo = $this->getConnection();
+        $vt = '`' . str_replace('`', '``', VenueSchemaHelper::venueTableName($pdo)) . '`';
+        $vpk = '`' . str_replace('`', '``', VenueSchemaHelper::primaryKeyColumn($pdo)) . '`';
+        $danceVenueName = VenueSchemaHelper::displayNameExpression($pdo, 'vd');
+
+        $stmt = $pdo->prepare(
+            "SELECT
+                t.ticket_id,
+                t.qr,
+                COALESCE(t.event_id, oi.event_id) AS event_id,
+                e.title,
+                e.event_type,
+                COALESCE(j.start_date, d.start_date, y.start_time, s.start_date) AS event_start_time,
+                CASE
+                    WHEN LOWER(TRIM(e.event_type)) = 'dance' THEN {$danceVenueName}
+                    ELSE COALESCE(NULLIF(TRIM(v.name), ''), '')
+                END AS venue_name,
+                COALESCE(j.price, d.price, y.price, s.price, p.base_price, 0) AS price
+             FROM `Ticket` t
+             INNER JOIN `order_items` oi ON oi.order_item_id = t.order_item_id
+             INNER JOIN `Event` e ON e.event_id = COALESCE(t.event_id, oi.event_id)
+             LEFT JOIN `JazzEvent` j ON j.event_id = e.event_id
+             LEFT JOIN `DanceEvent` d ON d.event_id = e.event_id
+             LEFT JOIN `YummyEvent` y ON y.event_id = e.event_id
+             LEFT JOIN `StoriesEvent` s ON s.event_id = e.event_id
+             LEFT JOIN `PassEvent` p ON p.event_id = e.event_id
+             LEFT JOIN {$vt} v ON v.{$vpk} = j.venue_id
+             LEFT JOIN {$vt} vd ON vd.{$vpk} = d.venue_id
+             WHERE oi.order_id = :order_id
+             ORDER BY t.ticket_id ASC"
         );
         $stmt->execute([':order_id' => $orderId]);
         $rows = $stmt->fetchAll();

@@ -4,9 +4,11 @@ FROM php:8.4-fpm
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
-        git unzip libzip-dev gnupg2 apt-transport-https curl build-essential unixodbc-dev ca-certificates; \
-    # Install MySQL PDO driver
-    docker-php-ext-install pdo pdo_mysql; \
+        git unzip libzip-dev gnupg2 apt-transport-https curl build-essential unixodbc-dev ca-certificates \
+        libpng-dev libjpeg62-turbo-dev libfreetype6-dev zlib1g-dev; \
+    # Install GD (required by setasign/fpdf) and zip extensions
+    docker-php-ext-configure gd --with-freetype --with-jpeg; \
+    docker-php-ext-install gd zip pdo pdo_mysql; \
     # Register Microsoft package repository for ODBC and SQLSRV (for connecting to Azure SQL)
     curl -sSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /usr/share/keyrings/microsoft.gpg; \
     echo "deb [signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/debian/11/prod bullseye main" > /etc/apt/sources.list.d/mssql-release.list; \
