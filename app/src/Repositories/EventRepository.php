@@ -76,11 +76,14 @@ class EventRepository extends Repository
 
     public function decrementAvailabilityByOne(int $eventId): bool
     {
+        return $this->decrementAvailabilityByOneUsingConnection($this->getConnection(), $eventId);
+    }
+
+    public function decrementAvailabilityByOneUsingConnection(\PDO $pdo, int $eventId): bool
+    {
         if ($eventId <= 0) {
             return false;
         }
-
-        $pdo = $this->getConnection();
 
         $stmt = $pdo->prepare('
             UPDATE Event

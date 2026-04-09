@@ -100,18 +100,12 @@ class OrderService
             ? $existingOrderId
             : $createdOrderId;
 
-        if (strtolower((string)($eventModel->event_type ?? '')) === 'history') {
-            $currentQuantity = 0;
-            if ($orderRow !== null) {
-                $existingOrder = $this->buildOrderFromRow($orderRow);
-                foreach ($existingOrder->items as $item) {
-                    if ((int)$item->event_id === $eventId) {
-                        $currentQuantity += max(0, (int)$item->quantity);
-                    }
-                }
-            }
+        $currentQuantity = $this->findPendingItemQuantity($orderId, $eventId, $effectivePassDate);
+        $nextQuantity = $currentQuantity + $quantity;
 
-            $nextQuantity = $currentQuantity + $quantity;
+        $this->assertEventCapacityForQuantity($eventRow, $nextQuantity);
+
+        if (strtolower((string)($eventModel->event_type ?? '')) === 'history') {
             $maxHistoryTickets = $this->historyPricing()->maxTicketsPerOrder();
             if ($nextQuantity > $maxHistoryTickets) {
                 throw new \RuntimeException('A history booking can contain at most ' . $maxHistoryTickets . ' tickets.');
@@ -191,6 +185,27 @@ class OrderService
         }
 
         $orderId = $this->extractOrderId($orderRow, $userId);
+
+        $itemsRows = $this->orderRepository->getOrderItemsWithEventData($orderId);
+        $targetEventId = 0;
+        foreach ($itemsRows as $row) {
+            if ((int)($row['order_item_id'] ?? 0) === $orderItemId) {
+                $targetEventId = (int)($row['event_id'] ?? 0);
+                break;
+            }
+        }
+
+        if ($targetEventId <= 0) {
+            throw new \RuntimeException('Order item not found in your cart.');
+        }
+
+        $eventRow = $this->orderRepository->findEventById($targetEventId);
+        if ($eventRow === null) {
+            throw new \RuntimeException('Event not found.');
+        }
+
+        $this->assertEventCapacityForQuantity($eventRow, $quantity);
+
         $updated = $this->orderRepository->updateOrderItemQuantity($orderId, $orderItemId, $quantity);
         if (!$updated) {
             throw new \RuntimeException('Order item not found in your cart.');
@@ -288,6 +303,59 @@ class OrderService
         }
 
         return $value;
+    }
+
+    private function findPendingItemQuantity(int $orderId, int $eventId, ?string $passDate): int
+    {
+        if ($orderId <= 0 || $eventId <= 0) {
+            return 0;
+        }
+
+        $itemsRows = $this->orderRepository->getOrderItemsWithEventData($orderId);
+        $expectedPassDate = $this->normalizeComparablePassDate($passDate);
+
+        foreach ($itemsRows as $row) {
+            $rowEventId = (int)($row['event_id'] ?? 0);
+            if ($rowEventId !== $eventId) {
+                continue;
+            }
+
+            $rowPassDate = $this->normalizeComparablePassDate(isset($row['pass_date']) ? (string)$row['pass_date'] : null);
+            if ($rowPassDate !== $expectedPassDate) {
+                continue;
+            }
+
+            return (int)($row['quantity'] ?? 0);
+        }
+
+        return 0;
+    }
+
+    private function normalizeComparablePassDate(?string $value): ?string
+    {
+        $value = $this->normalizePassDate($value);
+        if ($value === '1000-01-01') {
+            return null;
+        }
+
+        return $value;
+    }
+
+    private function assertEventCapacityForQuantity(array $eventRow, int $requestedQuantity): void
+    {
+        if ($requestedQuantity <= 0) {
+            throw new \InvalidArgumentException('Invalid quantity.');
+        }
+
+        $eventType = strtolower(trim((string)($eventRow['event_type'] ?? '')));
+        if ($eventType === 'pass') {
+            return;
+        }
+
+        $availability = (int)($eventRow['availability'] ?? 0);
+        if ($requestedQuantity > $availability) {
+            throw new \RuntimeException('Not enough seats available for this event.');
+        }
     }
 
     /** @return array{unit_price_override: ?float, line_total_override: ?float} */
