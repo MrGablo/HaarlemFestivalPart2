@@ -59,6 +59,22 @@ $tailwindLoaded = true;
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="/assets/js/history-tailwind-config.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        [data-history-submit] {
+            appearance: none;
+            background-color: #7e8552;
+            border: 1px solid #7e8552;
+            color: #ffffff;
+            opacity: 1;
+        }
+
+        [data-history-submit]:disabled {
+            background-color: #d4ccbc;
+            border-color: #b4b29f;
+            color: #171717;
+            opacity: 1;
+        }
+    </style>
 </head>
 
 <body class="m-0 bg-history-paper text-history-ink font-historySans">
@@ -186,7 +202,7 @@ $tailwindLoaded = true;
                         <input type="hidden" name="_csrf" value="<?= htmlspecialchars($cartCsrfToken, ENT_QUOTES, 'UTF-8') ?>">
                         <input type="hidden" name="event_id" value="" data-history-event-id>
                         <input type="hidden" name="quantity" value="1" data-history-quantity>
-                        <button type="submit" class="w-full cursor-pointer rounded-full border-0 bg-history-olive px-6 py-4 text-sm font-bold uppercase tracking-[0.18em] text-white transition hover:bg-history-oliveDark disabled:cursor-not-allowed disabled:bg-[#b4b29f]" data-history-submit>
+                        <button type="submit" class="w-full cursor-pointer rounded-full border-0 bg-history-olive px-6 py-4 text-sm font-bold uppercase tracking-[0.18em] text-white transition hover:bg-history-oliveDark disabled:cursor-not-allowed disabled:bg-[#b4b29f] disabled:text-history-ink" data-history-submit>
                             <?= htmlspecialchars((string)($booking['reserve_button_label'] ?? 'Reserve now')) ?>
                         </button>
                     </form>
