@@ -169,6 +169,13 @@ docker compose up --build
 - Main application: http://localhost
 - phpMyAdmin: http://localhost:8080
 
+### Default Admin Credentials
+
+Use the following credentials for the default admin account:
+
+- Username: `admin`
+- Password: `admiadmin`
+
 ### 4. Stop the environment
 
 ```bash
