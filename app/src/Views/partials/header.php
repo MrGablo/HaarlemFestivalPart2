@@ -2,6 +2,7 @@
 
 use \App\Utils\Session;
 use \App\Utils\AuthSessionData;
+use App\Config;
 use App\Cms\Services\CmsNavigationService;
 use App\Models\Order;
 use App\Repositories\OrderRepository;
@@ -13,7 +14,10 @@ Session::ensureStarted();
 $authPayload = AuthSessionData::read();
 
 $headerIsLoggedIn = isset($isLoggedIn) ? (bool) $isLoggedIn : ($authPayload !== null);
-$headerProfilePicturePath = (string) ($profilePicturePath ?? ($authPayload['profilePicturePath'] ?? '/assets/img/default-user.png'));
+$headerProfilePicturePath = trim((string) ($profilePicturePath ?? ($authPayload['profilePicturePath'] ?? Config::DEFAULT_USER_PROFILE_IMAGE_PATH)));
+$headerProfilePicturePath = $headerProfilePicturePath !== '' ? $headerProfilePicturePath : Config::DEFAULT_USER_PROFILE_IMAGE_PATH;
+$headerDisplayName = trim((string) ($authPayload['userName'] ?? ($authPayload['firstName'] ?? '')));
+$headerDisplayName = $headerDisplayName !== '' ? $headerDisplayName : 'Account';
 $headerIsAdmin = strtolower((string) ($authPayload['userRole'] ?? '')) === 'admin';
 $headerIsStaff = in_array(strtolower((string) ($authPayload['userRole'] ?? '')), ['admin', 'employee'], true);
 
@@ -106,8 +110,20 @@ if (!function_exists('getCmsNavClass')) {
             </button>
 
             <?php if ($headerIsLoggedIn): ?>
-                <a class="flex items-center gap-2 font-bold px-3 py-2 rounded-full hover:bg-gray-100" href="/account/manage">
-                    <img class="h-8 w-8 rounded-full object-cover" src="<?= htmlspecialchars($headerProfilePicturePath) ?>" alt="User">
+                <a class="flex items-center gap-2 font-bold px-3 py-2 rounded-full hover:bg-gray-100" href="/account/manage" aria-label="Open account">
+                    <span class="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-slate-700">
+                        <img
+                            class="h-8 w-8 rounded-full object-cover"
+                            src="<?= htmlspecialchars($headerProfilePicturePath) ?>"
+                            alt="<?= htmlspecialchars($headerDisplayName) ?>"
+                            onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');">
+                        <svg class="hidden h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19a4 4 0 0 0-6 0"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10Z"></path>
+                        </svg>
+                    </span>
+                    <span class="max-w-[9rem] truncate text-sm text-slate-900"><?= htmlspecialchars($headerDisplayName) ?></span>
                 </a>
                 <a href="/logout" class="<?= getNavClass('/logout', $currentPath) ?>">Logout</a>
             <?php else: ?>
@@ -156,7 +172,7 @@ if (!function_exists('getCmsNavClass')) {
             <hr class="border-gray-100 my-2">
             
             <?php if ($headerIsLoggedIn): ?>
-                <a href="/account/manage">Account</a>
+                <a href="/account/manage"><?= htmlspecialchars($headerDisplayName) ?></a>
                 <a href="/logout" class="text-red-500">Logout</a>
             <?php else: ?>
                 <a href="/login">Login</a>
