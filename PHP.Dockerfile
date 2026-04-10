@@ -35,11 +35,11 @@ ENV COMPOSER_ALLOW_SUPERUSER=1 \
 
 # Copy composer files and install PHP dependencies into the image
 COPY app/composer.json app/composer.lock /app/
-RUN composer install --no-interaction --no-progress --optimize-autoloader
+RUN composer install --working-dir=/app --no-interaction --no-progress --optimize-autoloader
 
 # Allow passing a DB connection string at build/runtime. Runtime env from docker-compose will override this.
 ARG DB_CONNECTION
 ENV DB_CONNECTION=${DB_CONNECTION}
 
-# On container start, ensure dependencies are up-to-date (handles volume-mounted source), then start php-fpm
-CMD ["sh", "-lc", "mkdir -p /app/public/assets/img/profiles; chmod -R 777 /app/public/assets/img || true; [ -f /app/vendor/autoload.php ] || composer install --working-dir=/app --no-interaction --no-progress; exec php-fpm"]
+# On container start, ensure dependencies exist for the mounted app volume, then start php-fpm
+CMD ["sh", "-lc", "mkdir -p /app/public/assets/img/profiles; chmod -R 777 /app/public/assets/img || true; if [ ! -f /app/vendor/autoload.php ] || [ /app/composer.lock -nt /app/vendor/autoload.php ]; then composer install --working-dir=/app --no-interaction --no-progress; fi; exec php-fpm"]
