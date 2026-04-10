@@ -6,9 +6,10 @@ namespace App\Repositories;
 
 use App\Framework\Repository;
 use App\Models\DanceEvent;
+use App\Repositories\Interfaces\IDanceEventRepository;
 use App\Support\VenueSchemaHelper;
 
-final class DanceEventRepository extends Repository
+final class DanceEventRepository extends Repository implements IDanceEventRepository
 {
     /** @var array<string, bool> */
     private array $columnCache = [];

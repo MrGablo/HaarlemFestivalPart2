@@ -3,9 +3,10 @@
 namespace App\Repositories;
 
 use App\Framework\Repository;
+use App\Repositories\Interfaces\ITicketRepository;
 use PDO;
 
-class TicketRepository extends Repository
+class TicketRepository extends Repository implements ITicketRepository
 {
     private ?bool $ticketHasEventIdColumn = null;
 
@@ -130,7 +131,7 @@ class TicketRepository extends Repository
         $stmt->execute([
             ':user_id' => $userId,
             ':pending_status' => 'pending',
-                        ':pass_type' => 'pass',
+            ':pass_type' => 'pass',
         ]);
 
         $rows = $stmt->fetchAll();
@@ -176,10 +177,10 @@ class TicketRepository extends Repository
     }
 
     public function getAllTicketsWithSummary(): array
-{
-    $eventExpr = $this->ticketHasEventIdColumn() ? 'COALESCE(t.event_id, oi.event_id)' : 'oi.event_id';
+    {
+        $eventExpr = $this->ticketHasEventIdColumn() ? 'COALESCE(t.event_id, oi.event_id)' : 'oi.event_id';
 
-    $sql = "
+        $sql = "
         SELECT
             t.ticket_id,
             t.order_item_id,
@@ -203,17 +204,17 @@ class TicketRepository extends Repository
         ORDER BY t.ticket_id DESC
     ";
 
-    $stmt = $this->getConnection()->query($sql);
-    $rows = $stmt->fetchAll();
+        $stmt = $this->getConnection()->query($sql);
+        $rows = $stmt->fetchAll();
 
-    return is_array($rows) ? $rows : [];
-}
+        return is_array($rows) ? $rows : [];
+    }
 
-public function findTicketById(int $ticketId): ?array
-{
-    $eventExpr = $this->ticketHasEventIdColumn() ? 'COALESCE(t.event_id, oi.event_id)' : 'oi.event_id';
+    public function findTicketById(int $ticketId): ?array
+    {
+        $eventExpr = $this->ticketHasEventIdColumn() ? 'COALESCE(t.event_id, oi.event_id)' : 'oi.event_id';
 
-    $sql = "
+        $sql = "
         SELECT
             t.ticket_id,
             t.order_item_id,
@@ -238,48 +239,48 @@ public function findTicketById(int $ticketId): ?array
         LIMIT 1
     ";
 
-    $stmt = $this->getConnection()->prepare($sql);
-    $stmt->execute([':ticket_id' => $ticketId]);
-    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt = $this->getConnection()->prepare($sql);
+        $stmt->execute([':ticket_id' => $ticketId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    return is_array($row) ? $row : null;
-}
-
-public function updateTicketCms(int $ticketId, string $qr, int $isScanned): bool
-{
-    $stmt = $this->getConnection()->prepare(
-        'UPDATE `Ticket`
-         SET qr = :qr, is_scanned = :is_scanned
-         WHERE ticket_id = :ticket_id'
-    );
-
-    $stmt->execute([
-        ':ticket_id' => $ticketId,
-        ':qr' => $qr,
-        ':is_scanned' => $isScanned,
-    ]);
-
-    if ($stmt->rowCount() > 0) {
-        return true;
+        return is_array($row) ? $row : null;
     }
 
-    $existsStmt = $this->getConnection()->prepare(
-        'SELECT 1 FROM `Ticket` WHERE ticket_id = :ticket_id LIMIT 1'
-    );
-    $existsStmt->execute([':ticket_id' => $ticketId]);
+    public function updateTicketCms(int $ticketId, string $qr, int $isScanned): bool
+    {
+        $stmt = $this->getConnection()->prepare(
+            'UPDATE `Ticket`
+         SET qr = :qr, is_scanned = :is_scanned
+         WHERE ticket_id = :ticket_id'
+        );
 
-    return (bool)$existsStmt->fetchColumn();
-}
+        $stmt->execute([
+            ':ticket_id' => $ticketId,
+            ':qr' => $qr,
+            ':is_scanned' => $isScanned,
+        ]);
 
-public function deleteTicketById(int $ticketId): bool
-{
-    $stmt = $this->getConnection()->prepare(
-        'DELETE FROM `Ticket` WHERE ticket_id = :ticket_id'
-    );
-    $stmt->execute([':ticket_id' => $ticketId]);
+        if ($stmt->rowCount() > 0) {
+            return true;
+        }
 
-    return $stmt->rowCount() > 0;
-}
+        $existsStmt = $this->getConnection()->prepare(
+            'SELECT 1 FROM `Ticket` WHERE ticket_id = :ticket_id LIMIT 1'
+        );
+        $existsStmt->execute([':ticket_id' => $ticketId]);
+
+        return (bool)$existsStmt->fetchColumn();
+    }
+
+    public function deleteTicketById(int $ticketId): bool
+    {
+        $stmt = $this->getConnection()->prepare(
+            'DELETE FROM `Ticket` WHERE ticket_id = :ticket_id'
+        );
+        $stmt->execute([':ticket_id' => $ticketId]);
+
+        return $stmt->rowCount() > 0;
+    }
 
     private function ticketHasEventIdColumn(): bool
     {

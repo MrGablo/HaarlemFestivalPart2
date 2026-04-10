@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Framework\Repository;
+use App\Repositories\Interfaces\IEventRepository;
 
-class EventRepository extends Repository
+class EventRepository extends Repository implements IEventRepository
 {
     public function getAllEvents(?string $eventType = null): array
     {

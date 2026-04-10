@@ -3,9 +3,10 @@
 namespace App\Repositories;
 
 use App\Framework\Repository;
+use App\Repositories\Interfaces\IPasswordResetRepository;
 use PDO;
 
-class PasswordResetRepository extends Repository
+class PasswordResetRepository extends Repository implements IPasswordResetRepository
 {
     public function createResetToken(int $userId, string $tokenHash, string $expiresAt): void
     {
