@@ -17,7 +17,7 @@ final class DanceHomePageViewModel
 
     public string $lineupTitle;
 
-    /** @var list<array{name: string, imageUrl: string, alt: string}> */
+    /** @var list<array{name: string, imageUrl: string, alt: string, pageUrl?: string}> */
     public array $lineupArtists;
 
     public string $timetableTitle;
@@ -41,7 +41,7 @@ final class DanceHomePageViewModel
     /**
      * @param array{titleLine1: string, titleLine2: string, subtitleHtml: string, primaryButtonLabel: string, stripText: string} $hero
      * @param array{kicker: string, bodyHtml: string, sideImageAlt: string, statsLine: string} $intro
-     * @param list<array{name: string, imageUrl: string, alt: string}> $lineupArtists
+     * @param list<array{name: string, imageUrl: string, alt: string, pageUrl?: string}> $lineupArtists
      * @param array{label: string, note: string, priceLabel: string, eventId: int}|null $allAccess
      * @param list<array{dayKey: string, dayLabel: string, passLabel: string, passPriceLabel: string, passEventId: int, sessions: list<array{title: string, tag: string, tagSpecial: bool, timeRange: string, venueName: string, priceLabel: string, eventId: int}>}> $timetableDays
      */

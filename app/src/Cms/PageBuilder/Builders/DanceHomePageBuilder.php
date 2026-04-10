@@ -119,30 +119,6 @@ final class DanceHomePageBuilder extends AbstractPageViewModelBuilder
                     ],
                 ],
             ],
-            [
-                'title' => 'Timetable Copy',
-                'description' => 'Only authored headings and pass labels are editable here. Session rows remain database-driven.',
-                'fields' => [
-                    [
-                        'key' => 'timetable',
-                        'type' => 'object',
-                        'fields' => [
-                            ['key' => 'title', 'type' => 'text', 'label' => 'Title'],
-                            ['key' => 'date_range', 'type' => 'text', 'label' => 'Date Range'],
-                            [
-                                'key' => 'passes',
-                                'type' => 'repeater',
-                                'label' => 'Pass Copy',
-                                'addLabel' => 'Add pass copy row',
-                                'fields' => [
-                                    ['key' => 'label', 'type' => 'text', 'label' => 'Label'],
-                                    ['key' => 'note', 'type' => 'text', 'label' => 'Note'],
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-            ],
         ];
     }
 }
