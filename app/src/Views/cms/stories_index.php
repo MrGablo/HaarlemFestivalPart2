@@ -14,18 +14,23 @@
     <main class="mx-auto max-w-7xl p-4 py-8">
         <section class="rounded-2xl bg-white p-6 shadow-xl ring-1 ring-slate-200">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Stories Events</h1>
-                    <p class="mt-1 text-sm text-slate-600">Manage stories events in the CMS.</p>
-                </div>
+    <div>
+        <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Stories Events</h1>
+        <p class="mt-1 text-sm text-slate-600">Manage stories events in the CMS.</p>
+    </div>
 
-                <div class="flex flex-wrap gap-2">
-                    <a href="/cms"
-                        class="rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200">
-                        ← Back to CMS
-                    </a>
-                </div>
-            </div>
+    <div class="flex flex-wrap gap-2">
+        <a href="/cms/events/stories/create"
+            class="rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700 shadow-sm transition-colors">
+            + Create New Story
+        </a>
+        
+        <a href="/cms"
+            class="rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200 transition-colors">
+            ← Back to CMS
+        </a>
+    </div>
+</div>
 
             <?php require __DIR__ . '/../partials/flash_success.php'; ?>
             <?php require __DIR__ . '/../partials/error_general.php'; ?>

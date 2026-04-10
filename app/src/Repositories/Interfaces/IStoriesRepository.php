@@ -12,4 +12,6 @@ interface IStoriesRepository
     public function getStoriesEventById(int $eventId): ?object;
     public function updateStoriesEventCms(int $eventId, array $data): bool;
     public function deleteStoriesEventById(int $eventId): bool;
+    public function getStoriesEventByPageId(int $pageId): ?array;
+
 }
