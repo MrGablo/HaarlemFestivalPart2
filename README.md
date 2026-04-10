@@ -174,7 +174,7 @@ docker compose up --build
 Use the following credentials for the default admin account:
 
 - Username: `admin`
-- Password: `admiadmin`
+- Password: `adminadmin`
 
 ### 4. Stop the environment
 
