@@ -71,6 +71,7 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     // History routes
     $r->addRoute('GET', '/history', ['App\Controllers\HistoryController', 'home']);
     $r->addRoute('GET', '/history/detail', ['App\Controllers\HistoryController', 'detail']);
+    $r->addRoute('GET', '/history/{slug:[A-Za-z0-9\-]+}', ['App\Controllers\HistoryController', 'detail']);
 
     //Jazz Festival routes
     $r->addRoute('GET', '/jazz', ['App\Controllers\JazzController', 'home']);

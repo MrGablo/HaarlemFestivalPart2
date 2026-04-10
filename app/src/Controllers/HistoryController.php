@@ -32,20 +32,22 @@ class HistoryController
         require __DIR__ . '/../Views/pages/history_home.php';
     }
 
-    public function detail(): void
+    public function detail(?string $slug = null): void
     {
         \App\Utils\Session::ensureStarted();
 
-        $pageId = isset($_GET['page_id']) ? (int)$_GET['page_id'] : 0;
-        if ($pageId <= 0) {
-            http_response_code(404);
-            require __DIR__ . '/../Views/partials/error_general.php';
-            return;
-        }
-
         try {
             $service = new HistoryDetailService(new PageRepository());
-            $vm = $service->getHistoryDetailPageViewModel($pageId);
+            if ($slug !== null && $slug !== '') {
+                $vm = $service->getHistoryDetailPageViewModelBySlug($slug);
+            } else {
+                $pageId = isset($_GET['page_id']) ? (int)$_GET['page_id'] : 0;
+                if ($pageId <= 0) {
+                    throw new \RuntimeException('History detail page not found.');
+                }
+
+                $vm = $service->getHistoryDetailPageViewModel($pageId);
+            }
 
             require __DIR__ . '/../Views/pages/history_detail.php';
         } catch (\Throwable $e) {
