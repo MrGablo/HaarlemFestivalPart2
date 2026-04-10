@@ -2,8 +2,8 @@
 
 use App\Utils\CmsForm;
 
-//get the TinyMCE API key from env variables, with fallback to empty string if not set
-$tinyMceApiKey = trim((string)($_ENV['TINYMCE_API_KEY'] ?? $_SERVER['TINYMCE_API_KEY'] ?? getenv('TINYMCE_API_KEY') ?: ''));
+/** Self-hosted TinyMCE (LGPL) — no Tiny Cloud API key required. Pin version for stable assets. */
+$tinymceCdnBase = 'https://cdn.jsdelivr.net/npm/tinymce@6.8.3';
 ?>
 <!doctype html>
 <html lang="en">
@@ -13,10 +13,7 @@ $tinyMceApiKey = trim((string)($_ENV['TINYMCE_API_KEY'] ?? $_SERVER['TINYMCE_API
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>CMS Edit Page</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script
-        src="https://cdn.tiny.cloud/1/<?= htmlspecialchars($tinyMceApiKey, ENT_QUOTES, 'UTF-8') ?>/tinymce/6/tinymce.min.js"
-        referrerpolicy="origin">
-    </script>
+    <script src="<?= htmlspecialchars($tinymceCdnBase, ENT_QUOTES, 'UTF-8') ?>/tinymce.min.js" referrerpolicy="origin"></script>
 </head>
 
 <body class="min-h-screen bg-slate-100 antialiased">
@@ -74,6 +71,8 @@ $tinyMceApiKey = trim((string)($_ENV['TINYMCE_API_KEY'] ?? $_SERVER['TINYMCE_API
 
     <script>
         const tinyConfig = {
+            base_url: '<?= htmlspecialchars($tinymceCdnBase, ENT_QUOTES, 'UTF-8') ?>',
+            suffix: '.min',
             menubar: false,
             plugins: 'link lists code',
             toolbar: 'undo redo | bold italic underline | bullist numlist | link | code',

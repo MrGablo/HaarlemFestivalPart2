@@ -16,7 +16,7 @@ final class CmsOrderService
     /** @return array<int, string> */
     public function getStatuses(): array
     {
-        return [OrderStatus::PENDING->value, OrderStatus::PAYED->value];
+        return [OrderStatus::PENDING->value, OrderStatus::PAYED->value, OrderStatus::CANCELLED->value];
     }
 
     /** @return array<int, array<string, mixed>> */

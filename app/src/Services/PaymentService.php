@@ -7,8 +7,7 @@ use App\Repositories\PaymentRepository;
 use App\Utils\QrGenerator;
 
 /**
- * Handles Stripe checkout session creation and webhook processing.
- * Uses Stripe TEST mode only.
+ * Stripe Checkout session creation and fulfilment (success URL + webhook).
  */
 class PaymentService
 {
@@ -40,13 +39,21 @@ class PaymentService
     {
         \Stripe\Stripe::setApiKey($this->getStripeSecretKey());
 
-        $pendingOrder = $this->orderService->getPendingOrderForUser($userId);
+        $this->orderService->expireStaleCheckoutDeadlines();
+
+        $pendingOrder = $this->orderService->getPayablePendingOrderForUser($userId);
         if ($pendingOrder === null) {
             throw new \RuntimeException('No pending cart found.');
         }
         $pendingOrderId = (int)($pendingOrder->order_id ?? 0);
         if ($pendingOrderId <= 0) {
             throw new \RuntimeException('Invalid pending cart.');
+        }
+
+        $this->orderService->markCheckoutStartedIfNeeded($userId, $pendingOrderId);
+        $pendingOrder = $this->orderService->getPayablePendingOrderForUser($userId);
+        if ($pendingOrder === null || (int)($pendingOrder->order_id ?? 0) !== $pendingOrderId) {
+            throw new \RuntimeException('Pending cart is no longer payable.');
         }
 
         $items = $pendingOrder->items;
@@ -56,29 +63,11 @@ class PaymentService
 
         $lineItems = [];
         foreach ($items as $item) {
-            $eventId = (int)($item->event_id ?? 0);
-            $quantity = (int)($item->quantity ?? 0);
-            $priceInCents = (int)round(((float)$item->getUnitPrice()) * 100);
-            $eventTitle = (string)($item->event?->title ?? 'Event Ticket');
-            if ($eventId <= 0 || $quantity <= 0 || $priceInCents <= 0) {
-                throw new \RuntimeException('Invalid pending cart item data.');
-            }
-
-            $lineItems[] = [
-                'price_data' => [
-                    'currency'     => 'eur',
-                    'product_data' => [
-                        'name' => $eventTitle,
-                    ],
-                    'unit_amount' => $priceInCents,
-                ],
-                'quantity' => $quantity,
-            ];
+            $lineItems[] = $this->buildStripeLineItem($item);
         }
 
-        $scheme  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $host    = $_SERVER['HTTP_HOST'] ?? 'localhost';
-        $baseUrl = $scheme . '://' . $host;
+        $baseUrl = $this->resolveBaseUrl();
+        $expiresAt = $this->resolveCheckoutSessionExpiresAt($pendingOrder->payment_deadline_at);
 
         $session = \Stripe\Checkout\Session::create([
             'line_items' => $lineItems,
@@ -86,6 +75,7 @@ class PaymentService
             'automatic_tax' => [
                 'enabled' => true,
             ],
+            'expires_at' => $expiresAt,
             'success_url' => $baseUrl . '/payment/success?session_id={CHECKOUT_SESSION_ID}',
             'cancel_url' => $baseUrl . '/payment/cancel',
             'metadata' => [
@@ -98,8 +88,7 @@ class PaymentService
     }
 
     /**
-     * Called from the success page using data stored in the PHP session.
-     * Marks the pending order as payed and creates Ticket rows.
+     * Marks the pending order paid, creates tickets, sends delivery email.
      */
     public function fulfillPendingOrder(int $userId, int $orderId): void
     {
@@ -107,25 +96,34 @@ class PaymentService
             return;
         }
 
-        $this->repo->markOrderAsPaid($orderId, $userId);
+        $marked = $this->repo->markOrderAsPaid($orderId, $userId);
+        if (!$marked) {
+            if ($this->repo->isOrderPaid($orderId)) {
+                return;
+            }
+            throw new \RuntimeException('Payment: could not mark order ' . $orderId . ' as paid.');
+        }
 
         $items = $this->repo->getOrderItemsByOrderId($orderId);
         foreach ($items as $item) {
-            $orderItemId = (int)($item['order_item_id'] ?? 0);
-            $eventId = (int)($item['event_id'] ?? 0);
-            $quantity    = (int)($item['quantity'] ?? 0);
-            $passDate = isset($item['pass_date']) ? (string)$item['pass_date'] : null;
-
-            if ($orderItemId <= 0 || $eventId <= 0 || $quantity <= 0) {
-                continue;
-            }
-
-            $this->ticketService->createTicketsForOrderItem($orderItemId, $userId, $eventId, $quantity, $passDate);
+            $this->createTicketsFromPaidOrderItem($item, $userId);
         }
 
         $this->sendTicketDeliveryEmail($orderId, $userId);
+    }
 
-        error_log("Payment OK: order=$orderId user=$userId");
+    /**
+     * Retrieves a checkout session from Stripe and fulfils only when paid.
+     */
+    public function fulfillPaidCheckoutSessionById(string $sessionId): void
+    {
+        $sessionId = trim($sessionId);
+        if ($sessionId === '') {
+            throw new \RuntimeException('Payment: missing checkout session id.');
+        }
+
+        \Stripe\Stripe::setApiKey($this->getStripeSecretKey());
+        $this->handleCheckoutCompleted(\Stripe\Checkout\Session::retrieve($sessionId));
     }
 
     /**
@@ -133,18 +131,80 @@ class PaymentService
      */
     public function handleCheckoutCompleted(object $session): void
     {
-        $userId           = (int) ($session->metadata->user_id ?? 0);
-        $pendingOrderId   = (int) ($session->metadata->pending_order_id ?? 0);
+        $this->orderService->expireStaleCheckoutDeadlines();
 
-        if ($userId <= 0) {
-            throw new \RuntimeException('Payment: invalid metadata - user_id=' . $userId);
+        $this->assertSessionIsPaid($session);
+
+        [$userId, $pendingOrderId] = $this->extractSessionMetadata($session);
+        if ($userId <= 0 || $pendingOrderId <= 0) {
+            throw new \RuntimeException(
+                'Payment: checkout session metadata incomplete. user_id=' . $userId . ', pending_order_id=' . $pendingOrderId
+            );
         }
 
-        if ($pendingOrderId <= 0) {
-            throw new \RuntimeException('Payment: missing pending_order_id in checkout session metadata.');
+        if ($this->repo->isOrderPaid($pendingOrderId)) {
+            return;
+        }
+
+        if ($this->repo->getOrderDeliveryRecipient($pendingOrderId, $userId) === null) {
+            throw new \RuntimeException(
+                'Payment: order ' . $pendingOrderId . ' not found for user_id=' . $userId
+            );
+        }
+
+        $pendingOrder = $this->repo->findPendingOrderByUserId($userId);
+        if (!is_array($pendingOrder)) {
+            throw new \RuntimeException('Payment: no payable pending order for user_id=' . $userId);
+        }
+
+        $pendingOrderIdInDb = (int)($pendingOrder['order_id'] ?? 0);
+        if ($pendingOrderIdInDb <= 0 || $pendingOrderIdInDb !== $pendingOrderId) {
+            throw new \RuntimeException(
+                'Payment: pending order mismatch. metadata=' . $pendingOrderId . ', db=' . $pendingOrderIdInDb
+            );
         }
 
         $this->fulfillPendingOrder($userId, $pendingOrderId);
+    }
+
+    private function extractSessionMetadata(object $session): array
+    {
+        $metadata = $session->metadata ?? null;
+        $userId = (int)($metadata->user_id ?? 0);
+        $pendingOrderId = (int)($metadata->pending_order_id ?? 0);
+
+        return [$userId, $pendingOrderId];
+    }
+
+    private function assertSessionIsPaid(object $session): void
+    {
+        $status = (string)($session->status ?? '');
+        $paymentStatus = (string)($session->payment_status ?? '');
+
+        if ($status !== 'complete' || $paymentStatus !== 'paid') {
+            throw new \RuntimeException(
+                "Payment: checkout session is not paid. status={$status}, payment_status={$paymentStatus}"
+            );
+        }
+    }
+
+    private function resolveCheckoutSessionExpiresAt(?string $paymentDeadlineAt): int
+    {
+        $deadline = $paymentDeadlineAt !== null ? trim($paymentDeadlineAt) : '';
+        if ($deadline === '') {
+            throw new \RuntimeException('Payment: checkout deadline is missing for pending order.');
+        }
+
+        $expiresAt = strtotime($deadline);
+        if (!is_int($expiresAt) || $expiresAt <= 0) {
+            throw new \RuntimeException('Payment: checkout deadline could not be parsed.');
+        }
+
+        if ($expiresAt <= time()) {
+            throw new \RuntimeException('Payment: checkout deadline has already expired.');
+        }
+
+        return $expiresAt;
     }
 
     private function getStripeSecretKey(): string
@@ -158,6 +218,73 @@ class PaymentService
         }
 
         return $key;
+    }
+
+    private function resolveBaseUrl(): string
+    {
+        $host = $this->readValidatedRequestHost();
+        if ($host === null) {
+            $host = 'localhost';
+        }
+
+        $isHttps = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+        $scheme = $isHttps ? 'https' : 'http';
+
+        return $scheme . '://' . $host;
+    }
+
+    private function readValidatedRequestHost(): ?string
+    {
+        $rawHost = trim((string)($_SERVER['HTTP_HOST'] ?? ''));
+        if ($rawHost === '') {
+            return null;
+        }
+
+        if (!preg_match('/^[A-Za-z0-9.-]+(?::\d{1,5})?$/', $rawHost)) {
+            return null;
+        }
+
+        $host = strtolower($rawHost);
+        $localHosts = ['localhost', 'localhost:80', 'localhost:443', '127.0.0.1', '127.0.0.1:80', '127.0.0.1:443'];
+
+        return in_array($host, $localHosts, true) ? $rawHost : null;
+    }
+
+    private function buildStripeLineItem(object $item): array
+    {
+        $eventId = (int)($item->event_id ?? 0);
+        $quantity = (int)($item->quantity ?? 0);
+        $priceInCents = (int)round(((float)$item->getUnitPrice()) * 100);
+        $eventTitle = (string)($item->event?->title ?? 'Event Ticket');
+
+        if ($eventId <= 0 || $quantity <= 0 || $priceInCents <= 0) {
+            throw new \RuntimeException('Invalid pending cart item data.');
+        }
+
+        return [
+            'price_data' => [
+                'currency'     => 'eur',
+                'product_data' => [
+                    'name' => $eventTitle,
+                ],
+                'unit_amount' => $priceInCents,
+            ],
+            'quantity' => $quantity,
+        ];
+    }
+
+    private function createTicketsFromPaidOrderItem(array $item, int $userId): void
+    {
+        $orderItemId = (int)($item['order_item_id'] ?? 0);
+        $eventId = (int)($item['event_id'] ?? 0);
+        $quantity = (int)($item['quantity'] ?? 0);
+        $passDate = isset($item['pass_date']) ? (string)$item['pass_date'] : null;
+
+        if ($orderItemId <= 0 || $eventId <= 0 || $quantity <= 0) {
+            return;
+        }
+
+        $this->ticketService->createTicketsForOrderItem($orderItemId, $userId, $eventId, $quantity, $passDate);
     }
 
     private function sendTicketDeliveryEmail(int $orderId, int $userId): void

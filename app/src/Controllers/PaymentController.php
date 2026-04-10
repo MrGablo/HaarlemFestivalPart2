@@ -9,13 +9,6 @@ use App\Utils\Csrf;
 use App\Utils\Flash;
 use App\Utils\Session;
 
-/**
- * Handles Stripe payment endpoints:
- *  - POST /payment/checkout     (redirect to Stripe hosted Checkout)
- *  - POST /api/payment/webhook  (called by Stripe)
- *  - GET  /payment/success
- *  - GET  /payment/cancel
- */
 class PaymentController
 {
     private PaymentService $paymentService;
@@ -25,160 +18,116 @@ class PaymentController
         $this->paymentService = new PaymentService(new PaymentRepository());
     }
 
-    // ---------------------------------------------------------------
-    // POST /payment/checkout
-    // Server-side redirect to Stripe hosted Checkout prebuilt UI.
-    // ---------------------------------------------------------------
     public function checkoutRedirect(): void
     {
         Session::ensureStarted();
 
         try {
             Csrf::assertPost('payment_csrf_token');
-
-            $auth = AuthSessionData::read();
-            if (!is_array($auth)) {
-                header('Location: /login', true, 302);
-                exit;
-            }
-
-            $userId = (int)($auth['userId'] ?? 0);
-            if ($userId <= 0) {
-                header('Location: /program', true, 302);
-                exit;
-            }
-
-            $repo = new PaymentRepository();
-            $pendingOrder = $repo->findPendingOrderByUserId($userId);
-            $pendingOrderId = (int)($pendingOrder['order_id'] ?? 0);
+            $userId = $this->requireAuthenticatedUserId();
 
             $checkoutUrl = $this->paymentService->createCheckoutUrlForPendingCart($userId);
-
-            $_SESSION['pending_payment'] = [
-                'user_id'  => $userId,
-                'order_id' => $pendingOrderId,
-            ];
-
-            header('HTTP/1.1 303 See Other');
-            header('Location: ' . $checkoutUrl);
-            exit;
+            $this->redirectSeeOther($checkoutUrl);
         } catch (\Throwable $e) {
-            error_log('Stripe checkout redirect failed: ' . $e->getMessage());
-            Flash::setErrors(['general' => 'Unable to initiate checkout. Please try again.']);
-            header('Location: /payment/cancel', true, 302);
-            exit;
+            error_log('Checkout redirect failed: ' . $e->getMessage());
+            Flash::setErrors(['general' => 'Unable to start checkout. Open My Program and try again.']);
+            $this->redirect('/program');
         }
     }
 
-    // ---------------------------------------------------------------
-    // POST /api/payment/webhook
-    // Called by Stripe servers after payment succeeds.
-    // Verifies signature, then creates Order + OrderItem + Ticket.
-    // ---------------------------------------------------------------
     public function handleWebhook(): void
     {
-        try {
-            // Read the raw request body (needed for signature check)
-            $payload   = file_get_contents('php://input');
-            $sigHeader = $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '';
-            $secret    = getenv('STRIPE_WEBHOOK_SECRET') ?: '';
+        $payload = file_get_contents('php://input');
 
-            // Browser-initiated POSTs must pass CSRF; Stripe-signed webhook calls are exempt.
-            if ($sigHeader === '') {
-                Csrf::assertPost('payment_csrf_token');
-            }
-
-            // Ensure we actually received a payload
-            if ($payload === false) {
-                error_log('Stripe webhook error: failed to read request body.');
-                http_response_code(400);
-                echo 'Invalid payload';
-                exit;
-            }
-
-            // Ensure the webhook secret is configured
-            if ($secret === '') {
-                error_log('Stripe webhook configuration error: STRIPE_WEBHOOK_SECRET is not set.');
-                http_response_code(500);
-                echo 'Webhook configuration error';
-                exit;
-            }
-
-            // Require a signature header
-            if ($sigHeader === '') {
-                error_log('Stripe webhook error: missing Stripe signature header.');
-                http_response_code(400);
-                echo 'Missing signature';
-                exit;
-            }
-
-            try {
-                $event = \Stripe\Webhook::constructEvent((string)$payload, $sigHeader, $secret);
-            } catch (\Exception $e) {
-                error_log('Webhook signature verification failed: ' . $e->getMessage());
-                http_response_code(400);
-                echo 'Invalid signature';
-                exit;
-            }
-        } catch (\Exception $e) {
-            error_log('Webhook request rejected: ' . $e->getMessage());
-            http_response_code(400);
-            echo 'Invalid request';
-            exit;
+        if ($payload === false) {
+            $this->respondAndExit(400, 'Invalid payload');
         }
 
-        // We only care about successful checkouts
+        $sigHeader = (string)($_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '');
+        $secret = trim((string)(getenv('STRIPE_WEBHOOK_SECRET') ?: ''));
+        if ($secret === '') {
+            error_log('STRIPE_WEBHOOK_SECRET is not set.');
+            $this->respondAndExit(500, 'Webhook configuration error');
+        }
+
+        if ($sigHeader === '') {
+            $this->respondAndExit(400, 'Missing signature');
+        }
+
+        try {
+            $event = \Stripe\Webhook::constructEvent((string)$payload, $sigHeader, $secret);
+        } catch (\Exception $e) {
+            error_log('Webhook signature verification failed: ' . $e->getMessage());
+            $this->respondAndExit(400, 'Invalid signature');
+        }
+
         if ($event->type === 'checkout.session.completed') {
             try {
                 $session = $event->data->object;
                 $this->paymentService->handleCheckoutCompleted($session);
             } catch (\Throwable $e) {
-                error_log('Webhook processing failed: ' . $e->getMessage());
-                http_response_code(500);
-                echo 'Processing failed';
-                exit;
+                error_log('Webhook fulfilment failed: ' . $e->getMessage());
+                $this->respondAndExit(500, 'Processing failed');
             }
         }
 
-        http_response_code(200);
-        echo 'OK';
-        exit;
+        $this->respondAndExit(200, 'OK');
     }
 
-    // ---------------------------------------------------------------
-    // GET /payment/success
-    // Retrieves the Stripe session and fulfils the order directly
-    // (webhooks cannot reach localhost in dev).
-    // ---------------------------------------------------------------
     public function success(): void
     {
         Session::ensureStarted();
 
-        $pendingPayment = $_SESSION['pending_payment'] ?? null;
-        if (is_array($pendingPayment)) {
-            unset($_SESSION['pending_payment']);
-
-            $userId  = (int)($pendingPayment['user_id']  ?? 0);
-            $orderId = (int)($pendingPayment['order_id'] ?? 0);
-
-            if ($userId > 0 && $orderId > 0) {
-                try {
-                    $this->paymentService->fulfillPendingOrder($userId, $orderId);
-                } catch (\Throwable $e) {
-                    error_log('Payment success fulfilment error: ' . $e->getMessage());
-                }
+        $sessionId = isset($_GET['session_id']) ? trim((string)$_GET['session_id']) : '';
+        if ($sessionId !== '') {
+            try {
+                $this->paymentService->fulfillPaidCheckoutSessionById($sessionId);
+            } catch (\Throwable $e) {
+                error_log('Payment success fulfilment error: ' . $e->getMessage());
             }
         }
 
         require __DIR__ . '/../Views/pages/payment_success.php';
     }
 
-    // ---------------------------------------------------------------
-    // GET /payment/cancel
-    // ---------------------------------------------------------------
     public function cancel(): void
     {
         Session::ensureStarted();
         require __DIR__ . '/../Views/pages/payment_cancel.php';
+    }
+
+    private function requireAuthenticatedUserId(): int
+    {
+        $auth = AuthSessionData::read();
+        if (!is_array($auth)) {
+            $this->redirect('/login');
+        }
+
+        $userId = (int)($auth['userId'] ?? 0);
+        if ($userId <= 0) {
+            $this->redirect('/program');
+        }
+
+        return $userId;
+    }
+
+    private function redirect(string $url, int $statusCode = 302): void
+    {
+        header('Location: ' . $url, true, $statusCode);
+        exit;
+    }
+
+    private function redirectSeeOther(string $url): void
+    {
+        header('HTTP/1.1 303 See Other');
+        header('Location: ' . $url);
+        exit;
+    }
+
+    private function respondAndExit(int $statusCode, string $body): void
+    {
+        http_response_code($statusCode);
+        echo $body;
+        exit;
     }
 }

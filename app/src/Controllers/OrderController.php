@@ -233,12 +233,15 @@ class OrderController
 
     private function buildCartPayload(?\App\Models\Order $order): array
     {
+        $cartCsrfToken = Csrf::token('cart_csrf_token');
+
         if ($order === null) {
             return [
                 'itemCount' => 0,
                 'total' => 0,
                 'totalLabel' => number_format(0, 2),
                 'items' => [],
+                'csrfToken' => $cartCsrfToken,
             ];
         }
 
@@ -263,6 +266,7 @@ class OrderController
             'total' => $order->getTotalPrice(),
             'totalLabel' => number_format($order->getTotalPrice(), 2),
             'items' => $items,
+            'csrfToken' => $cartCsrfToken,
         ];
     }
 }

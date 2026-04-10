@@ -117,6 +117,36 @@ class PassRepository extends Repository implements IPassRepository
         return array_values(array_unique($dates));
     }
 
+    public function getAvailableDancePassDates(): array
+    {
+        $pdo = $this->getConnection();
+
+        $stmt = $pdo->query(
+            "SELECT DISTINCT DATE(COALESCE(d.event_date, d.start_date)) AS pass_date
+             FROM DanceEvent d
+             INNER JOIN Event e ON e.event_id = d.event_id
+             WHERE e.event_type = 'dance'
+               AND d.row_kind = 'session'
+               AND e.availability > 0
+             ORDER BY DATE(COALESCE(d.event_date, d.start_date)) ASC"
+        );
+
+        $rows = $stmt ? $stmt->fetchAll() : [];
+        if (!is_array($rows)) {
+            return [];
+        }
+
+        $dates = [];
+        foreach ($rows as $row) {
+            $date = trim((string)($row['pass_date'] ?? ''));
+            if ($date !== '') {
+                $dates[] = $date;
+            }
+        }
+
+        return array_values(array_unique($dates));
+    }
+
     public function getAllPassProducts(): array
     {
         $stmt = $this->getConnection()->query(

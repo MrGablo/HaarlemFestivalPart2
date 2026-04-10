@@ -88,40 +88,49 @@ $intro = $vm->intro;
         <?php /** @var array{label: string, note: string, priceLabel: string, eventId: int} $aa */ ?>
         <?php $aa = $vm->allAccess; ?>
         <div class="mb-12">
-          <div class="mb-3 flex min-h-dance-row items-center gap-4 rounded px-4 py-2 bg-dance-row-glass">
+          <div class="mb-3 flex min-h-[3.5rem] min-h-dance-row items-center gap-4 rounded px-4 py-2 bg-dance-row-glass">
             <span class="min-w-0 flex-1 text-xl font-bold uppercase leading-tight text-dance-on-dark md:text-2xl"><?= htmlspecialchars((string) ($aa['label'] ?? '')) ?></span>
             <span class="shrink-0 text-base font-bold uppercase text-dance-on-dark"><?= htmlspecialchars((string) ($aa['note'] ?? '')) ?></span>
-            <span class="w-dance-slot-price shrink-0 text-right text-xl font-bold text-dance-on-dark"><?= htmlspecialchars((string) ($aa['priceLabel'] ?? '')) ?></span>
+            <span class="w-[6rem] shrink-0 text-right text-xl font-bold text-dance-on-dark"><?= htmlspecialchars((string) ($aa['priceLabel'] ?? '')) ?></span>
+            <?php $passDate = null; ?>
             <?php $eventId = $aa['eventId']; include __DIR__ . '/dance_ticket_button.php'; ?>
           </div>
         </div>
       <?php endif; ?>
 
       <?php foreach ($vm->timetableDays as $day): ?>
-        <?php /** @var array{dayLabel: string, passLabel: string, passPriceLabel: string, passEventId: int, sessions: list<array{title: string, tag: string, tagSpecial: bool, timeRange: string, venueName: string, priceLabel: string, eventId: int}>} $day */ ?>
+        <?php /** @var array{dayKey: string, dayLabel: string, passLabel: string, passPriceLabel: string, passEventId: int, sessions: list<array{title: string, tag: string, tagSpecial: bool, timeRange: string, venueName: string, priceLabel: string, eventId: int}>} $day */ ?>
         <div class="mb-14">
           <div class="mb-3 pl-5 text-xs font-normal leading-normal text-dance-text"><?= htmlspecialchars($day['dayLabel']) ?></div>
-          <div class="mb-3 flex min-h-dance-row items-center gap-4 rounded bg-dance-accent px-4 py-2">
+          <div class="mb-3 flex min-h-[3.5rem] min-h-dance-row items-center gap-4 rounded bg-dance-accent px-4 py-2">
             <span class="min-w-0 flex-1 text-lg font-bold uppercase leading-tight text-dance-on-dark md:text-2xl"><?= htmlspecialchars($day['passLabel']) ?></span>
-            <span class="w-dance-slot-price shrink-0 text-right text-xl font-bold text-dance-on-dark"><?= htmlspecialchars($day['passPriceLabel']) ?></span>
+            <span class="w-[6rem] shrink-0 text-right text-xl font-bold text-dance-on-dark"><?= htmlspecialchars($day['passPriceLabel']) ?></span>
+            <?php $passDate = (string)$day['dayKey']; ?>
             <?php $eventId = $day['passEventId']; include __DIR__ . '/dance_ticket_button.php'; ?>
           </div>
           <?php foreach ($day['sessions'] as $sess): ?>
-            <div class="mb-3">
-              <div class="flex min-h-dance-row w-full flex-wrap items-center gap-4 rounded px-4 py-2 md:flex-nowrap bg-dance-row-glass">
-                <div class="min-w-0 flex-1 md:basis-0 md:grow">
-                  <div class="mb-1 text-xl font-bold uppercase leading-tight text-dance-on-dark md:text-2xl"><?= htmlspecialchars((string) ($sess['title'] ?? '')) ?></div>
-                  <?php if (($sess['tag'] ?? '') !== ''): ?>
+            <?php
+            $sessionTag = trim((string) ($sess['tag'] ?? ''));
+            $showSessionTag = $sessionTag !== '' && $sessionTag !== '/';
+            ?>
+            <div class="mb-3 rounded bg-dance-row-glass px-4 py-3 md:py-2">
+              <div class="grid min-h-[3.5rem] grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_9rem_9rem_6rem_auto] md:items-center md:gap-x-4 md:gap-y-0">
+                <div class="min-w-0">
+                  <div class="text-xl font-bold uppercase leading-tight text-dance-on-dark md:text-2xl"><?= htmlspecialchars((string) ($sess['title'] ?? '')) ?></div>
+                  <?php if ($showSessionTag): ?>
                     <span class="mt-1 inline-flex items-center gap-1.5 text-dance-tag font-light uppercase leading-snug text-dance-text <?= !empty($sess['tagSpecial']) ? 'font-semibold italic' : '' ?>">
                       <?php if (!empty($sess['tagSpecial'])): ?><span class="inline-block h-dance-icon w-dance-icon" aria-hidden="true">★</span><?php endif; ?>
-                      <?= htmlspecialchars((string) ($sess['tag'] ?? '')) ?>
+                      <?= htmlspecialchars($sessionTag) ?>
                     </span>
                   <?php endif; ?>
                 </div>
-                <span class="w-full shrink-0 text-left text-xl font-bold leading-snug text-dance-on-dark md:w-dance-slot-time"><?= htmlspecialchars((string) ($sess['timeRange'] ?? '')) ?></span>
-                <span class="w-full shrink-0 truncate text-base font-bold leading-normal text-dance-text-strong underline md:w-dance-slot-venue"><?= htmlspecialchars((string) ($sess['venueName'] ?? '')) ?></span>
-                <span class="w-full shrink-0 text-right text-xl font-bold leading-snug text-dance-on-dark md:w-dance-slot-price"><?= htmlspecialchars((string) ($sess['priceLabel'] ?? '')) ?></span>
-                <?php $eventId = $sess['eventId']; include __DIR__ . '/dance_ticket_button.php'; ?>
+                <div class="text-xl font-bold leading-snug text-dance-on-dark md:text-right"><?= htmlspecialchars((string) ($sess['timeRange'] ?? '')) ?></div>
+                <div class="truncate text-base font-bold leading-normal text-dance-text-strong underline md:text-right"><?= htmlspecialchars((string) ($sess['venueName'] ?? '')) ?></div>
+                <div class="text-xl font-bold leading-snug text-dance-on-dark md:text-right"><?= htmlspecialchars((string) ($sess['priceLabel'] ?? '')) ?></div>
+                <div class="flex items-center md:justify-end">
+                  <?php $passDate = null; ?>
+                  <?php $eventId = $sess['eventId']; include __DIR__ . '/dance_ticket_button.php'; ?>
+                </div>
               </div>
             </div>
           <?php endforeach; ?>

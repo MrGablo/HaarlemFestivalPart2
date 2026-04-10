@@ -62,6 +62,17 @@ final class DanceHomeService
         $subtitleHtml = is_string($hero['subtitle_html'] ?? null) ? $hero['subtitle_html'] : '';
         $bodyHtml = is_string($intro['body_html'] ?? null) ? $intro['body_html'] : '';
 
+        $primaryBtn = $hero['primary_button'] ?? [];
+        $primaryBtn = is_array($primaryBtn) ? $primaryBtn : [];
+        $primaryBtnLabel = trim((string) ($primaryBtn['label'] ?? ''));
+        if ($primaryBtnLabel === '') {
+            $primaryBtnLabel = 'View timetable';
+        }
+        $stripText = trim((string) ($hero['strip_text'] ?? ''));
+        if ($stripText === '') {
+            $stripText = 'HAARLEM FESTIVAL DANCE';
+        }
+
         $stats = $intro['stats'] ?? [];
         $stats = is_array($stats) ? $stats : [];
 
@@ -92,8 +103,8 @@ final class DanceHomeService
                 'titleLine1' => $parts[0],
                 'titleLine2' => $parts[1],
                 'subtitleHtml' => $subtitleHtml,
-                'primaryButtonLabel' => (string) ($hero['primary_button']['label'] ?? 'Buy ticket'),
-                'stripText' => (string) ($hero['strip_text'] ?? 'HAARLEM FESTIVAL DANCE'),
+                'primaryButtonLabel' => $primaryBtnLabel,
+                'stripText' => $stripText,
             ],
             [
                 'kicker' => (string) ($intro['kicker'] ?? 'Let Haarlem\'s music welcome you in'),
@@ -172,6 +183,7 @@ final class DanceHomeService
             $pass = $passByDay[$dayKey] ?? null;
             $passEid = $pass !== null ? (int) ($pass['event_id'] ?? 0) : 0;
             $days[] = [
+                'dayKey' => (string)$dayKey,
                 'dayLabel' => (string) ($dayLabels[$dayKey] ?? $dayKey),
                 'passLabel' => $pass !== null
                     ? (string) ($pass['title'] ?? 'DAY PASS')

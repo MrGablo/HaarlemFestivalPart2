@@ -17,7 +17,7 @@ $headerProfilePicturePath = (string) ($profilePicturePath ?? ($authPayload['prof
 $headerIsAdmin = strtolower((string) ($authPayload['userRole'] ?? '')) === 'admin';
 $headerIsStaff = in_array(strtolower((string) ($authPayload['userRole'] ?? '')), ['admin', 'employee'], true);
 
-// get cart order if logged in
+// get editable cart order if logged in (checkout-in-progress is not editable)
 $headerCartOrder = null;
 $headerCartCount = 0;
 $headerCartTotal = 0.00; 
