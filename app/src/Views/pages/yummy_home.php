@@ -16,23 +16,7 @@ declare(strict_types=1);
     <link
         href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
-    <script>
-        tailwind = {
-            config: {
-                corePlugins: {
-                    preflight: false
-                },
-                theme: {
-                    extend: {
-                        fontFamily: {
-                            display: ['Cormorant Garamond', 'Times New Roman', 'serif'],
-                            body: ['Manrope', 'Segoe UI', 'sans-serif']
-                        }
-                    }
-                }
-            }
-        };
-    </script>
+    <script src="/assets/js/yummy/tailwind.config.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
