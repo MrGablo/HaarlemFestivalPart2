@@ -13,23 +13,24 @@ class StoriesRepository extends Repository implements IStoriesRepository
         $pdo = $this->getConnection();
 
         $sql = "
-            SELECT 
-                e.event_id,
-                e.title,
-                s.language,
-                s.age_group,
-                s.story_type,
-                s.location,
-                s.description,
-                s.start_date,
-                s.end_date,
-                s.price,
-                s.img_background
-            FROM Event e
-            INNER JOIN StoriesEvent s ON e.event_id = s.event_id
-            WHERE e.event_type = 'stories'
-            ORDER BY s.start_date ASC
-        ";
+        SELECT 
+            e.event_id,
+            e.title,
+            s.page_id,
+            s.language,
+            s.age_group,
+            s.story_type,
+            s.location,
+            s.description,
+            s.start_date,
+            s.end_date,
+            s.price,
+            s.img_background
+        FROM Event e
+        INNER JOIN StoriesEvent s ON e.event_id = s.event_id
+        WHERE e.event_type = 'stories'
+        ORDER BY s.start_date ASC
+    ";
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
@@ -43,25 +44,26 @@ class StoriesRepository extends Repository implements IStoriesRepository
         $pdo = $this->getConnection();
 
         $sql = "
-            SELECT 
-                e.event_id,
-                e.title,
-                e.event_type,
-                s.language,
-                s.age_group,
-                s.story_type,
-                s.location,
-                s.description,
-                s.start_date,
-                s.end_date,
-                s.price,
-                s.img_background
-            FROM Event e
-            INNER JOIN StoriesEvent s ON e.event_id = s.event_id
-            WHERE e.event_type = 'stories'
-              AND e.event_id = :event_id
-            LIMIT 1
-        ";
+        SELECT 
+            e.event_id,
+            e.title,
+            e.event_type,
+            s.page_id,
+            s.language,
+            s.age_group,
+            s.story_type,
+            s.location,
+            s.description,
+            s.start_date,
+            s.end_date,
+            s.price,
+            s.img_background
+        FROM Event e
+        INNER JOIN StoriesEvent s ON e.event_id = s.event_id
+        WHERE e.event_type = 'stories'
+          AND e.event_id = :event_id
+        LIMIT 1
+    ";
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute([':event_id' => $eventId]);
@@ -147,4 +149,39 @@ class StoriesRepository extends Repository implements IStoriesRepository
             throw $e;
         }
     }
+
+    public function getStoriesEventByPageId(int $pageId): ?array
+    {
+        $pdo = $this->getConnection();
+
+        $sql = "
+            SELECT
+                e.event_id,
+                e.title,
+                e.event_type,
+                e.availability,
+                s.page_id,
+                s.language,
+                s.age_group,
+                s.story_type,
+                s.location,
+                s.description,
+                s.start_date,
+                s.end_date,
+                s.price,
+                s.img_background
+            FROM Event e
+            INNER JOIN StoriesEvent s ON e.event_id = s.event_id
+            WHERE e.event_type = 'stories'
+              AND s.page_id = :page_id
+            LIMIT 1
+        ";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([':page_id' => $pageId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
 }
