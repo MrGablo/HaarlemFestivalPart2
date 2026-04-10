@@ -2,8 +2,7 @@
 
 declare(strict_types=1);
 
-/** @var int $eventId */
-/** @var ?string $passDate */
+// $eventId: dance event to add to cart. $passDate: optional day key for day passes.
 $cartCsrfToken = \App\Utils\Csrf::token('cart_csrf_token');
 $resolvedPassDate = isset($passDate) ? trim((string)$passDate) : '';
 

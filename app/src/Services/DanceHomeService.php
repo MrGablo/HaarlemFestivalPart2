@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Cms\PageBuilder\Builders\DanceHomePageBuilder;
-use App\Cms\PageBuilder\Content\DanceHomePageContentViewModel;
 use App\Repositories\DanceHomeRepository;
 use App\Repositories\Interfaces\IPageRepository;
 use App\Utils\Media;
 use App\ViewModels\DanceHomePageViewModel;
 
-/** Dance home page data: DB timetable/lineup + CMS hero/intro text. */
+// Builds the dance home page: mixes database timetable/lineup with CMS text and images.
 final class DanceHomeService
 {
     private const ALLOWED_DANCE_ASSETS = [
@@ -37,7 +36,7 @@ final class DanceHomeService
 
     public function buildViewModel(): DanceHomePageViewModel
     {
-        /** @var DanceHomePageContentViewModel $page */
+        // CMS page content (hero, intro, lineup block, timetable labels).
         $page = $this->builder->buildViewModel(
             $this->pageRepo->getPageContentByType($this->builder->pageType())
         );
@@ -83,7 +82,8 @@ final class DanceHomeService
         $lineupArtists = $this->buildLineupArtistsFromDatabase($lineup);
         $danceArtistPageMap = $this->buildDanceArtistPageMap();
         $fallbackDanceArtistPageId = $this->firstDanceArtistPageId();
-        [$allAccess, $days] = $this->buildTimetableFromRows($rows, $timetableCms);
+        $locationPageByVenueId = $this->buildDanceLocationPageMap();
+        [$allAccess, $days] = $this->buildTimetableFromRows($rows, $timetableCms, $locationPageByVenueId);
 
         $pageTitle = (string) ($hero['title'] ?? 'Dance');
         $heroBgUrl = self::webPath($heroBg);
@@ -136,11 +136,9 @@ final class DanceHomeService
         );
     }
 
-    /**
-     * @param list<array<string, mixed>> $rows
-     * @return array{0: ?array, 1: list<array>}
-     */
-    private function buildTimetableFromRows(array $rows, array $timetableCms): array
+    // Turns raw DB rows into the all-access pass block plus per-day passes and sessions.
+    // $locationPageByVenueId maps venue id -> CMS location page id (for venue name links).
+    private function buildTimetableFromRows(array $rows, array $timetableCms, array $locationPageByVenueId = []): array
     {
         $allAccess = null;
         $dayOrder = [];
@@ -203,18 +201,15 @@ final class DanceHomeService
                     ? $this->formatEuro((float) ($pass['price'] ?? 0))
                     : '',
                 'passEventId' => $passEid,
-                'sessions' => $this->mapSessions($sessionsByDay[$dayKey] ?? []),
+                'sessions' => $this->mapSessions($sessionsByDay[$dayKey] ?? [], $locationPageByVenueId),
             ];
         }
 
         return [$allAccess, $days];
     }
 
-    /**
-     * @param list<array<string, mixed>> $sessionRows
-     * @return list<array<string, mixed>>
-     */
-    private function mapSessions(array $sessionRows): array
+    // One session row in the timetable: time, venue, price, optional link to venue page.
+    private function mapSessions(array $sessionRows, array $locationPageByVenueId = []): array
     {
         $out = [];
         foreach ($sessionRows as $r) {
@@ -228,12 +223,18 @@ final class DanceHomeService
             } elseif ($end !== '') {
                 $timeRange = $end;
             }
+            $venueId = isset($r['venue_id']) ? (int) $r['venue_id'] : 0;
+            $venuePageUrl = '';
+            if ($venueId > 0 && isset($locationPageByVenueId[$venueId])) {
+                $venuePageUrl = '/dance/location?page_id=' . (int) $locationPageByVenueId[$venueId];
+            }
             $out[] = [
                 'title' => (string) ($r['title'] ?? ''),
                 'tag' => (string) ($r['session_tag'] ?? ''),
                 'tagSpecial' => !empty($r['tag_special']),
                 'timeRange' => $timeRange,
                 'venueName' => (string) ($r['location_name'] ?? ''),
+                'venuePageUrl' => $venuePageUrl,
                 'priceLabel' => $this->formatEuro((float) ($r['price'] ?? 0)),
                 'eventId' => (int) ($r['event_id'] ?? 0),
             ];
@@ -242,12 +243,42 @@ final class DanceHomeService
         return $out;
     }
 
+    // venue_id => CMS Dance location page id (so we can link the venue name).
+    private function buildDanceLocationPageMap(): array
+    {
+        $rows = $this->pageRepo->getPagesByType('Dance_Location_Page');
+        $map = [];
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $pageId = (int) ($row['Page_ID'] ?? 0);
+            if ($pageId <= 0) {
+                continue;
+            }
+            $decoded = json_decode((string) ($row['Content'] ?? ''), true);
+            if (!is_array($decoded)) {
+                continue;
+            }
+            $venue = $decoded['venue'] ?? [];
+            if (!is_array($venue)) {
+                continue;
+            }
+            $vid = (int) ($venue['venue_id'] ?? 0);
+            if ($vid > 0) {
+                $map[$vid] = $pageId;
+            }
+        }
+
+        return $map;
+    }
+
     private function formatEuro(float $amount): string
     {
         return '€' . number_format($amount, 2, '.', '');
     }
 
-    /** Same as Jazz: static files under public/ → URL /assets/... */
+    // Turn a path like assets/... into a URL path starting with /.
     private static function webPath(string $path): string
     {
         return '/' . ltrim(str_replace('\\', '/', $path), '/');
@@ -272,7 +303,7 @@ final class DanceHomeService
         return in_array($base, self::ALLOWED_DANCE_ASSETS, true) ? $path : $fallback;
     }
 
-    /** @return list<array{name: string, imageSrc: string, alt: string}> */
+    // Lineup cards: try DB artists first, then titles, then CMS/default images.
     private function buildLineupArtistsFromDatabase(array $lineup): array
     {
         $dbArtists = $this->danceRepo->findDanceLineupArtists(6);
@@ -354,7 +385,7 @@ final class DanceHomeService
         return $this->buildLineupFromCmsOrDefaults($lineup);
     }
 
-    /** @return list<string> */
+    // Split an event title into possible DJ names (handles "A / B", b2b, etc.).
     private function extractArtistNames(string $rawTitle): array
     {
         $title = trim($rawTitle);
@@ -384,9 +415,7 @@ final class DanceHomeService
         return $out;
     }
 
-    /**
-     * @return list<array{name: string, imageSrc: string, alt: string}>
-     */
+    // Fallback lineup when the database has no artist rows yet.
     private function buildLineupFromCmsOrDefaults(array $lineup): array
     {
         $artistsIn = is_array($lineup['artists'] ?? null) ? $lineup['artists'] : [];
@@ -408,7 +437,7 @@ final class DanceHomeService
         return $lineupArtists;
     }
 
-    /** @return array<string, string> */
+    // Normalized artist name key -> image path from CMS lineup block.
     private function buildCmsLineupImageMap(array $lineup): array
     {
         $artists = is_array($lineup['artists'] ?? null) ? $lineup['artists'] : [];
@@ -436,10 +465,7 @@ final class DanceHomeService
         return $map;
     }
 
-    /**
-     * @param list<array<string, mixed>> $rows
-     * @param list<string|int|float> $cmsStats
-     */
+    // Short stats line under the intro (days, session count, venue count), or CMS numbers if no rows.
     private function buildStatsLineFromTimetable(array $rows, array $cmsStats): string
     {
         if ($rows === []) {
@@ -468,9 +494,7 @@ final class DanceHomeService
         return sprintf('%d days  ·  %d sessions  ·  %d venues', $nd, $sessions, count($venues));
     }
 
-    /**
-     * @param list<array<string, mixed>> $rows
-     */
+    // Date range text for the timetable header from the first and last day in the data.
     private function buildDateRangeLabelFromTimetable(array $rows): ?string
     {
         $ordered = [];
@@ -494,10 +518,7 @@ final class DanceHomeService
         return $ordered[0] . ' → ' . $ordered[count($ordered) - 1];
     }
 
-    /**
-     * @param array<string, mixed> $row
-     * @return array{key: string, label: string}|null
-     */
+    // Stable day key and human label for one timetable row (date or text from DB).
     private function resolveDayMeta(array $row): ?array
     {
         $rawLabel = trim((string) ($row['day_display_label'] ?? ''));
@@ -560,13 +581,12 @@ final class DanceHomeService
         try {
             return new \DateTimeImmutable($text);
         } catch (\Throwable) {
+            // Text from DB/CMS is not a valid date — skip using it for sorting/labels.
             return null;
         }
     }
 
-    /**
-     * @param list<array<string, mixed>> $rows
-     */
+    // Section heading above the DJ photos.
     private function lineupSectionTitle(array $lineup, array $rows): string
     {
         $t = trim((string) ($lineup['title'] ?? ''));
@@ -580,7 +600,7 @@ final class DanceHomeService
         return 'TOP TIER LINEUP';
     }
 
-    /** @return array<string, int> */
+    // Normalized artist name key -> CMS dance artist page id (for lineup card links).
     private function buildDanceArtistPageMap(): array
     {
         $rows = $this->pageRepo->getPagesByType('Dance_Detail_Page');

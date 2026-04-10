@@ -4,10 +4,9 @@ namespace App\Services;
 
 use App\Repositories\OrderRepository;
 use App\Repositories\PaymentRepository;
+use App\Utils\QrGenerator;
 
-/**
- * Stripe Checkout session creation and fulfilment (success URL + webhook).
- */
+// Stripe checkout: build payment links, finish orders after pay, handle webhook.
 class PaymentService
 {
     private PaymentRepository $repo;
@@ -34,9 +33,7 @@ class PaymentService
         $this->orderService = $orderService ?? new OrderService(new OrderRepository(), new EventModelBuilderService());
     }
 
-    /**
-     * Create Stripe hosted checkout URL for the full pending cart.
-     */
+    // Sends the user to Stripe to pay for everything in their pending cart.
     public function createCheckoutUrlForPendingCart(int $userId): string
     {
         \Stripe\Stripe::setApiKey($this->getStripeSecretKey());
@@ -71,27 +68,31 @@ class PaymentService
         $baseUrl = $this->resolveBaseUrl();
         $expiresAt = $this->resolveCheckoutSessionExpiresAt($pendingOrder->payment_deadline_at);
 
-        $session = \Stripe\Checkout\Session::create([
-            'line_items' => $lineItems,
-            'mode' => 'payment',
-            'automatic_tax' => [
-                'enabled' => true,
-            ],
-            'expires_at' => $expiresAt,
-            'success_url' => $baseUrl . '/payment/success?session_id={CHECKOUT_SESSION_ID}',
-            'cancel_url' => $baseUrl . '/payment/cancel',
-            'metadata' => [
-                'user_id' => (string)$userId,
-                'pending_order_id' => (string)$pendingOrderId,
-            ],
-        ]);
+        try {
+            // Network or Stripe account issues show up here.
+            $session = \Stripe\Checkout\Session::create([
+                'line_items' => $lineItems,
+                'mode' => 'payment',
+                'automatic_tax' => [
+                    'enabled' => true,
+                ],
+                'expires_at' => $expiresAt,
+                'success_url' => $baseUrl . '/payment/success?session_id={CHECKOUT_SESSION_ID}',
+                'cancel_url' => $baseUrl . '/payment/cancel',
+                'metadata' => [
+                    'user_id' => (string)$userId,
+                    'pending_order_id' => (string)$pendingOrderId,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            error_log('Stripe Checkout Session::create failed: ' . $e->getMessage());
+            throw $e;
+        }
 
         return (string)$session->url;
     }
 
-    /**
-     * Marks the pending order paid, creates tickets, sends delivery email.
-     */
+    // After payment: mark order paid, create tickets, email the buyer.
     public function fulfillPendingOrder(int $userId, int $orderId): void
     {
         if ($this->repo->isOrderPaid($orderId)) {
@@ -111,12 +112,11 @@ class PaymentService
             $this->createTicketsFromPaidOrderItem($item, $userId);
         }
 
+        // Errors inside are logged there; paid order and tickets stay valid.
         $this->sendTicketDeliveryEmail($orderId, $userId);
     }
 
-    /**
-     * Retrieves a checkout session from Stripe and fulfils only when paid.
-     */
+    // Loads the Stripe session; if it is paid, completes the order (same as webhook path).
     public function fulfillPaidCheckoutSessionById(string $sessionId): void
     {
         $sessionId = trim($sessionId);
@@ -125,12 +125,16 @@ class PaymentService
         }
 
         \Stripe\Stripe::setApiKey($this->getStripeSecretKey());
-        $this->handleCheckoutCompleted(\Stripe\Checkout\Session::retrieve($sessionId));
+        try {
+            $stripeSession = \Stripe\Checkout\Session::retrieve($sessionId);
+        } catch (\Throwable $e) {
+            error_log('Stripe Checkout Session::retrieve failed: ' . $e->getMessage());
+            throw $e;
+        }
+        $this->handleCheckoutCompleted($stripeSession);
     }
 
-    /**
-     * Called by the webhook after Stripe confirms payment.
-     */
+    // Stripe webhook calls this when checkout is successfully paid.
     public function handleCheckoutCompleted(object $session): void
     {
         $this->orderService->expireStaleCheckoutDeadlines();
@@ -306,28 +310,59 @@ class PaymentService
             return;
         }
 
+        foreach ($tickets as &$ticket) {
+            $qr = trim((string)($ticket['qr'] ?? ''));
+            $ticket['qr_svg'] = '';
+
+            if ($qr === '') {
+                continue;
+            }
+
+            try {
+                $ticket['qr_svg'] = QrGenerator::generateSvgMarkup($qr);
+            } catch (\Throwable $e) {
+                // Email still sends; QR can be missing for one ticket if the library fails.
+                error_log('Ticket QR generation failed for order ' . $orderId . ': ' . $e->getMessage());
+            }
+        }
+        unset($ticket);
+
         $firstName = trim((string)($recipient['first_name'] ?? 'Festival guest'));
         $lastName = trim((string)($recipient['last_name'] ?? ''));
         $orderNumber = sprintf('HF-%06d', $orderId);
-        $invoiceNumber = sprintf('INV-HF-%06d', $orderId);
-        $invoiceItems = $this->repo->getInvoiceLineItems($orderId);
 
         $pdfPath = '';
         $invoicePdfPath = '';
 
         try {
+            // Build PDF and send mail; temp file is removed in finally.
             $pdfPath = $this->ticketPdfGenerator->generateTicketsPdf(
                 $orderNumber,
                 trim($firstName . ' ' . $lastName),
                 $tickets
             );
 
-            $invoicePdfPath = $this->invoicePdfGenerator->generateInvoicePdf(
-                $invoiceNumber,
-                $orderNumber,
-                $recipient,
-                $invoiceItems
-            );
+            $lineItems = $this->repo->getInvoiceLineItems($orderId);
+            if ($lineItems !== []) {
+                try {
+                    $customer = [
+                        'first_name' => (string)($recipient['first_name'] ?? ''),
+                        'last_name' => (string)($recipient['last_name'] ?? ''),
+                        'email' => $email,
+                        'created_at' => (string)($recipient['created_at'] ?? ''),
+                    ];
+                    $invoiceNumber = sprintf('INV-%06d', $orderId);
+                    $invoicePdfPath = $this->invoicePdfGenerator->generateInvoicePdf(
+                        $invoiceNumber,
+                        $orderNumber,
+                        $customer,
+                        $lineItems
+                    );
+                } catch (\Throwable $e) {
+                    error_log('Invoice PDF failed for order ' . $orderId . ': ' . $e->getMessage());
+                    $invoicePdfPath = '';
+                }
+            }
 
             $sent = $this->emailService->sendTicketDelivery(
                 $email,
@@ -342,6 +377,7 @@ class PaymentService
                 error_log('Ticket delivery email was not sent for order ' . $orderId);
             }
         } catch (\Throwable $e) {
+            // Paid tickets in DB are unchanged; operator can resend from support if needed.
             error_log('Ticket delivery preparation failed for order ' . $orderId . ': ' . $e->getMessage());
         } finally {
             if ($pdfPath !== '' && is_file($pdfPath)) {

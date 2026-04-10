@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-/** Dance ticket: price, venue id, location name. */
+// One dance ticket row: price, venue, times, pass type, etc.
 final class DanceEvent extends Event
 {
     public string $start_date;

@@ -11,10 +11,10 @@ use App\Support\VenueSchemaHelper;
 
 final class DanceEventRepository extends Repository implements IDanceEventRepository
 {
-    /** @var array<string, bool> */
+    // Remembers which optional columns exist on DanceEvent (old vs new schema).
     private array $columnCache = [];
 
-    /** @return DanceEvent[] */
+    // All dance events as model objects.
     public function getAllDanceEvents(): array
     {
         $rows = $this->fetchDanceRows();
@@ -41,6 +41,7 @@ final class DanceEventRepository extends Repository implements IDanceEventReposi
         $pdo->beginTransaction();
 
         try {
+            // Parent Event row first, then DanceEvent; rollback leaves no orphan row.
             $stmtEvent = $pdo->prepare("
                 INSERT INTO Event (title, event_type, availability)
                 VALUES (:title, 'dance', :availability)
@@ -147,6 +148,7 @@ final class DanceEventRepository extends Repository implements IDanceEventReposi
         $pdo->beginTransaction();
 
         try {
+            // Keep Event and DanceEvent in sync; rollback on any SQL error.
             $check = $pdo->prepare("SELECT 1 FROM Event WHERE event_id = :id AND event_type = 'dance' LIMIT 1");
             $check->execute([':id' => $event->event_id]);
             if (!$check->fetchColumn()) {
@@ -236,6 +238,7 @@ final class DanceEventRepository extends Repository implements IDanceEventReposi
         $pdo->beginTransaction();
 
         try {
+            // Delete child row first, then parent Event, or undo both on failure.
             $check = $pdo->prepare("SELECT 1 FROM Event WHERE event_id = :id AND event_type = 'dance' LIMIT 1");
             $check->execute([':id' => $eventId]);
             if (!$check->fetchColumn()) {
@@ -257,7 +260,7 @@ final class DanceEventRepository extends Repository implements IDanceEventReposi
         }
     }
 
-    /** @return list<array<string, mixed>> */
+    // Shared SELECT for dance rows; builds SQL that works with the current table columns.
     private function fetchDanceRows(string $where = '1=1', array $params = [], string $suffix = ''): array
     {
         $pdo = $this->getConnection();
@@ -326,6 +329,7 @@ final class DanceEventRepository extends Repository implements IDanceEventReposi
             $stmt->execute([':column' => $column]);
             $exists = $stmt->fetch() !== false;
         } catch (\Throwable) {
+            // If we cannot read the table definition, treat the column as absent.
             $exists = false;
         }
 

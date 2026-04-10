@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Cms\PageBuilder\Builders\DanceArtistPageBuilder;
-use App\Cms\PageBuilder\Content\DanceArtistPageContentViewModel;
 use App\Repositories\DanceHomeRepository;
 use App\Repositories\Interfaces\IPageRepository;
 use App\ViewModels\DanceArtistPageViewModel;
@@ -20,7 +19,7 @@ final class DanceArtistService
 
     public function getArtistPageViewModel(int $pageId): DanceArtistPageViewModel
     {
-        /** @var DanceArtistPageContentViewModel $page */
+        // CMS content for this dance artist page.
         $page = $this->builder->buildViewModel($this->pageRepo->getPageContentById($pageId));
 
         $artist = is_array($page->artist) ? $page->artist : [];
@@ -207,6 +206,7 @@ final class DanceArtistService
         try {
             return new \DateTimeImmutable($text);
         } catch (\Throwable) {
+            // Unparseable date string — leave as empty and use other fields if any.
             return null;
         }
     }

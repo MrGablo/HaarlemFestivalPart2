@@ -6,6 +6,7 @@ namespace App\Cms\PageBuilder;
 
 use App\Cms\PageBuilder\Builders\DanceHomePageBuilder;
 use App\Cms\PageBuilder\Builders\DanceArtistPageBuilder;
+use App\Cms\PageBuilder\Builders\DanceLocationPageBuilder;
 use App\Cms\PageBuilder\Builders\GenericPageBuilder;
 use App\Cms\PageBuilder\Builders\HistoryDetailPageBuilder;
 use App\Cms\PageBuilder\Builders\HistoryHomePageBuilder;
@@ -31,6 +32,7 @@ final class PageBuilderRegistry
             new JazzHomePageBuilder(),
             new DanceHomePageBuilder(),
             new DanceArtistPageBuilder(),
+            new DanceLocationPageBuilder(),
             new JazzArtistPageBuilder(),
             new StoriesHomePageBuilder(),
             new StoriesDetailPageBuilder(),

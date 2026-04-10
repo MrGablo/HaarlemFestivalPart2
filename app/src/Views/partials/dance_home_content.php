@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Utils\Wysiwyg;
 
-/** @var \App\ViewModels\DanceHomePageViewModel $vm */
+// $vm: all data for the dance home page (see DanceHomePageViewModel).
 
 $h = $vm->hero;
 $intro = $vm->intro;
@@ -92,7 +92,7 @@ $intro = $vm->intro;
       <p class="text-dance-muted">Timetable will be published soon.</p>
     <?php else: ?>
       <?php if ($vm->allAccess !== null): ?>
-        <?php /** @var array{label: string, note: string, priceLabel: string, eventId: int} $aa */ ?>
+        <?php // $aa: all-access pass row (label, note, price, event id). ?>
         <?php $aa = $vm->allAccess; ?>
         <div class="mb-12">
           <div class="mb-3 flex min-h-[3.5rem] min-h-dance-row items-center gap-4 rounded px-4 py-2 bg-dance-row-glass">
@@ -106,7 +106,7 @@ $intro = $vm->intro;
       <?php endif; ?>
 
       <?php foreach ($vm->timetableDays as $day): ?>
-        <?php /** @var array{dayKey: string, dayLabel: string, passLabel: string, passPriceLabel: string, passEventId: int, sessions: list<array{title: string, tag: string, tagSpecial: bool, timeRange: string, venueName: string, priceLabel: string, eventId: int}>} $day */ ?>
+        <?php // $day: one timetable day (pass + sessions list). ?>
         <div class="mb-14">
           <div class="mb-3 pl-5 text-xs font-normal leading-normal text-dance-text"><?= htmlspecialchars($day['dayLabel']) ?></div>
           <div class="mb-3 flex min-h-[3.5rem] min-h-dance-row items-center gap-4 rounded bg-dance-accent px-4 py-2">
@@ -132,7 +132,17 @@ $intro = $vm->intro;
                   <?php endif; ?>
                 </div>
                 <div class="text-xl font-bold leading-snug text-dance-on-dark md:text-right"><?= htmlspecialchars((string) ($sess['timeRange'] ?? '')) ?></div>
-                <div class="truncate text-base font-bold leading-normal text-dance-text-strong underline md:text-right"><?= htmlspecialchars((string) ($sess['venueName'] ?? '')) ?></div>
+                <?php
+                $venuePageUrl = trim((string) ($sess['venuePageUrl'] ?? ''));
+                $venueName = (string) ($sess['venueName'] ?? '');
+                ?>
+                <div class="truncate text-base font-bold leading-normal text-dance-text-strong md:text-right">
+                  <?php if ($venuePageUrl !== '' && $venueName !== ''): ?>
+                    <a href="<?= htmlspecialchars($venuePageUrl) ?>" class="text-inherit underline decoration-white/40 hover:brightness-110"><?= htmlspecialchars($venueName) ?></a>
+                  <?php else: ?>
+                    <span class="underline"><?= htmlspecialchars($venueName) ?></span>
+                  <?php endif; ?>
+                </div>
                 <div class="text-xl font-bold leading-snug text-dance-on-dark md:text-right"><?= htmlspecialchars((string) ($sess['priceLabel'] ?? '')) ?></div>
                 <div class="flex items-center md:justify-end">
                   <?php $passDate = null; ?>
