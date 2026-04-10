@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Utils\QrGenerator;
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\PHPMailer;
 
@@ -105,6 +106,7 @@ class EmailService
         string $firstName,
         string $orderNumber,
         string $ticketPdfPath,
+        string $invoicePdfPath,
         array $tickets
     ): bool {
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -126,23 +128,22 @@ class EmailService
                 $startsAt = trim((string)($ticket['event_start_time'] ?? ''));
                 $venue = trim((string)($ticket['venue_name'] ?? ''));
                 $qr = trim((string)($ticket['qr'] ?? ''));
-                $qrSvg = (string)($ticket['qr_svg'] ?? '');
                 $cid = 'ticket-qr-' . ($ticketId > 0 ? (string)$ticketId : (string)$index);
+                $hasQrImage = false;
 
-                if ($qrSvg !== '') {
-                    $mailer->addStringEmbeddedImage(
-                        $qrSvg,
-                        $cid,
-                        'ticket-' . ($ticketId > 0 ? (string)$ticketId : (string)$index) . '.svg',
-                        PHPMailer::ENCODING_BASE64,
-                        'image/svg+xml'
-                    );
-                    $mailer->addStringAttachment(
-                        $qrSvg,
-                        'ticket-' . ($ticketId > 0 ? (string)$ticketId : (string)$index) . '-qr.svg',
-                        PHPMailer::ENCODING_BASE64,
-                        'image/svg+xml'
-                    );
+                if ($qr !== '') {
+                    try {
+                        $mailer->addStringEmbeddedImage(
+                            QrGenerator::generatePngData($qr),
+                            $cid,
+                            'ticket-' . ($ticketId > 0 ? (string)$ticketId : (string)$index) . '.png',
+                            PHPMailer::ENCODING_BASE64,
+                            'image/png'
+                        );
+                        $hasQrImage = true;
+                    } catch (\Throwable $e) {
+                        error_log('Ticket QR embed failed: ' . $e->getMessage());
+                    }
                 }
 
                 $details = [];
@@ -159,7 +160,7 @@ class EmailService
                     . (!empty($details)
                         ? '<p style="margin:0 0 12px;font-size:14px;line-height:1.5;color:#4b5563;">' . implode(' | ', $details) . '</p>'
                         : '')
-                    . ($qrSvg !== ''
+                    . ($hasQrImage
                         ? '<img src="cid:' . htmlspecialchars($cid, ENT_QUOTES, 'UTF-8') . '" alt="QR code for ticket ' . $ticketId . '" style="display:block;width:220px;height:220px;background:#ffffff;border:1px solid #d6dee8;border-radius:8px;padding:8px;">'
                         : '')
                     . '<p style="margin:12px 0 0;font-size:13px;line-height:1.5;color:#6b7280;">Ticket code: ' . htmlspecialchars($qr, ENT_QUOTES, 'UTF-8') . '</p>'
@@ -180,19 +181,23 @@ class EmailService
 
             $mailer->Body = '<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#111827;">'
                 . '<p style="margin:0 0 16px;">Hi ' . htmlspecialchars($firstName, ENT_QUOTES, 'UTF-8') . ',</p>'
-                . '<p style="margin:0 0 16px;">Thank you for your payment. Your ticket PDF is attached below, and each QR code is included in this e-mail for quick entry at the venue.</p>'
+                . '<p style="margin:0 0 16px;">Thank you for your payment. Your ticket PDF and invoice PDF are attached, and each QR code is included in this e-mail for quick entry at the venue.</p>'
                 . '<p style="margin:0 0 20px;"><strong>Order number:</strong> ' . htmlspecialchars($orderNumber, ENT_QUOTES, 'UTF-8') . '</p>'
                 . implode('', $htmlTickets)
                 . '<p style="margin:24px 0 0;">Enjoy the festival!<br>Haarlem Festival</p>'
                 . '</div>';
             $mailer->AltBody = "Hi {$firstName},\n\n"
-                . "Thank you for your payment. Your ticket PDF is attached to this email.\n"
+                . "Thank you for your payment. Your ticket PDF and invoice PDF are attached to this email.\n"
                 . "Order number: {$orderNumber}\n\n"
                 . implode("\n\n", $textTickets)
                 . "\n\nEnjoy the festival!\nHaarlem Festival";
 
             if ($ticketPdfPath !== '' && is_file($ticketPdfPath) && is_readable($ticketPdfPath)) {
                 $mailer->addAttachment($ticketPdfPath, 'tickets.pdf');
+            }
+
+            if ($invoicePdfPath !== '' && is_file($invoicePdfPath) && is_readable($invoicePdfPath)) {
+                $mailer->addAttachment($invoicePdfPath, 'invoice.pdf');
             }
 
             $mailer->send();

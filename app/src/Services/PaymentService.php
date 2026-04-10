@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Repositories\OrderRepository;
 use App\Repositories\PaymentRepository;
-use App\Utils\QrGenerator;
 
 /**
  * Stripe Checkout session creation and fulfilment (success URL + webhook).
@@ -15,6 +14,7 @@ class PaymentService
     private TicketService $ticketService;
     private EmailService $emailService;
     private TicketPdfGenerator $ticketPdfGenerator;
+    private InvoicePdfGenerator $invoicePdfGenerator;
     private OrderService $orderService;
 
     public function __construct(
@@ -22,6 +22,7 @@ class PaymentService
         ?TicketService $ticketService = null,
         ?EmailService $emailService = null,
         ?TicketPdfGenerator $ticketPdfGenerator = null,
+        ?InvoicePdfGenerator $invoicePdfGenerator = null,
         ?OrderService $orderService = null
     )
     {
@@ -29,6 +30,7 @@ class PaymentService
         $this->ticketService = $ticketService ?? new TicketService();
         $this->emailService = $emailService ?? new EmailService();
         $this->ticketPdfGenerator = $ticketPdfGenerator ?? new TicketPdfGenerator();
+        $this->invoicePdfGenerator = $invoicePdfGenerator ?? new InvoicePdfGenerator();
         $this->orderService = $orderService ?? new OrderService(new OrderRepository(), new EventModelBuilderService());
     }
 
@@ -304,27 +306,14 @@ class PaymentService
             return;
         }
 
-        foreach ($tickets as &$ticket) {
-            $qr = trim((string)($ticket['qr'] ?? ''));
-            $ticket['qr_svg'] = '';
-
-            if ($qr === '') {
-                continue;
-            }
-
-            try {
-                $ticket['qr_svg'] = QrGenerator::generateSvgMarkup($qr);
-            } catch (\Throwable $e) {
-                error_log('Ticket QR generation failed for order ' . $orderId . ': ' . $e->getMessage());
-            }
-        }
-        unset($ticket);
-
         $firstName = trim((string)($recipient['first_name'] ?? 'Festival guest'));
         $lastName = trim((string)($recipient['last_name'] ?? ''));
         $orderNumber = sprintf('HF-%06d', $orderId);
+        $invoiceNumber = sprintf('INV-HF-%06d', $orderId);
+        $invoiceItems = $this->repo->getInvoiceLineItems($orderId);
 
         $pdfPath = '';
+        $invoicePdfPath = '';
 
         try {
             $pdfPath = $this->ticketPdfGenerator->generateTicketsPdf(
@@ -333,11 +322,19 @@ class PaymentService
                 $tickets
             );
 
+            $invoicePdfPath = $this->invoicePdfGenerator->generateInvoicePdf(
+                $invoiceNumber,
+                $orderNumber,
+                $recipient,
+                $invoiceItems
+            );
+
             $sent = $this->emailService->sendTicketDelivery(
                 $email,
                 $firstName !== '' ? $firstName : 'Festival guest',
                 $orderNumber,
                 $pdfPath,
+                $invoicePdfPath,
                 $tickets
             );
 
@@ -349,6 +346,9 @@ class PaymentService
         } finally {
             if ($pdfPath !== '' && is_file($pdfPath)) {
                 @unlink($pdfPath);
+            }
+            if ($invoicePdfPath !== '' && is_file($invoicePdfPath)) {
+                @unlink($invoicePdfPath);
             }
         }
     }
