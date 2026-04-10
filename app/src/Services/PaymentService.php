@@ -13,6 +13,7 @@ class PaymentService
     private TicketService $ticketService;
     private EmailService $emailService;
     private TicketPdfGenerator $ticketPdfGenerator;
+    private InvoicePdfGenerator $invoicePdfGenerator;
     private OrderService $orderService;
 
     public function __construct(
@@ -20,6 +21,7 @@ class PaymentService
         ?TicketService $ticketService = null,
         ?EmailService $emailService = null,
         ?TicketPdfGenerator $ticketPdfGenerator = null,
+        ?InvoicePdfGenerator $invoicePdfGenerator = null,
         ?OrderService $orderService = null
     )
     {
@@ -27,6 +29,7 @@ class PaymentService
         $this->ticketService = $ticketService ?? new TicketService();
         $this->emailService = $emailService ?? new EmailService();
         $this->ticketPdfGenerator = $ticketPdfGenerator ?? new TicketPdfGenerator();
+        $this->invoicePdfGenerator = $invoicePdfGenerator ?? new InvoicePdfGenerator();
         $this->orderService = $orderService ?? new OrderService(new OrderRepository(), new EventModelBuilderService());
     }
 
@@ -329,6 +332,7 @@ class PaymentService
         $orderNumber = sprintf('HF-%06d', $orderId);
 
         $pdfPath = '';
+        $invoicePdfPath = '';
 
         try {
             // Build PDF and send mail; temp file is removed in finally.
@@ -338,11 +342,34 @@ class PaymentService
                 $tickets
             );
 
+            $lineItems = $this->repo->getInvoiceLineItems($orderId);
+            if ($lineItems !== []) {
+                try {
+                    $customer = [
+                        'first_name' => (string)($recipient['first_name'] ?? ''),
+                        'last_name' => (string)($recipient['last_name'] ?? ''),
+                        'email' => $email,
+                        'created_at' => (string)($recipient['created_at'] ?? ''),
+                    ];
+                    $invoiceNumber = sprintf('INV-%06d', $orderId);
+                    $invoicePdfPath = $this->invoicePdfGenerator->generateInvoicePdf(
+                        $invoiceNumber,
+                        $orderNumber,
+                        $customer,
+                        $lineItems
+                    );
+                } catch (\Throwable $e) {
+                    error_log('Invoice PDF failed for order ' . $orderId . ': ' . $e->getMessage());
+                    $invoicePdfPath = '';
+                }
+            }
+
             $sent = $this->emailService->sendTicketDelivery(
                 $email,
                 $firstName !== '' ? $firstName : 'Festival guest',
                 $orderNumber,
                 $pdfPath,
+                $invoicePdfPath,
                 $tickets
             );
 
@@ -355,6 +382,9 @@ class PaymentService
         } finally {
             if ($pdfPath !== '' && is_file($pdfPath)) {
                 @unlink($pdfPath);
+            }
+            if ($invoicePdfPath !== '' && is_file($invoicePdfPath)) {
+                @unlink($invoicePdfPath);
             }
         }
     }
