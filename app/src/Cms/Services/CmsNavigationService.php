@@ -57,10 +57,19 @@ final class CmsNavigationService
             [
                 'key' => 'stories-events',
                 'title' => 'Stories Events',
-                'type' => 'stories-events',
+                'type' => 'stories_events',
                 'href' => '/cms/events/stories',
                 'label' => 'Open',
                 'match' => ['/cms/events/stories'],
+                'showOnOverview' => true,
+            ],
+            [
+                'key' => 'yummy-events',
+                'title' => 'Yummy Events',
+                'type' => 'yummy_events',
+                'href' => '/cms/events/yummy',
+                'label' => 'Open',
+                'match' => ['/cms/events/yummy'],
                 'showOnOverview' => true,
             ],
             [
@@ -124,7 +133,7 @@ final class CmsNavigationService
     {
         return array_values(array_filter(
             $this->items(),
-            static fn (array $item): bool => (bool) ($item['showOnOverview'] ?? false)
+            static fn(array $item): bool => (bool) ($item['showOnOverview'] ?? false)
         ));
     }
 
