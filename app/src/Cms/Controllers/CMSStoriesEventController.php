@@ -88,4 +88,46 @@ final class CMSStoriesEventController
         header('Location: /cms/events/stories', true, 302);
         exit;
     }
+
+    public function create(): void
+    {
+        AdminGuard::requireAdmin(true);
+
+        $errors = Flash::getErrors();
+        $flashSuccess = Flash::getSuccess();
+        $csrfToken = Csrf::token();
+
+        $event = (object) [
+            'event_id' => 0,
+            'title' => '',
+            'language' => '',
+            'age_group' => '',
+            'story_type' => '',
+            'location' => '',
+            'description' => '',
+            'start_date' => '',
+            'end_date' => '',
+            'price' => '0.00',
+            'img_background' => ''
+        ];
+
+        require __DIR__ . '/../../Views/cms/story_create.php';
+    }
+
+    public function store(): void
+    {
+        AdminGuard::requireAdmin(true);
+
+        try {
+            Csrf::assertPost();
+            $newId = $this->service->createStoriesEvent($_POST, $_FILES);
+            Flash::setSuccess('Stories event created successfully.');
+            header('Location: /cms/events/stories/' . $newId, true, 302);
+            exit;
+        } catch (\Throwable $e) {
+            Flash::setErrors(['general' => $e->getMessage()]);
+            header('Location: /cms/events/stories/create', true, 302);
+            exit;
+        }
+    }
 }
