@@ -1,145 +1,95 @@
 <?php
-/**
- * @var array $pages Array of \App\Models\Page objects
- * @var \App\Models\YummyEvent $event
- * @var array $errors
- * @var array $flashSuccess
- * @var string $csrfToken
- */
-$pageIdStr = (string)($event->page_id ?? '');
+$pageTitle = 'Edit Yummy Event';
+$backRoute = '/cms/events/yummy';
+$backLabel = '← Back to Yummy Events';
+$formAction = '/cms/events/yummy/' . (int)($event->event_id ?? 0);
+$isEdit = true;
+$submitLabel = 'Save changes';
+$submitClass = 'bg-blue-600 hover:bg-blue-700';
 
-$startTimeStr = (string)($event->start_time ?? '');
-$endTimeStr = (string)($event->end_time ?? '');
-if ($startTimeStr) {
-    try {
-        $startTimeStr = (new \DateTime($startTimeStr))->format('Y-m-d\TH:i');
-    } catch (\Exception $e) { }
-}
-if ($endTimeStr) {
-    try {
-        $endTimeStr = (new \DateTime($endTimeStr))->format('Y-m-d\TH:i');
-    } catch (\Exception $e) { }
-}
+require __DIR__ . '/partials/cms_event_form.php';
 ?>
 
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Edit Yummy Event</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50 text-gray-800">
+                <!-- Child YummyEvent fields -->
+                <div class="border-t border-slate-200 pt-6">
+                    <h2 class="text-lg font-semibold text-slate-900">Yummy details</h2>
+                    <p class="mt-1 text-sm text-slate-600">These are stored in the <span
+                            class="font-medium">YummyEvent</span> table.</p>
 
-<?php include __DIR__ . '/../partials/header.php'; ?>
+                    <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700">Start Time</label>
+                            <input name="start_time" type="datetime-local" required
+                                value="<?= htmlspecialchars((string)toDatetimeLocal($event->start_time ?? null)) ?>"
+                                class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200">
+                        </div>
 
-<main class="container mx-auto p-4 mb-16">
-    <div class="max-w-3xl mx-auto bg-white p-8 rounded shadow-sm border border-gray-200">
-        <div class="flex items-center justify-between mb-6">
-            <h1 class="text-2xl font-bold">Edit Yummy Event #<?= (int)$event->event_id ?></h1>
-            <span class="text-xs bg-gray-200 text-gray-700 font-bold px-2 py-1 rounded">YUMMY</span>
-        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700">End Time</label>
+                            <input name="end_time" type="datetime-local" required
+                                value="<?= htmlspecialchars((string)toDatetimeLocal($event->end_time ?? null)) ?>"
+                                class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200">
+                        </div>
 
-        <?php require __DIR__ . '/../partials/flash_success.php'; ?>
-        <?php require __DIR__ . '/../partials/error_general.php'; ?>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700">Cuisine</label>
+                            <input name="cuisine" type="text" required
+                                value="<?= htmlspecialchars((string)($event->cuisine ?? '')) ?>"
+                                class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200">
+                        </div>
 
-        <form action="/cms/events/yummy/<?= (int)$event->event_id ?>/update" method="POST" enctype="multipart/form-data">
-            <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700">Star Rating (0-5)</label>
+                            <input name="star_rating" type="number" min="0" max="5" required
+                                value="<?= (int)($event->star_rating ?? 0) ?>"
+                                class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200">
+                        </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                    <label class="block text-sm font-semibold mb-1" for="title">Title *</label>
-                    <input type="text" id="title" name="title" required
-                           value="<?= htmlspecialchars((string)($event->title ?? '')) ?>"
-                           class="w-full border border-gray-300 rounded px-3 py-2 bg-gray-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold mb-1" for="cuisine">Cuisine *</label>
-                    <input type="text" id="cuisine" name="cuisine" required
-                           value="<?= htmlspecialchars((string)($event->cuisine ?? '')) ?>"
-                           class="w-full border border-gray-300 rounded px-3 py-2 bg-gray-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500">
-                </div>
-            </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700">Availability (seats)</label>
+                            <input name="availability" type="number" min="1" required
+                                value="<?= (int)($event->availability ?? 300) ?>"
+                                class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200">
+                        </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                    <label class="block text-sm font-semibold mb-1" for="start_time">Start Time *</label>
-                    <input type="datetime-local" id="start_time" name="start_time" required
-                           value="<?= htmlspecialchars($startTimeStr) ?>"
-                           class="w-full border border-gray-300 rounded px-3 py-2 bg-gray-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold mb-1" for="end_time">End Time *</label>
-                    <input type="datetime-local" id="end_time" name="end_time" required
-                           value="<?= htmlspecialchars($endTimeStr) ?>"
-                           class="w-full border border-gray-300 rounded px-3 py-2 bg-gray-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500">
-                </div>
-            </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700">Price (€)</label>
+                            <input name="price" type="number" step="0.01" min="0" required
+                                value="<?= htmlspecialchars((string)($event->price ?? '0.00')) ?>"
+                                class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200">
+                        </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div>
-                    <label class="block text-sm font-semibold mb-1" for="price">Price *</label>
-                    <input type="number" step="0.01" min="0" id="price" name="price" required
-                           value="<?= htmlspecialchars((string)($event->price ?? '0')) ?>"
-                           class="w-full border border-gray-300 rounded px-3 py-2 bg-gray-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold mb-1" for="availability">Availability *</label>
-                    <input type="number" min="1" id="availability" name="availability" required
-                           value="<?= htmlspecialchars((string)($event->availability ?? '')) ?>"
-                           class="w-full border border-gray-300 rounded px-3 py-2 bg-gray-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold mb-1" for="star_rating">Star Rating (0-5)</label>
-                    <input type="number" min="0" max="5" id="star_rating" name="star_rating"
-                           value="<?= htmlspecialchars((string)($event->star_rating ?? '0')) ?>"
-                           class="w-full border border-gray-300 rounded px-3 py-2 bg-gray-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500">
-                </div>
-            </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-sm font-medium text-slate-700">Thumbnail Image (optional)</label>
+                            <input name="thumbnail_path_file" type="file" accept=".jpg,.jpeg,.png,.webp,.gif" class="mt-1 block w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm
+                                       file:mr-4 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-slate-700
+                                       hover:file:bg-slate-200">
+                            <?php if (!empty($event->thumbnail_path)): ?>
+                                <p class="mt-3 text-xs text-slate-600">
+                                    Current image path: <span
+                                        class="font-mono"><?= htmlspecialchars((string)$event->thumbnail_path) ?></span>
+                                </p>
+                            <?php endif; ?>
+                        </div>
 
-            <div class="mb-4">
-                <label class="block text-sm font-semibold mb-1" for="page_id">Linked Details Page</label>
-                <select id="page_id" name="page_id"
-                        class="w-full border border-gray-300 rounded px-3 py-2 bg-gray-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500">
-                    <option value="">-- None --</option>
-                    <?php foreach ($pages as $p): ?>
-                        <?php $pData = (array)$p; ?>
-                        <option value="<?= (int)($pData['Page_ID'] ?? 0) ?>" <?= $pageIdStr === (string)($pData['Page_ID'] ?? '') ? 'selected' : '' ?>>
-                            <?= htmlspecialchars((string)($pData['Page_Title'] ?? 'Untitled Page')) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-                <p class="text-xs text-gray-500 mt-1">Select a CMS Page to provide extra info when users click on this event.</p>
-            </div>
-
-            <div class="mb-6">
-                <label class="block text-sm font-semibold mb-1" for="thumbnail_path_file">Thumbnail Image</label>
-                <?php if (!empty($event->thumbnail_path)): ?>
-                    <div class="mb-3">
-                        <img src="<?= htmlspecialchars('/' . ltrim((string)$event->thumbnail_path, '/')) ?>"
-                             alt="Thumbnail" class="w-32 h-auto rounded shadow">
+                        <div class="sm:col-span-2">
+                            <label class="block text-sm font-medium text-slate-700">Linked page (optional)</label>
+                            <select name="page_id"
+                                class="mt-1 w-full sm:w-1/2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200">
+                                <option value="">No linked page</option>
+                                <?php foreach (($pages ?? []) as $page): ?>
+                                    <?php
+                                    $pageId = (string)($page['Page_ID'] ?? '');
+                                    $isSelected = ((string)($event->page_id ?? '') === $pageId) ? 'selected' : '';
+                                    $label = (string)($page['Page_Title'] ?? 'Untitled');
+                                    $type = (string)($page['Page_Type'] ?? '');
+                                    ?>
+                                    <option value="<?= htmlspecialchars($pageId) ?>" <?= $isSelected ?>>
+                                        <?= htmlspecialchars($label) ?><?= $type !== '' ? ' (' . htmlspecialchars($type) . ')' : '' ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                     </div>
-                <?php endif; ?>
-                <input type="file" id="thumbnail_path_file" name="thumbnail_path_file" accept=".jpg,.jpeg,.png,.webp,.gif"
-                       class="block w-full text-sm text-gray-600
-                              file:mr-4 file:py-2 file:px-4
-                              file:rounded file:border-0
-                              file:text-sm file:font-semibold
-                              file:bg-blue-50 file:text-blue-700
-                              hover:file:bg-blue-100">
-            </div>
-
-            <div class="flex items-center justify-between pt-4 border-t border-gray-200">
-                <a href="/cms/events/yummy" class="text-sm font-medium text-gray-600 hover:underline">Cancel</a>
-                <button type="submit"
-                        class="px-5 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition">
-                    Save Changes
-                </button>
-            </div>
-        </form>
-    </div>
-</main>
-
-</body>
-</html>
+                </div>
+<?php require __DIR__ . '/partials/cms_event_form_footer.php'; ?>

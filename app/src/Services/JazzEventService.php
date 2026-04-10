@@ -16,7 +16,8 @@ class JazzEventService
         private JazzEventRepository $events = new JazzEventRepository(),
         private ArtistRepository $artists = new ArtistRepository(),
         private PageRepository $pages = new PageRepository(),
-        private VenueRepository $venues = new VenueRepository()
+        private VenueRepository $venues = new VenueRepository(),
+        private EventValidationService $validator = new EventValidationService()
     ) {}
 
     public function allEvents(): array
@@ -46,12 +47,12 @@ class JazzEventService
 
     public function hydrateEventFromInput(JazzEvent $event, array $input): void
     {
-        $event->title = $this->requireText($input, 'title', 'Title');
-        $event->start_date = $this->normalizeDateTime((string)($input['start_date'] ?? ''));
-        $event->end_date = $this->normalizeDateTime((string)($input['end_date'] ?? ''));
-        $event->venue_id = $this->parseRequiredPositiveInt((string)($input['venue_id'] ?? ''), 'Venue');
+        $event->title = $this->validator->requireText($input, 'title', 'Title');
+        $event->start_date = $this->validator->normalizeDateTime((string)($input['start_date'] ?? ''));
+        $event->end_date = $this->validator->normalizeDateTime((string)($input['end_date'] ?? ''));
+        $event->venue_id = $this->validator->parseRequiredPositiveInt((string)($input['venue_id'] ?? ''), 'Venue');
         $event->location = '';
-        $event->artist_id = $this->parseRequiredPositiveInt((string)($input['artist_id'] ?? ''), 'Artist');
+        $event->artist_id = $this->validator->parseRequiredPositiveInt((string)($input['artist_id'] ?? ''), 'Artist');
 
         if ($this->venues->findById((int)$event->venue_id) === null) {
             throw new \RuntimeException('Selected venue does not exist.');
@@ -61,8 +62,8 @@ class JazzEventService
             throw new \RuntimeException('Selected artist does not exist.');
         }
 
-        $event->price = $this->parsePrice((string)($input['price'] ?? ''));
-        $event->page_id = $this->parseOptionalPositiveInt((string)($input['page_id'] ?? ''), 'Page ID');
+        $event->price = $this->validator->parsePrice((string)($input['price'] ?? ''));
+        $event->page_id = $this->validator->parseOptionalPositiveInt((string)($input['page_id'] ?? ''), 'Page ID');
     }
 
     public function createEvent(JazzEvent $event): int
@@ -88,84 +89,5 @@ class JazzEventService
     public function assignPageToArtistEvents(int $artistId, int $pageId): void
     {
         $this->events->assignPageToArtistEvents($artistId, $pageId);
-    }
-
-    private function requireText(array $input, string $key, string $label): string
-    {
-        $raw = trim((string)($input[$key] ?? ''));
-        if ($raw === '') {
-            throw new \RuntimeException($label . ' is required.');
-        }
-
-        return $raw;
-    }
-
-    private function parsePrice(string $raw): float
-    {
-        $raw = trim($raw);
-        if ($raw === '') {
-            throw new \RuntimeException('Price is required.');
-        }
-
-        if (!is_numeric($raw)) {
-            throw new \RuntimeException('Price must be numeric.');
-        }
-
-        $price = (float)$raw;
-        if ($price < 0) {
-            throw new \RuntimeException('Price cannot be negative.');
-        }
-
-        return $price;
-    }
-
-    private function parseOptionalPositiveInt(string $raw, string $label): ?int
-    {
-        $raw = trim($raw);
-        if ($raw === '') {
-            return null;
-        }
-
-        $value = (int)$raw;
-        if ($value <= 0) {
-            throw new \RuntimeException($label . ' must be a positive integer.');
-        }
-
-        return $value;
-    }
-
-    private function parseRequiredPositiveInt(string $raw, string $label): int
-    {
-        $raw = trim($raw);
-        if ($raw === '') {
-            throw new \RuntimeException($label . ' is required.');
-        }
-
-        $value = (int)$raw;
-        if ($value <= 0) {
-            throw new \RuntimeException($label . ' must be a positive integer.');
-        }
-
-        return $value;
-    }
-
-    private function normalizeDateTime(string $input): string
-    {
-        $input = trim($input);
-
-        if ($input === '') {
-            throw new \RuntimeException('Date/time fields are required.');
-        }
-
-        if (preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/', $input)) {
-            return str_replace('T', ' ', $input) . ':00';
-        }
-
-        try {
-            $dt = new \DateTime($input);
-            return $dt->format('Y-m-d H:i:s');
-        } catch (\Throwable $e) {
-            throw new \RuntimeException('Invalid date/time format.');
-        }
     }
 }

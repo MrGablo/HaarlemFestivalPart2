@@ -26,8 +26,7 @@
                         + Create Yummy event
                     </a>
 
-                    <a href="/cms"
-                       class="text-sm font-medium text-slate-600 hover:text-slate-900">← Back to CMS</a>
+                    <a href="/cms" class="text-sm font-medium text-slate-600 hover:text-slate-900">← Back to CMS</a>
                 </div>
             </div>
 
@@ -49,43 +48,52 @@
                     </thead>
                     <tbody class="divide-y divide-slate-200 bg-white">
                         <?php if (empty($events)): ?>
-                        <tr>
-                            <td colspan="7" class="px-4 py-6 text-center text-slate-500">No yummy events found.</td>
-                        </tr>
+                            <tr>
+                                <td colspan="7" class="px-4 py-6 text-center text-slate-500">
+                                    No yummy events found.
+                                </td>
+                            </tr>
                         <?php else: ?>
-                        <?php foreach ($events as $e): ?>
-                        <tr class="hover:bg-slate-50">
-                            <td class="whitespace-nowrap px-4 py-3 text-slate-700"><?= (int)$e->event_id ?></td>
-                            <td class="px-4 py-3 font-medium text-slate-900">
-                                <?= htmlspecialchars((string)($e->title ?? '')) ?></td>
-                            <td class="whitespace-nowrap px-4 py-3 text-slate-700">
-                                <?= htmlspecialchars((string)($e->cuisine ?? '')) ?></td>
-                            <td class="whitespace-nowrap px-4 py-3 text-slate-700">
-                                <?= htmlspecialchars((string)($e->start_time ?? '')) ?></td>
-                            <td class="whitespace-nowrap px-4 py-3 text-slate-700">
-                                €<?= number_format((float)($e->price ?? 0), 2) ?></td>
-                            <td class="whitespace-nowrap px-4 py-3 text-slate-700"><?= (int)($e->availability ?? 0) ?>
-                            </td>
-                            <td class="whitespace-nowrap px-4 py-3 text-right">
-                                <div class="flex items-center justify-end gap-2">
-                                    <a href="/cms/events/yummy/<?= (int)$e->event_id ?>"
-                                        class="rounded border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">
-                                        Edit
-                                    </a>
-                                    <form method="POST" action="/cms/events/yummy/<?= (int)$e->event_id ?>/delete"
-                                        onsubmit="return confirm('Are you sure you want to delete this event?');"
-                                        class="inline-block m-0 p-0">
-                                        <input type="hidden" name="_csrf"
-                                            value="<?= htmlspecialchars((string)($csrfToken ?? '')) ?>">
-                                        <button type="submit"
-                                            class="rounded bg-rose-100 px-2 py-1 text-xs font-medium text-rose-700 hover:bg-rose-200">
-                                            Delete
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
+                            <?php foreach ($events as $e): ?>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="whitespace-nowrap px-4 py-3 text-slate-700">
+                                        <?= (int)$e->event_id ?>
+                                    </td>
+                                    <td class="whitespace-nowrap px-4 py-3 text-slate-700">
+                                        <?= htmlspecialchars((string)($e->title ?? '')) ?>
+                                    </td>
+                                    <td class="whitespace-nowrap px-4 py-3 text-slate-700">
+                                        <?= htmlspecialchars((string)($e->cuisine ?? '')) ?>
+                                    </td>
+                                    <td class="whitespace-nowrap px-4 py-3 text-slate-700">
+                                        <?= htmlspecialchars((string)($e->start_time ?? '')) ?>
+                                    </td>
+                                    <td class="whitespace-nowrap px-4 py-3 text-slate-700">
+                                        €<?= number_format((float)($e->price ?? 0), 2) ?>
+                                    </td>
+                                    <td class="whitespace-nowrap px-4 py-3 text-slate-700">
+                                        <?= (int)($e->availability ?? 0) ?>
+                                    </td>
+                                    <td class="whitespace-nowrap px-4 py-3 text-right">
+                                        <div class="flex items-center justify-end gap-2">
+                                            <a href="/cms/events/yummy/<?= (int)$e->event_id ?>"
+                                                class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">
+                                                Edit
+                                            </a>
+                                            <form method="POST" action="/cms/events/yummy/<?= (int)$e->event_id ?>/delete"
+                                                class="inline-block m-0 p-0"
+                                                onsubmit="return confirm('Are you sure you want to delete this event? This cannot be undone.');">
+                                                <input type="hidden" name="_csrf"
+                                                    value="<?= htmlspecialchars((string)($csrfToken ?? '')) ?>">
+                                                <button type="submit"
+                                                    class="rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700">
+                                                    Delete
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
                         <?php endif; ?>
                     </tbody>
                 </table>
