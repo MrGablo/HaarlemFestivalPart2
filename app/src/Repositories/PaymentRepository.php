@@ -11,6 +11,9 @@ use App\Support\VenueSchemaHelper;
  */
 class PaymentRepository extends Repository
 {
+    private const ORDER_STATUS_PENDING = 'pending';
+    private const ORDER_STATUS_PAID = 'payed';
+
     private ?string $orderItemPassDateColumn = null;
 
     public function findPendingOrderByUserId(int $userId): ?array
@@ -29,7 +32,7 @@ class PaymentRepository extends Repository
         );
         $stmt->execute([
             ':user_id' => $userId,
-            ':status' => 'pending',
+            ':status' => self::ORDER_STATUS_PENDING,
         ]);
         $row = $stmt->fetch();
 
@@ -47,8 +50,8 @@ class PaymentRepository extends Repository
                AND order_status = :pending'
         );
         $stmt->execute([
-            ':status'   => 'payed',
-            ':pending'  => 'pending',
+            ':status'   => self::ORDER_STATUS_PAID,
+            ':pending'  => self::ORDER_STATUS_PENDING,
             ':order_id' => $orderId,
             ':user_id'  => $userId,
         ]);
@@ -64,7 +67,7 @@ class PaymentRepository extends Repository
         $stmt->execute([':order_id' => $orderId]);
         $status = $stmt->fetchColumn();
 
-        return $status === 'payed';
+        return $status === self::ORDER_STATUS_PAID;
     }
 
     public function getOrderItemsByOrderId(int $orderId): array
@@ -79,7 +82,7 @@ class PaymentRepository extends Repository
                 oi.quantity,
                 {$passDateExpr} AS pass_date
              FROM `order_items` oi
-                 WHERE order_id = :order_id"
+             WHERE order_id = :order_id"
         );
         $stmt->execute([':order_id' => $orderId]);
         $rows = $stmt->fetchAll();

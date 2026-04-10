@@ -24,64 +24,41 @@ class PaymentController
 
         try {
             Csrf::assertPost('payment_csrf_token');
-
-            $auth = AuthSessionData::read();
-            if (!is_array($auth)) {
-                header('Location: /login', true, 302);
-                exit;
-            }
-
-            $userId = (int)($auth['userId'] ?? 0);
-            if ($userId <= 0) {
-                header('Location: /program', true, 302);
-                exit;
-            }
+            $userId = $this->requireAuthenticatedUserId();
 
             $checkoutUrl = $this->paymentService->createCheckoutUrlForPendingCart($userId);
-
-            header('HTTP/1.1 303 See Other');
-            header('Location: ' . $checkoutUrl);
-            exit;
+            $this->redirectSeeOther($checkoutUrl);
         } catch (\Throwable $e) {
             error_log('Checkout redirect failed: ' . $e->getMessage());
             Flash::setErrors(['general' => 'Unable to start checkout. Open My Program and try again.']);
-            header('Location: /program', true, 302);
-            exit;
+            $this->redirect('/program');
         }
     }
 
     public function handleWebhook(): void
     {
         $payload = file_get_contents('php://input');
-        $sigHeader = $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '';
-        $secret = trim((string)(getenv('STRIPE_WEBHOOK_SECRET') ?: ''));
 
         if ($payload === false) {
-            http_response_code(400);
-            echo 'Invalid payload';
-            exit;
+            $this->respondAndExit(400, 'Invalid payload');
         }
 
+        $sigHeader = (string)($_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '');
+        $secret = trim((string)(getenv('STRIPE_WEBHOOK_SECRET') ?: ''));
         if ($secret === '') {
             error_log('STRIPE_WEBHOOK_SECRET is not set.');
-            http_response_code(500);
-            echo 'Webhook configuration error';
-            exit;
+            $this->respondAndExit(500, 'Webhook configuration error');
         }
 
         if ($sigHeader === '') {
-            http_response_code(400);
-            echo 'Missing signature';
-            exit;
+            $this->respondAndExit(400, 'Missing signature');
         }
 
         try {
             $event = \Stripe\Webhook::constructEvent((string)$payload, $sigHeader, $secret);
         } catch (\Exception $e) {
             error_log('Webhook signature verification failed: ' . $e->getMessage());
-            http_response_code(400);
-            echo 'Invalid signature';
-            exit;
+            $this->respondAndExit(400, 'Invalid signature');
         }
 
         if ($event->type === 'checkout.session.completed') {
@@ -90,15 +67,11 @@ class PaymentController
                 $this->paymentService->handleCheckoutCompleted($session);
             } catch (\Throwable $e) {
                 error_log('Webhook fulfilment failed: ' . $e->getMessage());
-                http_response_code(500);
-                echo 'Processing failed';
-                exit;
+                $this->respondAndExit(500, 'Processing failed');
             }
         }
 
-        http_response_code(200);
-        echo 'OK';
-        exit;
+        $this->respondAndExit(200, 'OK');
     }
 
     public function success(): void
@@ -121,5 +94,40 @@ class PaymentController
     {
         Session::ensureStarted();
         require __DIR__ . '/../Views/pages/payment_cancel.php';
+    }
+
+    private function requireAuthenticatedUserId(): int
+    {
+        $auth = AuthSessionData::read();
+        if (!is_array($auth)) {
+            $this->redirect('/login');
+        }
+
+        $userId = (int)($auth['userId'] ?? 0);
+        if ($userId <= 0) {
+            $this->redirect('/program');
+        }
+
+        return $userId;
+    }
+
+    private function redirect(string $url, int $statusCode = 302): void
+    {
+        header('Location: ' . $url, true, $statusCode);
+        exit;
+    }
+
+    private function redirectSeeOther(string $url): void
+    {
+        header('HTTP/1.1 303 See Other');
+        header('Location: ' . $url);
+        exit;
+    }
+
+    private function respondAndExit(int $statusCode, string $body): void
+    {
+        http_response_code($statusCode);
+        echo $body;
+        exit;
     }
 }

@@ -63,29 +63,10 @@ class PaymentService
 
         $lineItems = [];
         foreach ($items as $item) {
-            $eventId = (int)($item->event_id ?? 0);
-            $quantity = (int)($item->quantity ?? 0);
-            $priceInCents = (int)round(((float)$item->getUnitPrice()) * 100);
-            $eventTitle = (string)($item->event?->title ?? 'Event Ticket');
-            if ($eventId <= 0 || $quantity <= 0 || $priceInCents <= 0) {
-                throw new \RuntimeException('Invalid pending cart item data.');
-            }
-
-            $lineItems[] = [
-                'price_data' => [
-                    'currency'     => 'eur',
-                    'product_data' => [
-                        'name' => $eventTitle,
-                    ],
-                    'unit_amount' => $priceInCents,
-                ],
-                'quantity' => $quantity,
-            ];
+            $lineItems[] = $this->buildStripeLineItem($item);
         }
 
-        $scheme  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $host    = $_SERVER['HTTP_HOST'] ?? 'localhost';
-        $baseUrl = $scheme . '://' . $host;
+        $baseUrl = $this->resolveBaseUrl();
         $expiresAt = $this->resolveCheckoutSessionExpiresAt($pendingOrder->payment_deadline_at);
 
         $session = \Stripe\Checkout\Session::create([
@@ -125,16 +106,7 @@ class PaymentService
 
         $items = $this->repo->getOrderItemsByOrderId($orderId);
         foreach ($items as $item) {
-            $orderItemId = (int)($item['order_item_id'] ?? 0);
-            $eventId = (int)($item['event_id'] ?? 0);
-            $quantity    = (int)($item['quantity'] ?? 0);
-            $passDate = isset($item['pass_date']) ? (string)$item['pass_date'] : null;
-
-            if ($orderItemId <= 0 || $eventId <= 0 || $quantity <= 0) {
-                continue;
-            }
-
-            $this->ticketService->createTicketsForOrderItem($orderItemId, $userId, $eventId, $quantity, $passDate);
+            $this->createTicketsFromPaidOrderItem($item, $userId);
         }
 
         $this->sendTicketDeliveryEmail($orderId, $userId);
@@ -151,9 +123,7 @@ class PaymentService
         }
 
         \Stripe\Stripe::setApiKey($this->getStripeSecretKey());
-        $session = \Stripe\Checkout\Session::retrieve($sessionId);
-
-        $this->handleCheckoutCompleted($session);
+        $this->handleCheckoutCompleted(\Stripe\Checkout\Session::retrieve($sessionId));
     }
 
     /**
@@ -165,10 +135,7 @@ class PaymentService
 
         $this->assertSessionIsPaid($session);
 
-        $metadata = $session->metadata ?? null;
-        $userId = (int)($metadata->user_id ?? 0);
-        $pendingOrderId = (int)($metadata->pending_order_id ?? 0);
-
+        [$userId, $pendingOrderId] = $this->extractSessionMetadata($session);
         if ($userId <= 0 || $pendingOrderId <= 0) {
             throw new \RuntimeException(
                 'Payment: checkout session metadata incomplete. user_id=' . $userId . ', pending_order_id=' . $pendingOrderId
@@ -198,6 +165,15 @@ class PaymentService
         }
 
         $this->fulfillPendingOrder($userId, $pendingOrderId);
+    }
+
+    private function extractSessionMetadata(object $session): array
+    {
+        $metadata = $session->metadata ?? null;
+        $userId = (int)($metadata->user_id ?? 0);
+        $pendingOrderId = (int)($metadata->pending_order_id ?? 0);
+
+        return [$userId, $pendingOrderId];
     }
 
     private function assertSessionIsPaid(object $session): void
@@ -242,6 +218,52 @@ class PaymentService
         }
 
         return $key;
+    }
+
+    private function resolveBaseUrl(): string
+    {
+        $isHttps = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+        $scheme = $isHttps ? 'https' : 'http';
+        $host = (string)($_SERVER['HTTP_HOST'] ?? 'localhost');
+
+        return $scheme . '://' . $host;
+    }
+
+    private function buildStripeLineItem(object $item): array
+    {
+        $eventId = (int)($item->event_id ?? 0);
+        $quantity = (int)($item->quantity ?? 0);
+        $priceInCents = (int)round(((float)$item->getUnitPrice()) * 100);
+        $eventTitle = (string)($item->event?->title ?? 'Event Ticket');
+
+        if ($eventId <= 0 || $quantity <= 0 || $priceInCents <= 0) {
+            throw new \RuntimeException('Invalid pending cart item data.');
+        }
+
+        return [
+            'price_data' => [
+                'currency'     => 'eur',
+                'product_data' => [
+                    'name' => $eventTitle,
+                ],
+                'unit_amount' => $priceInCents,
+            ],
+            'quantity' => $quantity,
+        ];
+    }
+
+    private function createTicketsFromPaidOrderItem(array $item, int $userId): void
+    {
+        $orderItemId = (int)($item['order_item_id'] ?? 0);
+        $eventId = (int)($item['event_id'] ?? 0);
+        $quantity = (int)($item['quantity'] ?? 0);
+        $passDate = isset($item['pass_date']) ? (string)$item['pass_date'] : null;
+
+        if ($orderItemId <= 0 || $eventId <= 0 || $quantity <= 0) {
+            return;
+        }
+
+        $this->ticketService->createTicketsForOrderItem($orderItemId, $userId, $eventId, $quantity, $passDate);
     }
 
     private function sendTicketDeliveryEmail(int $orderId, int $userId): void

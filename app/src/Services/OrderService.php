@@ -224,10 +224,11 @@ class OrderService
     {
         $this->assertPositiveId($userId, 'user id');
         $this->assertPositiveId($orderItemId, 'order item id');
+        $this->assertNoAwaitingPaymentOrder($userId);
 
         $orderRow = $this->orderRepository->findPendingOrderByUserId($userId);
         if ($orderRow === null) {
-            return null;
+            throw new \RuntimeException('No editable cart found. Your checkout may already be in progress.');
         }
 
         $orderId = $this->extractOrderId($orderRow, $userId);
@@ -255,10 +256,11 @@ class OrderService
         $this->assertPositiveId($userId, 'user id');
         $this->assertPositiveId($orderItemId, 'order item id');
         $this->assertPositiveId($quantity, 'quantity');
+        $this->assertNoAwaitingPaymentOrder($userId);
 
         $orderRow = $this->orderRepository->findPendingOrderByUserId($userId);
         if ($orderRow === null) {
-            return null;
+            throw new \RuntimeException('No editable cart found. Your checkout may already be in progress.');
         }
 
         $currentOrder = $this->buildOrderFromRow($orderRow);
@@ -456,6 +458,15 @@ class OrderService
         $availability = (int)($eventRow['availability'] ?? 0);
         if ($requestedQuantity > $availability) {
             throw new \RuntimeException('Not enough seats available for this event.');
+        }
+    }
+
+    private function assertNoAwaitingPaymentOrder(int $userId): void
+    {
+        if ($this->orderRepository->findAwaitingPaymentOrderByUserId($userId) !== null) {
+            throw new \RuntimeException(
+                'Checkout is in progress for this order. Open My Program to finish payment or cancel checkout first.'
+            );
         }
     }
 
