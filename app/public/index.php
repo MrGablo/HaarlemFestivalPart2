@@ -58,6 +58,7 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
 
         //Stories routes
     $r->addRoute('GET', '/stories', ['App\Controllers\StoriesController', 'index']);
+    $r->addRoute('GET', '/stories/detail', ['App\Controllers\StoriesController', 'detail']);
 
     //Jazz Festival routes
     $r->addRoute('GET', '/jazz', ['App\Controllers\JazzController', 'home']);
@@ -154,6 +155,7 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     $r->addRoute('GET',  '/cms/events/stories/{id:\d+}', ['App\Cms\Controllers\CMSStoriesEventController', 'edit']);
     $r->addRoute('POST', '/cms/events/stories/{id:\d+}', ['App\Cms\Controllers\CMSStoriesEventController', 'update']);
     $r->addRoute('POST', '/cms/events/stories/{id:\d+}/delete', ['App\Cms\Controllers\CMSStoriesEventController', 'delete']);
+    
  
     // Jazz CMS routes (admin only)
     $r->addRoute('GET',  '/cms/events/jazz', ['App\Cms\Controllers\CMSJazzController', 'index']);
