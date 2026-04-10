@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Repositories\Interfaces\IReservationRepository;
 use App\Repositories\ReservationRepository;
 
 final class ReservationService
 {
-    private ReservationRepository $reservationRepository;
+    private IReservationRepository $reservationRepository;
 
     public function __construct()
     {
