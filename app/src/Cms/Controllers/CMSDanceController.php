@@ -54,6 +54,7 @@ final class CMSDanceController
         AdminGuard::requireAdmin(true);
 
         try {
+            // Validate form, save row, optional image upload.
             Csrf::assertPost();
             $event = new DanceEvent([
                 'event_id' => 0,
@@ -68,6 +69,7 @@ final class CMSDanceController
             header('Location: /cms/events/dance/' . $newId, true, 302);
             exit;
         } catch (\Throwable $e) {
+            error_log('CMSDanceController::create: ' . $e->getMessage());
             Flash::setErrors(['general' => $e->getMessage()]);
             Flash::setOld($_POST);
             header('Location: /cms/events/dance/create', true, 302);
@@ -102,6 +104,7 @@ final class CMSDanceController
             $this->service->updateEvent($event);
             Flash::setSuccess('Dance event updated successfully.');
         } catch (\Throwable $e) {
+            error_log('CMSDanceController::update: ' . $e->getMessage());
             Flash::setErrors(['general' => $e->getMessage()]);
         }
 
@@ -126,6 +129,7 @@ final class CMSDanceController
             $this->uploads->deleteImage($event->img_background, 'dance', 'event');
             Flash::setSuccess('Dance event deleted successfully.');
         } catch (\Throwable $e) {
+            error_log('CMSDanceController::delete: ' . $e->getMessage());
             Flash::setErrors(['general' => $e->getMessage()]);
         }
 

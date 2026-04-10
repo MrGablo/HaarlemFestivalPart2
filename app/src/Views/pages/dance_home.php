@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-/** @var \App\ViewModels\DanceHomePageViewModel $vm */
+// $vm: dance home page data (DanceHomePageViewModel).
 ?>
 <!doctype html>
 <html lang="en">

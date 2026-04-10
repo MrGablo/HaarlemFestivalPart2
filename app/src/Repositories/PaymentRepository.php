@@ -6,10 +6,7 @@ use App\Framework\Repository;
 use App\Repositories\Interfaces\IPaymentRepository;
 use App\Support\VenueSchemaHelper;
 
-/**
- * Data access for Stripe checkout fulfilment: pending order lookup,
- * mark paid, order items for ticketing, email/PDF payload.
- */
+// Database helpers for payments: find pending orders, mark paid, load items and tickets for email/PDF.
 class PaymentRepository extends Repository implements IPaymentRepository
 {
     private const ORDER_STATUS_PENDING = 'pending';
@@ -115,48 +112,6 @@ class PaymentRepository extends Repository implements IPaymentRepository
         $row = $stmt->fetch();
 
         return is_array($row) ? $row : null;
-    }
-
-    public function getInvoiceLineItems(int $orderId): array
-    {
-        $pdo = $this->getConnection();
-        $vt = '`' . str_replace('`', '``', VenueSchemaHelper::venueTableName($pdo)) . '`';
-        $vpk = '`' . str_replace('`', '``', VenueSchemaHelper::primaryKeyColumn($pdo)) . '`';
-        $danceVenueName = VenueSchemaHelper::displayNameExpression($pdo, 'vd');
-        $passDateExpr = $this->orderItemsPassDateSelectExpression('oi');
-
-        $stmt = $pdo->prepare(
-            "SELECT
-                oi.order_item_id,
-                oi.quantity,
-                {$passDateExpr} AS pass_date,
-                e.title,
-                e.event_type,
-                COALESCE(j.start_date, d.start_date, h.start_date, y.start_time, s.start_date) AS event_start_time,
-                CASE
-                    WHEN LOWER(TRIM(e.event_type)) = 'dance' THEN {$danceVenueName}
-                    WHEN LOWER(TRIM(e.event_type)) = 'history' THEN COALESCE(h.location, '')
-                    ELSE COALESCE(NULLIF(TRIM(v.name), ''), '')
-                END AS venue_name,
-                COALESCE(j.price, d.price, h.price, y.price, s.price, p.base_price, 0) AS unit_price,
-                h.family_price
-             FROM `order_items` oi
-             INNER JOIN `Event` e ON e.event_id = oi.event_id
-             LEFT JOIN `JazzEvent` j ON j.event_id = e.event_id
-             LEFT JOIN `DanceEvent` d ON d.event_id = e.event_id
-             LEFT JOIN `HistoryEvent` h ON h.event_id = e.event_id
-             LEFT JOIN `YummyEvent` y ON y.event_id = e.event_id
-             LEFT JOIN `StoriesEvent` s ON s.event_id = e.event_id
-             LEFT JOIN `PassEvent` p ON p.event_id = e.event_id
-             LEFT JOIN {$vt} v ON v.{$vpk} = j.venue_id
-             LEFT JOIN {$vt} vd ON vd.{$vpk} = d.venue_id
-             WHERE oi.order_id = :order_id
-             ORDER BY oi.order_item_id ASC"
-        );
-        $stmt->execute([':order_id' => $orderId]);
-        $rows = $stmt->fetchAll();
-
-        return is_array($rows) ? $rows : [];
     }
 
     public function getIssuedTicketsForOrder(int $orderId): array

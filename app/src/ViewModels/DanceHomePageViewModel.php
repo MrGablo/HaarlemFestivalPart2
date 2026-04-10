@@ -9,25 +9,25 @@ final class DanceHomePageViewModel
 {
     public string $pageTitle;
 
-    /** @var array{titleLine1: string, titleLine2: string, subtitleHtml: string, primaryButtonLabel: string, stripText: string} */
+    // Hero: two title lines, subtitle HTML, button label, marquee strip text.
     public array $hero;
 
-    /** @var array{kicker: string, bodyHtml: string, sideImageAlt: string, statsLine: string} */
+    // Intro: kicker, body HTML, image alt text, stats line under the image.
     public array $intro;
 
     public string $lineupTitle;
 
-    /** @var list<array{name: string, imageUrl: string, alt: string, pageUrl?: string}> */
+    // Lineup: each item has name, image URL, alt, optional link to artist page.
     public array $lineupArtists;
 
     public string $timetableTitle;
 
     public string $timetableDateRange;
 
-    /** @var array{label: string, note: string, priceLabel: string, eventId: int}|null */
+    // Optional all-access pass row (label, note, price, Stripe/event id), or null.
     public ?array $allAccess;
 
-    /** @var list<array{dayKey: string, dayLabel: string, passLabel: string, passPriceLabel: string, passEventId: int, sessions: list<array{title: string, tag: string, tagSpecial: bool, timeRange: string, venueName: string, priceLabel: string, eventId: int}>}> */
+    // Timetable: one entry per day with day pass + list of sessions.
     public array $timetableDays;
 
     public bool $timetableHasRows;
@@ -38,13 +38,7 @@ final class DanceHomePageViewModel
 
     public string $timetableSectionBackgroundUrl;
 
-    /**
-     * @param array{titleLine1: string, titleLine2: string, subtitleHtml: string, primaryButtonLabel: string, stripText: string} $hero
-     * @param array{kicker: string, bodyHtml: string, sideImageAlt: string, statsLine: string} $intro
-     * @param list<array{name: string, imageUrl: string, alt: string, pageUrl?: string}> $lineupArtists
-     * @param array{label: string, note: string, priceLabel: string, eventId: int}|null $allAccess
-     * @param list<array{dayKey: string, dayLabel: string, passLabel: string, passPriceLabel: string, passEventId: int, sessions: list<array{title: string, tag: string, tagSpecial: bool, timeRange: string, venueName: string, priceLabel: string, eventId: int}>}> $timetableDays
-     */
+    // Packs all home page data for dance_home.php and partials.
     public function __construct(
         string $pageTitle,
         array $hero,

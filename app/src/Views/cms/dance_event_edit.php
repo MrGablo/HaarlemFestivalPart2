@@ -150,6 +150,7 @@ function toDatetimeLocal($value): string
         $dt = new DateTime($s);
         return $dt->format('Y-m-d\TH:i');
     } catch (Throwable) {
+        // Value is not a normal date — leave the datetime input empty for the admin.
         return '';
     }
 }

@@ -16,10 +16,7 @@ use App\Utils\Session;
 
 Env::load();
 
-/**
- * Serve static assets for /dance when all requests hit this front controller (e.g. Aiven).
- * GET /dance/assets/... -> serve from app/public/assets/... (CSS, images, etc.)
- */
+// Dance CSS/images: GET /dance/assets/... reads files from public/assets/ (when everything goes through index.php).
 $uri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
 $uri = strtok($uri, '?');
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && strpos($uri, '/dance/assets/') === 0) {
@@ -64,6 +61,7 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     // Dance Festival routes
     $r->addRoute('GET', '/dance', ['App\Controllers\DanceController', 'home']);
     $r->addRoute('GET', '/dance/artist', ['App\Controllers\DanceController', 'artist']);
+    $r->addRoute('GET', '/dance/location', ['App\Controllers\DanceController', 'location']);
 
     //Stories routes
     $r->addRoute('GET', '/stories', ['App\Controllers\StoriesController', 'index']);

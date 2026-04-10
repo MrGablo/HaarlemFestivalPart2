@@ -1,4 +1,7 @@
-<footer class="bg-white py-[60px] mt-[50px] font-sans">
+<?php
+$danceFooterMargin = empty($danceFooter) ? 'mt-[50px]' : 'mt-0';
+?>
+<footer class="bg-white py-[60px] <?= $danceFooterMargin ?> font-sans">
     <div class="max-w-[1200px] mx-auto px-5 flex flex-wrap justify-between items-start gap-10">
         
         <div class="flex-1 min-w-[200px] flex flex-col gap-5 max-w-[300px]">

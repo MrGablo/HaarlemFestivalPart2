@@ -8,7 +8,7 @@ use App\Models\DanceEvent;
 
 interface IDanceEventRepository
 {
-    /** @return DanceEvent[] */
+    // See DanceEventRepository::getAllDanceEvents.
     public function getAllDanceEvents(): array;
     public function findDanceEventById(int $eventId): ?DanceEvent;
     public function createDanceEvent(DanceEvent $event): int;

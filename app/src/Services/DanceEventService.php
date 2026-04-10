@@ -155,6 +155,7 @@ final class DanceEventService
             $dt = new \DateTime($input);
             return $dt->format('Y-m-d H:i:s');
         } catch (\Throwable) {
+            // Let the admin see a clear message instead of a PHP error page.
             throw new \RuntimeException('Invalid date/time format.');
         }
     }
@@ -165,6 +166,7 @@ final class DanceEventService
             $dt = new \DateTimeImmutable($dateTime);
             return $dt->format('l F jS');
         } catch (\Throwable) {
+            // Stored value is not a normal datetime — leave the label blank in the CMS list.
             return '';
         }
     }

@@ -9,6 +9,7 @@ use App\Utils\Csrf;
 use App\Utils\Flash;
 use App\Utils\Session;
 
+// Handles pay button redirect, success page, cancel, and Stripe webhook.
 class PaymentController
 {
     private PaymentService $paymentService;
@@ -23,12 +24,14 @@ class PaymentController
         Session::ensureStarted();
 
         try {
+            // Normal path: CSRF ok, user logged in, Stripe returns a checkout URL.
             Csrf::assertPost('payment_csrf_token');
             $userId = $this->requireAuthenticatedUserId();
 
             $checkoutUrl = $this->paymentService->createCheckoutUrlForPendingCart($userId);
             $this->redirectSeeOther($checkoutUrl);
         } catch (\Throwable $e) {
+            // Wrong token, not logged in, empty cart, Stripe down, or missing API key.
             error_log('Checkout redirect failed: ' . $e->getMessage());
             Flash::setErrors(['general' => 'Unable to start checkout. Open My Program and try again.']);
             $this->redirect('/program');
@@ -55,14 +58,16 @@ class PaymentController
         }
 
         try {
+            // Proves the request really came from Stripe (uses STRIPE_WEBHOOK_SECRET).
             $event = \Stripe\Webhook::constructEvent((string)$payload, $sigHeader, $secret);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             error_log('Webhook signature verification failed: ' . $e->getMessage());
             $this->respondAndExit(400, 'Invalid signature');
         }
 
         if ($event->type === 'checkout.session.completed') {
             try {
+                // Mark order paid, create tickets, send email (same rules as success URL).
                 $session = $event->data->object;
                 $this->paymentService->handleCheckoutCompleted($session);
             } catch (\Throwable $e) {
@@ -81,8 +86,10 @@ class PaymentController
         $sessionId = isset($_GET['session_id']) ? trim((string)$_GET['session_id']) : '';
         if ($sessionId !== '') {
             try {
+                // User landed here after Stripe — complete the order if not already done.
                 $this->paymentService->fulfillPaidCheckoutSessionById($sessionId);
             } catch (\Throwable $e) {
+                // Still show the thank-you page; webhook may finish the order, or support can help.
                 error_log('Payment success fulfilment error: ' . $e->getMessage());
             }
         }

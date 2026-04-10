@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-/** @var \App\ViewModels\DanceArtistPageViewModel $vm */
+// $vm: one dance artist page (DanceArtistPageViewModel).
 use App\Utils\Wysiwyg;
 ?>
 <!doctype html>
@@ -26,10 +26,12 @@ use App\Utils\Wysiwyg;
             background-size: 24px 24px;
             opacity: 0.25;
         }
+        .dance-strip-track { animation: dance-strip-scroll 52s linear infinite; }
+        @keyframes dance-strip-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
     </style>
 </head>
 
-<body class="min-h-screen bg-dance-bg text-dance-text font-['Montserrat',sans-serif]">
+<body class="bg-dance-bg text-dance-text font-['Montserrat',sans-serif]">
     <?php include __DIR__ . '/../partials/header.php'; ?>
 
     <main class="dance-artist-bg">

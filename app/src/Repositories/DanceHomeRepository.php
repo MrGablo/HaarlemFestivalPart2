@@ -10,7 +10,7 @@ use App\Support\VenueSchemaHelper;
 
 final class DanceHomeRepository extends Repository implements IDanceHomeRepository
 {
-    /** @return list<array<string, mixed>> */
+    // Dance sessions linked to one CMS artist page (DanceEvent.page_id).
     public function findDanceArtistEventsByPageId(int $pageId): array
     {
         if ($pageId <= 0) {
@@ -60,7 +60,7 @@ final class DanceHomeRepository extends Repository implements IDanceHomeReposito
         return $rows ?? [];
     }
 
-    /** @return list<array<string, mixed>> */
+    // Dance sessions where the artist name matches the Artist table or event title.
     public function findDanceArtistEventsByArtistName(string $artistName): array
     {
         $artistName = trim($artistName);
@@ -153,7 +153,57 @@ final class DanceHomeRepository extends Repository implements IDanceHomeReposito
         return $rows ?? [];
     }
 
-    /** @return list<array<string, mixed>> */
+    // Dance sessions at one venue (by venue_id).
+    public function findDanceLocationEventsByVenueId(int $venueId): array
+    {
+        if ($venueId <= 0) {
+            return [];
+        }
+
+        $pdo = $this->getConnection();
+        $vpk = VenueSchemaHelper::primaryKeyColumn($pdo);
+        $locExpr = VenueSchemaHelper::displayNameExpression($pdo, 'v');
+        $venueTable = str_replace('`', '``', VenueSchemaHelper::venueTableName($pdo));
+
+        $sqlNew = 'SELECT e.event_id,
+                          e.title,
+                          ' . $locExpr . ' AS location_name,
+                          d.price,
+                          d.start_date AS session_start,
+                          d.end_date AS session_end,
+                          d.event_date AS day_display_label,
+                          d.sort_order
+                     FROM DanceEvent d
+                     INNER JOIN Event e ON e.event_id = d.event_id AND e.event_type = \'dance\'
+                     LEFT JOIN `' . $venueTable . '` v ON v.`' . $vpk . '` = d.venue_id
+                    WHERE d.venue_id = :venue_id
+                      AND (d.row_kind IS NULL OR TRIM(d.row_kind) = \'\' OR LOWER(TRIM(d.row_kind)) NOT IN (\'all_access\', \'day_pass\'))
+                    ORDER BY d.sort_order ASC, d.start_date ASC, e.event_id ASC';
+
+        $sqlLegacy = 'SELECT e.event_id,
+                             e.title,
+                             ' . $locExpr . ' AS location_name,
+                             d.price,
+                             d.session_start,
+                             d.session_end,
+                             d.day_display_label,
+                             d.sort_order
+                        FROM DanceEvent d
+                        INNER JOIN Event e ON e.event_id = d.event_id AND e.event_type = \'dance\'
+                        LEFT JOIN `' . $venueTable . '` v ON v.`' . $vpk . '` = d.venue_id
+                       WHERE d.venue_id = :venue_id
+                         AND (d.row_kind IS NULL OR TRIM(d.row_kind) = \'\' OR LOWER(TRIM(d.row_kind)) NOT IN (\'all_access\', \'day_pass\'))
+                       ORDER BY d.sort_order ASC, d.session_start ASC, e.event_id ASC';
+
+        $rows = $this->tryFetchRowsPrepared($pdo, $sqlNew, [':venue_id' => $venueId]);
+        if ($rows === null) {
+            $rows = $this->tryFetchRowsPrepared($pdo, $sqlLegacy, [':venue_id' => $venueId]);
+        }
+
+        return $rows ?? [];
+    }
+
+    // All dance timetable rows (passes and sessions) for the home page.
     public function findDanceTimetableRows(): array
     {
         $pdo = $this->getConnection();
@@ -200,7 +250,7 @@ final class DanceHomeRepository extends Repository implements IDanceHomeReposito
         return is_array($rows) ? $rows : [];
     }
 
-    /** @return list<array{title: string, sort_order: int}> */
+    // Distinct event titles from session rows (used when we need a simple lineup list).
     public function findDanceLineupHeadlines(int $limit = 6): array
     {
         $limit = max(1, min(12, $limit));
@@ -214,6 +264,7 @@ final class DanceHomeRepository extends Repository implements IDanceHomeReposito
                  LIMIT ' . $limit;
 
         try {
+            // If Artist/Event tables differ, return an empty lineup instead of breaking the home page.
             $stmt = $pdo->query($sql);
             $rows = $stmt ? $stmt->fetchAll(\PDO::FETCH_ASSOC) : [];
         } catch (\Throwable $e) {
@@ -236,7 +287,7 @@ final class DanceHomeRepository extends Repository implements IDanceHomeReposito
         return $out;
     }
 
-    /** @return list<array{name: string, sort_order: int}> */
+    // Artist names matched from session event titles (for the home lineup).
     public function findDanceLineupArtists(int $limit = 6): array
     {
         $limit = max(1, min(12, $limit));
@@ -251,6 +302,7 @@ final class DanceHomeRepository extends Repository implements IDanceHomeReposito
                  LIMIT ' . $limit;
 
         try {
+            // JOIN with Artist can fail on some schemas — home page still loads without this block.
             $stmt = $pdo->query($sql);
             $rows = $stmt ? $stmt->fetchAll(\PDO::FETCH_ASSOC) : [];
         } catch (\Throwable $e) {
@@ -277,7 +329,7 @@ final class DanceHomeRepository extends Repository implements IDanceHomeReposito
         return $out;
     }
 
-    /** @return array<int, int> */
+    // Session event ids happening on one calendar day (for day passes).
     public function getDanceSessionEventIdsByDate(string $isoDate): array
     {
         $stmt = $this->getConnection()->prepare(
@@ -295,7 +347,7 @@ final class DanceHomeRepository extends Repository implements IDanceHomeReposito
         return $this->normalizeEventIds(is_array($rows) ? $rows : []);
     }
 
-    /** @return array<int, int> */
+    // Same calendar day as this pass row: all session ids on that day.
     public function getDanceSessionEventIdsByPassEvent(int $passEventId): array
     {
         try {
@@ -324,7 +376,8 @@ final class DanceHomeRepository extends Repository implements IDanceHomeReposito
                 return $this->normalizeEventIds(is_array($rows) ? $rows : []);
             }
         } catch (\Throwable $e) {
-            // Fallback to legacy label schema below.
+            // Date columns may be missing on older DBs — use day_display_label path below.
+            error_log('DanceHomeRepository::getDanceSessionEventIdsByPassEvent date query: ' . $e->getMessage());
         }
 
         $stmt = $this->getConnection()->prepare(
@@ -354,7 +407,7 @@ final class DanceHomeRepository extends Repository implements IDanceHomeReposito
         return $this->normalizeEventIds(is_array($rows) ? $rows : []);
     }
 
-    /** @return array<int, int> */
+    // Every dance session event id (all-access pass covers these).
     public function getAllDanceSessionEventIds(): array
     {
         $stmt = $this->getConnection()->query(
@@ -370,7 +423,7 @@ final class DanceHomeRepository extends Repository implements IDanceHomeReposito
         return $this->normalizeEventIds(is_array($rows) ? $rows : []);
     }
 
-    /** @return array<int, int> */
+    // If this event is a pass, return which session ids it unlocks; otherwise empty.
     public function getDanceCoveredSessionEventIdsByEventId(int $eventId): array
     {
         if ($eventId <= 0) {
@@ -399,10 +452,11 @@ final class DanceHomeRepository extends Repository implements IDanceHomeReposito
         return [];
     }
 
-    /** @return list<array<string, mixed>>|null */
+    // Run plain SQL; return null if this query shape fails on an older database.
     private function tryFetchRows(\PDO $pdo, string $sql): ?array
     {
         try {
+            // We try several SQL shapes; this variant may not match the live schema.
             $stmt = $pdo->query($sql);
             $rows = $stmt ? $stmt->fetchAll(\PDO::FETCH_ASSOC) : [];
 
@@ -414,9 +468,7 @@ final class DanceHomeRepository extends Repository implements IDanceHomeReposito
         }
     }
 
-    /** @param array<string, mixed> $params
-     *  @return list<array<string, mixed>>|null
-     */
+    // Same as tryFetchRows but with bound parameters.
     private function tryFetchRowsPrepared(\PDO $pdo, string $sql, array $params): ?array
     {
         try {
@@ -426,15 +478,14 @@ final class DanceHomeRepository extends Repository implements IDanceHomeReposito
 
             return is_array($rows) ? $rows : [];
         } catch (\Throwable $e) {
+            // Wrong column names or connection issue — caller tries another query shape.
             error_log('DanceHomeRepository prepared query failed: ' . $e->getMessage());
 
             return null;
         }
     }
 
-    /** @param array<int, array<string, mixed>> $rows
-     *  @return array<int, int>
-     */
+    // Flat list of unique positive event ids from query rows.
     private function normalizeEventIds(array $rows): array
     {
         $eventIds = [];

@@ -9,6 +9,5 @@ interface IPaymentRepository
     public function isOrderPaid(int $orderId): bool;
     public function getOrderItemsByOrderId(int $orderId): array;
     public function getOrderDeliveryRecipient(int $orderId, int $userId): ?array;
-    public function getInvoiceLineItems(int $orderId): array;
     public function getIssuedTicketsForOrder(int $orderId): array;
 }
