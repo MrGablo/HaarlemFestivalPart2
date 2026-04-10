@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Framework\Repository;
 use App\Models\YummyEvent;
+use App\Repositories\Interfaces\IYummyEventRepository;
 use App\Services\EventModelBuilderService;
 
 class YummyEventRepository extends Repository implements IYummyEventRepository

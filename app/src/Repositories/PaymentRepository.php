@@ -3,13 +3,14 @@
 namespace App\Repositories;
 
 use App\Framework\Repository;
+use App\Repositories\Interfaces\IPaymentRepository;
 use App\Support\VenueSchemaHelper;
 
 /**
  * Data access for Stripe checkout fulfilment: pending order lookup,
  * mark paid, order items for ticketing, email/PDF payload.
  */
-class PaymentRepository extends Repository
+class PaymentRepository extends Repository implements IPaymentRepository
 {
     private const ORDER_STATUS_PENDING = 'pending';
     private const ORDER_STATUS_PAID = 'payed';

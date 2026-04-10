@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Framework\Repository;
+use App\Repositories\Interfaces\IDanceHomeRepository;
 use App\Support\VenueSchemaHelper;
 
-final class DanceHomeRepository extends Repository
+final class DanceHomeRepository extends Repository implements IDanceHomeRepository
 {
     /** @return list<array<string, mixed>> */
     public function findDanceArtistEventsByPageId(int $pageId): array
