@@ -34,6 +34,41 @@ final class CmsStoriesEventService
         return $this->storiesRepository->getStoriesEventById($eventId);
     }
 
+    /**
+     * Creates a new event in the parent table and then the details in the stories table.
+     */
+    public function createStoriesEvent(array $post, array $files = []): int
+    {
+        // 1. Prepare and validate common fields
+        $data = $this->prepareAndValidateData($post);
+
+        // 2. Handle Image Upload
+        if (isset($files['img_background_file'])) {
+            $data['img_background'] = $this->handleImageUpload($files['img_background_file']);
+        }
+
+        // 3. Create Parent Event
+        // We assume 'stories' type and 0 initial availability (or adjust as needed)
+        $eventId = (int)$this->eventRepository->createEvent($data['title'], 'stories', 0);
+
+        if ($eventId <= 0) {
+            throw new \RuntimeException('Could not create parent event.');
+        }
+
+        // 4. Create Stories Detail Record
+        $data['event_id'] = $eventId;
+        $success = $this->storiesRepository->createStoriesEventCms($data);
+
+        if (!$success) {
+            throw new \RuntimeException('Could not create stories event details.');
+        }
+
+        return $eventId;
+    }
+
+    /**
+     * Updates existing event and stories details.
+     */
     public function updateStoriesEvent(int $eventId, array $post, array $files = []): void
     {
         $event = $this->getStoriesEventById($eventId);
@@ -46,91 +81,34 @@ final class CmsStoriesEventService
             throw new \RuntimeException('Parent event not found.');
         }
 
-        $title = trim((string)($post['title'] ?? ''));
-        $language = trim((string)($post['language'] ?? ''));
-        $ageGroup = trim((string)($post['age_group'] ?? ''));
-        $storyType = trim((string)($post['story_type'] ?? ''));
-        $location = trim((string)($post['location'] ?? ''));
-        $description = trim((string)($post['description'] ?? ''));
-        $startDate = trim((string)($post['start_date'] ?? ''));
-        $endDate = trim((string)($post['end_date'] ?? ''));
-        $priceRaw = trim((string)($post['price'] ?? ''));
+        // 1. Prepare and validate common fields
+        $data = $this->prepareAndValidateData($post);
 
-        if ($title === '') {
-            throw new \RuntimeException('Title is required.');
+        // 2. Handle Image Upload (only if a new file is provided)
+        $imagePath = $this->handleImageUpload($files['img_background_file'] ?? []);
+        if ($imagePath !== null) {
+            $data['img_background'] = $imagePath;
+        } else {
+            // Keep the existing image if no new one is uploaded
+            $data['img_background'] = $event->img_background ?? null;
         }
 
-        if ($language === '') {
-            throw new \RuntimeException('Language is required.');
-        }
-
-        $allowedLanguages = ['NL', 'ENG', 'NL/ENG'];
-        if (!in_array($language, $allowedLanguages, true)) {
-            throw new \RuntimeException('Invalid language selected.');
-        }
-
-        if ($ageGroup === '') {
-            throw new \RuntimeException('Age group is required.');
-        }
-
-        if ($storyType === '') {
-            throw new \RuntimeException('Story type is required.');
-        }
-
-        if ($location === '') {
-            throw new \RuntimeException('Location is required.');
-        }
-
-        if ($startDate === '') {
-            throw new \RuntimeException('Start date is required.');
-        }
-
-        if ($endDate === '') {
-            throw new \RuntimeException('End date is required.');
-        }
-
-        $price = 0.0;
-        if ($priceRaw !== '') {
-            if (!is_numeric($priceRaw)) {
-                throw new \RuntimeException('Price must be a valid number.');
-            }
-
-            $price = (float)$priceRaw;
-
-            if ($price < 0) {
-                throw new \RuntimeException('Price cannot be negative.');
-            }
-        }
-
-        $imagePath = null;
-        if (isset($files['img_background_file']) && is_array($files['img_background_file'])) {
-            $imagePath = $this->handleImageUpload($files['img_background_file']);
-        }
-
+        // 3. Update Parent Event
         $availability = (int)($parentEvent['availability'] ?? 0);
-
-        $updatedParent = $this->eventRepository->updateEvent($eventId, $title, $availability);
+        $updatedParent = $this->eventRepository->updateEvent($eventId, $data['title'], $availability);
+        
         if (!$updatedParent) {
-            $sameTitle = ((string)($parentEvent['title'] ?? '')) === $title;
+            $sameTitle = ((string)($parentEvent['title'] ?? '')) === $data['title'];
             if (!$sameTitle) {
                 throw new \RuntimeException('Could not update parent event.');
             }
         }
 
-        $updatedStories = $this->storiesRepository->updateStoriesEventCms($eventId, [
-            'language' => $language,
-            'age_group' => $ageGroup,
-            'story_type' => $storyType,
-            'location' => $location,
-            'description' => $description !== '' ? $description : null,
-            'start_date' => $this->normalizeDatetimeForDatabase($startDate),
-            'end_date' => $this->normalizeDatetimeForDatabase($endDate),
-            'price' => $price,
-            'img_background' => $imagePath,
-        ]);
+        // 4. Update Stories Details
+        $updatedStories = $this->storiesRepository->updateStoriesEventCms($eventId, $data);
 
         if (!$updatedStories) {
-            throw new \RuntimeException('Could not update stories event.');
+            throw new \RuntimeException('Could not update stories event details.');
         }
     }
 
@@ -145,13 +123,60 @@ final class CmsStoriesEventService
         return $this->storiesRepository->deleteStoriesEventById($eventId);
     }
 
+    /**
+     * Shared validation and data formatting logic to keep code DRY.
+     */
+    private function prepareAndValidateData(array $post): array
+    {
+        $title = trim((string)($post['title'] ?? ''));
+        $language = trim((string)($post['language'] ?? ''));
+        $ageGroup = trim((string)($post['age_group'] ?? ''));
+        $storyType = trim((string)($post['story_type'] ?? ''));
+        $location = trim((string)($post['location'] ?? ''));
+        $description = trim((string)($post['description'] ?? ''));
+        $startDate = trim((string)($post['start_date'] ?? ''));
+        $endDate = trim((string)($post['end_date'] ?? ''));
+        $priceRaw = trim((string)($post['price'] ?? ''));
+
+        // Basic Validations
+        if ($title === '') throw new \RuntimeException('Title is required.');
+        if ($language === '') throw new \RuntimeException('Language is required.');
+        if ($ageGroup === '') throw new \RuntimeException('Age group is required.');
+        if ($storyType === '') throw new \RuntimeException('Story type is required.');
+        if ($location === '') throw new \RuntimeException('Location is required.');
+        if ($startDate === '') throw new \RuntimeException('Start date is required.');
+        if ($endDate === '') throw new \RuntimeException('End date is required.');
+
+        $allowedLanguages = ['NL', 'ENG', 'NL/ENG'];
+        if (!in_array($language, $allowedLanguages, true)) {
+            throw new \RuntimeException('Invalid language selected.');
+        }
+
+        $price = 0.0;
+        if ($priceRaw !== '') {
+            if (!is_numeric($priceRaw)) throw new \RuntimeException('Price must be a valid number.');
+            $price = (float)$priceRaw;
+            if ($price < 0) throw new \RuntimeException('Price cannot be negative.');
+        }
+
+        return [
+            'title'          => $title,
+            'language'       => $language,
+            'age_group'      => $ageGroup,
+            'story_type'     => $storyType,
+            'location'       => $location,
+            'description'    => $description !== '' ? $description : null,
+            'start_date'     => $this->normalizeDatetimeForDatabase($startDate),
+            'end_date'       => $this->normalizeDatetimeForDatabase($endDate),
+            'price'          => $price,
+            'img_background' => null, // Default, handled by caller
+        ];
+    }
+
     private function normalizeDatetimeForDatabase(string $value): string
     {
         $value = trim($value);
-
-        if ($value === '') {
-            return '';
-        }
+        if ($value === '') return '';
 
         if (preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/', $value)) {
             return str_replace('T', ' ', $value) . ':00';
@@ -181,14 +206,12 @@ final class CmsStoriesEventService
             throw new \RuntimeException('Image upload failed.');
         }
 
-        $originalName = (string)($file['name'] ?? '');
         $tmpName = (string)($file['tmp_name'] ?? '');
-
         if ($tmpName === '' || !is_uploaded_file($tmpName)) {
             throw new \RuntimeException('Invalid uploaded file.');
         }
 
-        $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+        $extension = strtolower(pathinfo((string)$file['name'], PATHINFO_EXTENSION));
         $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
 
         if (!in_array($extension, $allowedExtensions, true)) {
