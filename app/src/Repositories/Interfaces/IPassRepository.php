@@ -15,6 +15,8 @@ interface IPassRepository
 
     /** @return array<int, string> */
     public function getAvailableJazzPassDates(): array;
+    /** @return array<int, string> */
+    public function getAvailableDancePassDates(): array;
 
     /** @return array<int, array<string, mixed>> */
     public function getAllPassProducts(): array;

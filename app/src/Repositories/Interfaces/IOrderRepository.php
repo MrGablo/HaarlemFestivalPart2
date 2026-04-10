@@ -4,7 +4,32 @@ namespace App\Repositories\Interfaces;
 
 interface IOrderRepository
 {
+    /**
+     * Pending cart only: checkout not started (no payment deadline).
+     */
     public function findPendingOrderByUserId(int $userId): ?array;
+
+    /**
+     * Pending order user may pay: cart (no deadline) or checkout started (deadline in the future).
+     */
+    public function findPayablePendingOrderByUserId(int $userId): ?array;
+
+    /**
+     * Pending order with an active payment window (user clicked Pay at least once).
+     */
+    public function findAwaitingPaymentOrderByUserId(int $userId): ?array;
+
+    public function cancelExpiredPendingPaymentOrders(): int;
+
+    /**
+     * User abandons checkout: pending order with a payment window set -> cancelled.
+     */
+    public function cancelAwaitingPaymentOrderForUser(int $userId, int $orderId): bool;
+
+    public function ensurePaymentDeadlineFromFirstCheckout(int $orderId, int $userId): void;
+
+    /** @return array<int, array<string, mixed>> */
+    public function findCancelledOrdersByUserId(int $userId): array;
 
     /** @return array<int, array<string, mixed>> */
     public function getAllOrdersWithSummary(): array;

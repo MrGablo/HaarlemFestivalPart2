@@ -9,6 +9,8 @@ class TicketRepository extends Repository
 {
     private ?bool $ticketHasEventIdColumn = null;
 
+    private ?string $orderItemPassDateColumn = null;
+
     public function createTicket(int $orderItemId, int $userId, int $eventId, string $qr): int
     {
         return $this->createTicketUsingConnection(
@@ -67,6 +69,33 @@ class TicketRepository extends Repository
     public function getPaidTicketsForUser(int $userId): array
     {
         $eventExpr = $this->ticketHasEventIdColumn() ? 'COALESCE(t.event_id, oi.event_id)' : 'oi.event_id';
+        $passDateExpr = $this->orderItemsPassDateSelectExpression('oi');
+        // Avoid NULLIF(date_col, ''): MySQL strict mode raises 1525 "Incorrect DATE value: ''".
+        // Treat pass_date_key sentinels (e.g. 1000-01-01) as NULL so they do not override real times
+        // from JazzEvent/DanceEvent/HistoryEvent/etc.
+        if ($passDateExpr === 'NULL') {
+            $passDateForCoalesce = 'NULL';
+        } else {
+            $passDateForCoalesce = "(CASE
+                WHEN {$passDateExpr} IS NULL THEN NULL
+                WHEN TRIM(CAST({$passDateExpr} AS CHAR(32))) = '' THEN NULL
+                WHEN TRIM(CAST({$passDateExpr} AS CHAR(32))) IN (
+                    '0000-00-00', '0000-00-00 00:00:00',
+                    '1000-01-01', '1000-01-01 00:00:00'
+                ) THEN NULL
+                ELSE {$passDateExpr}
+            END)";
+        }
+        // Prefer canonical start from typed event tables; use order_items pass date only as fallback
+        // (e.g. rare cases where the slot is not on the joined row).
+        $eventStartExpr = "COALESCE(
+                j.start_date,
+                d.start_date,
+                h.start_date,
+                y.start_time,
+                s.start_date,
+                {$passDateForCoalesce}
+            )";
 
         $stmt = $this->getConnection()->prepare(
             "SELECT
@@ -80,7 +109,8 @@ class TicketRepository extends Repository
                      CASE
                           WHEN LOWER(TRIM(e.event_type)) = 'history' THEN COALESCE(h.location, '')
                           ELSE ''
-                     END AS location
+                     END AS location,
+                {$eventStartExpr} AS event_start_time
              FROM `Ticket` t
              INNER JOIN `order_items` oi ON oi.order_item_id = t.order_item_id
              INNER JOIN `orders` o ON o.order_id = oi.order_id
@@ -88,6 +118,8 @@ class TicketRepository extends Repository
              LEFT JOIN `JazzEvent` j ON j.event_id = e.event_id
              LEFT JOIN `DanceEvent` d ON d.event_id = e.event_id
                  LEFT JOIN `HistoryEvent` h ON h.event_id = e.event_id
+             LEFT JOIN `YummyEvent` y ON y.event_id = e.event_id
+             LEFT JOIN `StoriesEvent` s ON s.event_id = e.event_id
              LEFT JOIN `PassEvent` p ON p.event_id = e.event_id
              WHERE o.user_id = :user_id
                AND LOWER(TRIM(o.order_status)) <> :pending_status
@@ -260,5 +292,38 @@ public function deleteTicketById(int $ticketId): bool
         $this->ticketHasEventIdColumn = is_array($row);
 
         return $this->ticketHasEventIdColumn;
+    }
+
+    private function orderItemsPassDateColumn(): ?string
+    {
+        if ($this->orderItemPassDateColumn !== null) {
+            return $this->orderItemPassDateColumn;
+        }
+
+        $stmt = $this->getConnection()->query("SHOW COLUMNS FROM `order_items` LIKE 'pass_date_key'");
+        $row = $stmt ? $stmt->fetch() : false;
+        if (is_array($row)) {
+            $this->orderItemPassDateColumn = 'pass_date_key';
+            return $this->orderItemPassDateColumn;
+        }
+
+        $stmt = $this->getConnection()->query("SHOW COLUMNS FROM `order_items` LIKE 'pass_date'");
+        $row = $stmt ? $stmt->fetch() : false;
+        if (is_array($row)) {
+            $this->orderItemPassDateColumn = 'pass_date';
+            return $this->orderItemPassDateColumn;
+        }
+
+        return null;
+    }
+
+    private function orderItemsPassDateSelectExpression(string $tableAlias): string
+    {
+        $column = $this->orderItemsPassDateColumn();
+        if ($column === null) {
+            return 'NULL';
+        }
+
+        return $tableAlias . '.' . $column;
     }
 }

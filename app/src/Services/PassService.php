@@ -138,6 +138,17 @@ class PassService
         return in_array($isoDate, $availableDates, true);
     }
 
+    public function isValidDancePassDate(string $isoDate): bool
+    {
+        $isoDate = trim($isoDate);
+        if (!$this->isIsoDate($isoDate)) {
+            return false;
+        }
+
+        $availableDates = $this->passRepo->getAvailableDancePassDates();
+        return in_array($isoDate, $availableDates, true);
+    }
+
     private function isIsoDate(string $value): bool
     {
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {

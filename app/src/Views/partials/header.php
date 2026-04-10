@@ -17,7 +17,7 @@ $headerProfilePicturePath = (string) ($profilePicturePath ?? ($authPayload['prof
 $headerIsAdmin = strtolower((string) ($authPayload['userRole'] ?? '')) === 'admin';
 $headerIsStaff = in_array(strtolower((string) ($authPayload['userRole'] ?? '')), ['admin', 'employee'], true);
 
-// get cart order if logged in
+// get editable cart order if logged in (checkout-in-progress is not editable)
 $headerCartOrder = null;
 $headerCartCount = 0;
 $headerCartTotal = 0.00; 
@@ -67,8 +67,6 @@ if (!function_exists('getCmsNavClass')) {
     }
 }
 ?>
-
-<script src="https://cdn.tailwindcss.com"></script>
 
 <header class="bg-gradient-to-r from-blue-600 to-white lg:bg-none lg:bg-white border-b border-gray-100 font-sans sticky top-0 z-30">
     <div class="mx-auto flex max-w-6xl items-stretch justify-between pl-5 lg:px-5">

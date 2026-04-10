@@ -82,6 +82,11 @@ class TicketService
     {
         $pass = $this->passService->findActivePassProductByEventId($eventId);
         if (!$pass instanceof PassEvent) {
+            $danceCoveredEventIds = $this->danceHomeRepository->getDanceCoveredSessionEventIdsByEventId($eventId);
+            if ($danceCoveredEventIds !== []) {
+                return $danceCoveredEventIds;
+            }
+
             return [$eventId];
         }
 
@@ -98,7 +103,11 @@ class TicketService
             }
 
             if ($festivalType === 'dance') {
-                return $this->danceHomeRepository->getDanceSessionEventIdsByPassEvent($eventId);
+                if ($passDate === null || trim($passDate) === '') {
+                    return [];
+                }
+
+                return $this->danceHomeRepository->getDanceSessionEventIdsByDate($passDate);
             }
         }
 
