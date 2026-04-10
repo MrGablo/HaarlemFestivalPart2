@@ -26,7 +26,6 @@ use App\Config;
             <div class="w-full max-w-[500px] flex-none text-left lg:w-[45%]">
                 <h1 class="mb-4 text-[3.2rem] font-extrabold leading-[1.05] tracking-tight text-black lg:mb-[25px] lg:text-[4.5rem]">
                     <?php 
-                        // Split title to keep the blue "Haarlem Festival" styling
                         $title = $content['hero']['title'] ?? 'Discover Haarlem Festival';
                         $parts = explode('Haarlem', $title);
                         echo htmlspecialchars($parts[0]);
@@ -119,7 +118,7 @@ use App\Config;
                         if ($i === 1) $gridClass = 'lg:col-start-2 lg:col-end-3 lg:row-start-1 lg:row-end-2';
                         if ($i === 2) $gridClass = 'lg:col-start-1 lg:col-end-2 lg:row-start-2 lg:row-end-3';
                         if ($i === 3) $gridClass = 'lg:col-start-2 lg:col-end-3 lg:row-start-2 lg:row-end-3';
-                        if ($i === 5) {
+                        if ($i === 4) {
                             $gridClass = 'lg:col-start-3 lg:col-end-4 lg:row-start-1 lg:row-end-3 lg:h-full';
                             $imgClass = 'h-[160px] lg:h-full lg:min-h-[520px]';
                         }
