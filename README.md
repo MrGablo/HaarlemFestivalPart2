@@ -176,6 +176,11 @@ Use the following credentials for the default admin account:
 - Username: `admin`
 - Password: `admiadmin`
 
+user account:
+
+- Username: `wolfik`
+- Password: `qwerty123`
+
 ### 4. Stop the environment
 
 ```bash
