@@ -47,7 +47,7 @@
                             <th class="px-4 py-3 text-left font-semibold text-slate-700">Location</th>
                             <th class="px-4 py-3 text-left font-semibold text-slate-700">Start Date</th>
                             <th class="px-4 py-3 text-left font-semibold text-slate-700">Price</th>
-                            <th class="px-4 py-3 text-left font-semibold text-slate-700">Actions</th>
+                            <th class="min-w-[220px] px-4 py-3 text-left font-semibold text-slate-700">Actions</th>
                         </tr>
                     </thead>
 
@@ -95,10 +95,10 @@
                                         €<?= htmlspecialchars(number_format((float)($event['price'] ?? 0), 2)) ?>
                                     </td>
 
-                                    <td class="whitespace-nowrap px-4 py-3">
-                                        <div class="flex flex-wrap gap-2">
+                                    <td class="min-w-[220px] whitespace-nowrap px-4 py-3">
+                                        <div class="flex flex-nowrap items-center gap-2">
                                             <a href="/cms/events/stories/<?= (int)($event['event_id'] ?? 0) ?>"
-                                                class="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700">
+                                                class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">
                                                 Edit
                                             </a>
 
@@ -107,7 +107,7 @@
                                                 onsubmit="return confirm('Delete this stories event? This cannot be undone.');">
                                                 <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string)($csrfToken ?? '')) ?>">
                                                 <button type="submit"
-                                                    class="rounded-lg bg-rose-600 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-700">
+                                                    class="rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700">
                                                     Delete
                                                 </button>
                                             </form>

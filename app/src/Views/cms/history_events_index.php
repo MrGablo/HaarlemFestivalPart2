@@ -45,7 +45,7 @@
                             <th class="px-4 py-3 text-left font-semibold text-slate-700">Availability</th>
                             <th class="px-4 py-3 text-left font-semibold text-slate-700">Price</th>
                             <th class="px-4 py-3 text-left font-semibold text-slate-700">Family Price</th>
-                            <th class="px-4 py-3 text-left font-semibold text-slate-700">Actions</th>
+                            <th class="min-w-[220px] px-4 py-3 text-left font-semibold text-slate-700">Actions</th>
                         </tr>
                     </thead>
 
@@ -65,8 +65,8 @@
                                     <td class="whitespace-nowrap px-4 py-3 text-slate-700"><?= (int)$e->availability ?></td>
                                     <td class="whitespace-nowrap px-4 py-3 text-slate-700"><?= htmlspecialchars((string)$e->price) ?></td>
                                     <td class="whitespace-nowrap px-4 py-3 text-slate-700"><?= htmlspecialchars((string)$e->family_price) ?></td>
-                                    <td class="whitespace-nowrap px-4 py-3">
-                                        <div class="flex flex-wrap gap-2">
+                                    <td class="min-w-[220px] whitespace-nowrap px-4 py-3">
+                                        <div class="flex flex-nowrap items-center gap-2">
                                             <a href="/cms/events/history/<?= (int)$e->event_id ?>"
                                                class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">
                                                 Edit history event
