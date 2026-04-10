@@ -17,6 +17,16 @@
 
     cartCsrfToken = String(cartBody.dataset.cartCsrfToken || '');
 
+    function getCartCsrfToken() {
+        var tokenFromDataset = String(cartBody.dataset.cartCsrfToken || '').trim();
+        if (tokenFromDataset !== '') {
+            cartCsrfToken = tokenFromDataset;
+            return tokenFromDataset;
+        }
+
+        return String(cartCsrfToken || '').trim();
+    }
+
     function escapeHtml(value) {
         return String(value)
             .replace(/&/g, '&amp;')
@@ -81,6 +91,12 @@
     function updateCartUI(cart) {
         if (!cart) {
             return;
+        }
+
+        var payloadCsrfToken = typeof cart.csrfToken === 'string' ? cart.csrfToken.trim() : '';
+        if (payloadCsrfToken !== '') {
+            cartCsrfToken = payloadCsrfToken;
+            cartBody.dataset.cartCsrfToken = payloadCsrfToken;
         }
 
         var count = Number(cart.itemCount || 0);
@@ -177,9 +193,18 @@
         submitBtn.disabled = true;
         submitBtn.textContent = 'Removing...';
 
+        var formData = new FormData(form);
+        var postedToken = String(formData.get('_csrf') || '').trim();
+        if (postedToken === '') {
+            var fallbackToken = getCartCsrfToken();
+            if (fallbackToken !== '') {
+                formData.set('_csrf', fallbackToken);
+            }
+        }
+
         fetch(action, {
             method: 'POST',
-            body: new FormData(form),
+            body: formData,
             headers: {
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
@@ -263,8 +288,9 @@
         var body = new FormData();
         body.append('order_item_id', String(orderItemId));
         body.append('quantity', String(nextQuantity));
-        if (cartCsrfToken !== '') {
-            body.append('_csrf', cartCsrfToken);
+        var currentCartCsrfToken = getCartCsrfToken();
+        if (currentCartCsrfToken !== '') {
+            body.append('_csrf', currentCartCsrfToken);
         }
 
         fetch('/order/item/quantity', {

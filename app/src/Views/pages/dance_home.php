@@ -23,7 +23,7 @@ declare(strict_types=1);
     </style>
 </head>
 
-<body class="dance-open-cart-on-add min-h-screen bg-dance-bg text-dance-text text-sm font-['Montserrat',sans-serif]">
+<body class="min-h-screen bg-dance-bg text-dance-text text-sm font-['Montserrat',sans-serif]">
     <?php include __DIR__ . '/../partials/header.php'; ?>
     <?php require __DIR__ . '/../partials/dance_home_content.php'; ?>
 

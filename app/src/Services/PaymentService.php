@@ -51,6 +51,10 @@ class PaymentService
         }
 
         $this->orderService->markCheckoutStartedIfNeeded($userId, $pendingOrderId);
+        $pendingOrder = $this->orderService->getPayablePendingOrderForUser($userId);
+        if ($pendingOrder === null || (int)($pendingOrder->order_id ?? 0) !== $pendingOrderId) {
+            throw new \RuntimeException('Pending cart is no longer payable.');
+        }
 
         $items = $pendingOrder->items;
         if ($items === []) {
@@ -82,6 +86,7 @@ class PaymentService
         $scheme  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         $host    = $_SERVER['HTTP_HOST'] ?? 'localhost';
         $baseUrl = $scheme . '://' . $host;
+        $expiresAt = $this->resolveCheckoutSessionExpiresAt($pendingOrder->payment_deadline_at);
 
         $session = \Stripe\Checkout\Session::create([
             'line_items' => $lineItems,
@@ -89,6 +94,7 @@ class PaymentService
             'automatic_tax' => [
                 'enabled' => true,
             ],
+            'expires_at' => $expiresAt,
             'success_url' => $baseUrl . '/payment/success?session_id={CHECKOUT_SESSION_ID}',
             'cancel_url' => $baseUrl . '/payment/cancel',
             'metadata' => [
@@ -204,6 +210,25 @@ class PaymentService
                 "Payment: checkout session is not paid. status={$status}, payment_status={$paymentStatus}"
             );
         }
+    }
+
+    private function resolveCheckoutSessionExpiresAt(?string $paymentDeadlineAt): int
+    {
+        $deadline = $paymentDeadlineAt !== null ? trim($paymentDeadlineAt) : '';
+        if ($deadline === '') {
+            throw new \RuntimeException('Payment: checkout deadline is missing for pending order.');
+        }
+
+        $expiresAt = strtotime($deadline);
+        if (!is_int($expiresAt) || $expiresAt <= 0) {
+            throw new \RuntimeException('Payment: checkout deadline could not be parsed.');
+        }
+
+        if ($expiresAt <= time()) {
+            throw new \RuntimeException('Payment: checkout deadline has already expired.');
+        }
+
+        return $expiresAt;
     }
 
     private function getStripeSecretKey(): string

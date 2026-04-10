@@ -155,13 +155,19 @@ class OrderService
             $passScope = strtolower($pass->pass_scope);
             $festivalType = strtolower($pass->festival_type);
 
-            if ($festivalType === 'jazz' && $passScope === 'day') {
+            if ($passScope === 'day') {
                 if ($passDate === null) {
-                    throw new \RuntimeException('Please select a valid Jazz day for this pass.');
+                    throw new \RuntimeException('Please select a valid day for this pass.');
                 }
 
-                if (!$passService->isValidJazzPassDate($passDate)) {
-                    throw new \RuntimeException('Selected Jazz day is unavailable for this pass.');
+                $isValidDay = match ($festivalType) {
+                    'jazz' => $passService->isValidJazzPassDate($passDate),
+                    'dance' => $passService->isValidDancePassDate($passDate),
+                    default => false,
+                };
+
+                if (!$isValidDay) {
+                    throw new \RuntimeException('Selected day is unavailable for this pass.');
                 }
 
                 $effectivePassDate = $passDate;
