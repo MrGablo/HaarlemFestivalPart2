@@ -51,23 +51,30 @@ $intro = $vm->intro;
     <h2 class="mb-10 text-center text-2xl font-bold uppercase tracking-wider text-dance-text md:text-3xl"><?= htmlspecialchars((string) $vm->lineupTitle) ?></h2>
     <div class="grid grid-cols-2 gap-8 sm:grid-cols-3 md:gap-10">
       <?php foreach ($vm->lineupArtists as $artist): ?>
+        <?php $artistPageUrl = trim((string)($artist['pageUrl'] ?? '')); ?>
         <div class="flex flex-col items-center">
-          <div class="relative h-dance-photo-sm w-dance-photo-sm overflow-hidden rounded-none md:h-dance-photo-lg md:w-dance-photo-lg">
-            <img
-              src="/assets/img/dance-assets/artistBG.svg"
-              alt=""
-              aria-hidden="true"
-              class="absolute inset-0 z-0 h-full w-full scale-110 object-contain object-center pointer-events-none select-none"
-              loading="lazy"
-            >
-            <img
-              src="<?= htmlspecialchars((string) ($artist['imageUrl'] ?? '')) ?>"
-              alt="<?= htmlspecialchars((string) ($artist['alt'] ?? '')) ?>"
-              class="relative z-10 h-full w-full object-cover object-top"
-              loading="lazy"
-            >
-          </div>
-          <div class="mt-3.5 max-w-dance-lineup-name text-center text-sm font-bold uppercase tracking-wide text-dance-text md:text-base"><?= htmlspecialchars((string) ($artist['name'] ?? '')) ?></div>
+          <?php if ($artistPageUrl !== ''): ?>
+            <a href="<?= htmlspecialchars($artistPageUrl) ?>" class="group text-inherit no-underline">
+          <?php endif; ?>
+              <div class="relative h-dance-photo-sm w-dance-photo-sm overflow-hidden rounded-none md:h-dance-photo-lg md:w-dance-photo-lg">
+                <img
+                  src="/assets/img/dance-assets/artistBG.svg"
+                  alt=""
+                  aria-hidden="true"
+                  class="absolute inset-0 z-0 h-full w-full scale-110 object-contain object-center pointer-events-none select-none"
+                  loading="lazy"
+                >
+                <img
+                  src="<?= htmlspecialchars((string) ($artist['imageUrl'] ?? '')) ?>"
+                  alt="<?= htmlspecialchars((string) ($artist['alt'] ?? '')) ?>"
+                  class="relative z-10 h-full w-full object-cover object-top transition duration-150 group-hover:brightness-110"
+                  loading="lazy"
+                >
+              </div>
+              <div class="mt-3.5 max-w-dance-lineup-name text-center text-sm font-bold uppercase tracking-wide text-dance-text md:text-base"><?= htmlspecialchars((string) ($artist['name'] ?? '')) ?></div>
+          <?php if ($artistPageUrl !== ''): ?>
+            </a>
+          <?php endif; ?>
         </div>
       <?php endforeach; ?>
     </div>

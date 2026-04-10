@@ -18,7 +18,7 @@ use App\Utils\Session;
 class CMSController
 {
     /** @var array<int, string> */
-    private const CREATABLE_PAGE_TYPES = ['Jazz_Detail_Page', 'Yummy_Detail_Page', 'Yummy_Detail_Page'];
+    private const CREATABLE_PAGE_TYPES = ['Jazz_Detail_Page', 'Dance_Detail_Page', 'Yummy_Detail_Page'];
     
 
     private ArtistService $artists;

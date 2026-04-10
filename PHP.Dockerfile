@@ -27,18 +27,19 @@ RUN set -eux; \
 WORKDIR /app
 RUN printf '%s\n' 'upload_max_filesize=20M' 'post_max_size=20M' > /usr/local/etc/php/conf.d/uploads.ini
 
-
-
-
 # Allow running Composer as root within the container
 ENV COMPOSER_ALLOW_SUPERUSER=1 \
     COMPOSER_HOME=/tmp/composer \
     COMPOSER_CACHE_DIR=/tmp/composer/cache \
     COMPOSER=/app/composer.json
 
+# Copy composer files and install PHP dependencies into the image
+COPY app/composer.json app/composer.lock /app/
+RUN composer install --working-dir=/app --no-interaction --no-progress --optimize-autoloader
+
 # Allow passing a DB connection string at build/runtime. Runtime env from docker-compose will override this.
 ARG DB_CONNECTION
 ENV DB_CONNECTION=${DB_CONNECTION}
 
-# On container start, install dependencies from /app/composer.json if vendor is missing, then start php-fpm
-CMD ["sh", "-lc", "mkdir -p /app/public/assets/img/profiles; chmod -R 777 /app/public/assets/img || true; [ -f /app/vendor/autoload.php ] || composer install --working-dir=/app --no-interaction --no-progress; exec php-fpm"]
+# On container start, ensure dependencies exist for the mounted app volume, then start php-fpm
+CMD ["sh", "-lc", "mkdir -p /app/public/assets/img/profiles; chmod -R 777 /app/public/assets/img || true; if [ ! -f /app/vendor/autoload.php ] || [ /app/composer.lock -nt /app/vendor/autoload.php ]; then composer install --working-dir=/app --no-interaction --no-progress; fi; exec php-fpm"]

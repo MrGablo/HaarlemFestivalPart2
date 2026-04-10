@@ -81,6 +81,8 @@ final class DanceHomeService
         $dateRangeFromDb = $this->buildDateRangeLabelFromTimetable($rows);
 
         $lineupArtists = $this->buildLineupArtistsFromDatabase($lineup);
+        $danceArtistPageMap = $this->buildDanceArtistPageMap();
+        $fallbackDanceArtistPageId = $this->firstDanceArtistPageId();
         [$allAccess, $days] = $this->buildTimetableFromRows($rows, $timetableCms);
 
         $pageTitle = (string) ($hero['title'] ?? 'Dance');
@@ -90,10 +92,19 @@ final class DanceHomeService
 
         $lineupWithUrls = [];
         foreach ($lineupArtists as $a) {
+            $pageUrl = null;
+            $artistKey = $this->normalizeArtistKey((string)($a['alt'] ?? $a['name'] ?? ''));
+            if ($artistKey !== '' && isset($danceArtistPageMap[$artistKey])) {
+                $pageUrl = '/dance/artist?page_id=' . (int)$danceArtistPageMap[$artistKey];
+            } elseif ($artistKey === 'martingarrix' && $fallbackDanceArtistPageId > 0) {
+                // Fallback so the Martin Garrix card is clickable even if page content name is not filled yet.
+                $pageUrl = '/dance/artist?page_id=' . $fallbackDanceArtistPageId;
+            }
             $lineupWithUrls[] = [
                 'name' => $a['name'],
                 'imageUrl' => self::webPath($a['imageSrc']),
                 'alt' => $a['alt'],
+                'pageUrl' => $pageUrl,
             ];
         }
 
@@ -266,6 +277,7 @@ final class DanceHomeService
     {
         $dbArtists = $this->danceRepo->findDanceLineupArtists(6);
         $dbHeadlines = $this->danceRepo->findDanceLineupHeadlines(6);
+        $cmsImageByArtistKey = $this->buildCmsLineupImageMap($lineup);
         $cycle = array_column(self::DEFAULT_LINEUP, 'image');
         $n = count($cycle);
         if ($n === 0) {
@@ -280,9 +292,11 @@ final class DanceHomeService
                 if ($artistName === '') {
                     continue;
                 }
+                $artistKey = $this->normalizeArtistKey($artistName);
+                $mappedCms = $artistKey !== '' ? ($cmsImageByArtistKey[$artistKey] ?? null) : null;
                 $out[] = [
                     'name' => mb_strtoupper($artistName, 'UTF-8'),
-                    'imageSrc' => $cycle[$i % $n],
+                    'imageSrc' => $mappedCms ?? $cycle[$i % $n],
                     'alt' => $artistName,
                 ];
             }
@@ -307,9 +321,11 @@ final class DanceHomeService
             if ($artistNames !== []) {
                 $out = [];
                 foreach ($artistNames as $i => $artistName) {
+                    $artistKey = $this->normalizeArtistKey($artistName);
+                    $mappedCms = $artistKey !== '' ? ($cmsImageByArtistKey[$artistKey] ?? null) : null;
                     $out[] = [
                         'name' => mb_strtoupper($artistName, 'UTF-8'),
-                        'imageSrc' => $cycle[$i % $n],
+                        'imageSrc' => $mappedCms ?? $cycle[$i % $n],
                         'alt' => $artistName,
                     ];
                 }
@@ -323,9 +339,11 @@ final class DanceHomeService
                 if ($title === '') {
                     continue;
                 }
+                $artistKey = $this->normalizeArtistKey($title);
+                $mappedCms = $artistKey !== '' ? ($cmsImageByArtistKey[$artistKey] ?? null) : null;
                 $out[] = [
                     'name' => mb_strtoupper($title, 'UTF-8'),
-                    'imageSrc' => $cycle[$i % $n],
+                    'imageSrc' => $mappedCms ?? $cycle[$i % $n],
                     'alt' => $title,
                 ];
             }
@@ -388,6 +406,34 @@ final class DanceHomeService
         }
 
         return $lineupArtists;
+    }
+
+    /** @return array<string, string> */
+    private function buildCmsLineupImageMap(array $lineup): array
+    {
+        $artists = is_array($lineup['artists'] ?? null) ? $lineup['artists'] : [];
+        $map = [];
+
+        foreach ($artists as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $name = trim((string)($item['name'] ?? ''));
+            $key = $this->normalizeArtistKey($name);
+            if ($key === '') {
+                continue;
+            }
+
+            $raw = Media::image($item['image'] ?? null)['src'];
+            $src = $this->normaliseAsset($raw, '');
+            if ($src === '') {
+                continue;
+            }
+
+            $map[$key] = $src;
+        }
+
+        return $map;
     }
 
     /**
@@ -532,5 +578,79 @@ final class DanceHomeService
         }
 
         return 'TOP TIER LINEUP';
+    }
+
+    /** @return array<string, int> */
+    private function buildDanceArtistPageMap(): array
+    {
+        $rows = $this->pageRepo->getPagesByType('Dance_Detail_Page');
+        $map = [];
+
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $pageId = (int)($row['Page_ID'] ?? 0);
+            if ($pageId <= 0) {
+                continue;
+            }
+
+            $pageTitle = trim((string)($row['Page_Title'] ?? ''));
+            $contentRaw = (string)($row['Content'] ?? '');
+            $decoded = json_decode($contentRaw, true);
+            $content = is_array($decoded) ? $decoded : [];
+            $artist = is_array($content['artist'] ?? null) ? $content['artist'] : [];
+
+            $candidates = [
+                (string)($artist['name'] ?? ''),
+                (string)($artist['hero_title'] ?? ''),
+                $pageTitle,
+            ];
+
+            foreach ($candidates as $candidate) {
+                $key = $this->normalizeArtistKey($candidate);
+                if ($key === '' || isset($map[$key])) {
+                    continue;
+                }
+                $map[$key] = $pageId;
+            }
+        }
+
+        return $map;
+    }
+
+    private function normalizeArtistKey(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+
+        $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value);
+        if (is_string($ascii) && $ascii !== '') {
+            $value = $ascii;
+        }
+
+        $value = strtolower($value);
+        $value = preg_replace('/[^a-z0-9]+/', '', $value) ?? '';
+
+        return $value;
+    }
+
+    private function firstDanceArtistPageId(): int
+    {
+        $rows = $this->pageRepo->getPagesByType('Dance_Detail_Page');
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $pageId = (int)($row['Page_ID'] ?? 0);
+            if ($pageId > 0) {
+                return $pageId;
+            }
+        }
+
+        return 0;
     }
 }
