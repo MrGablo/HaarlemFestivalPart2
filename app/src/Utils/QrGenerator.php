@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Utils;
 
 use chillerlan\QRCode\QRCode;
+use chillerlan\QRCode\Output\QRGdImagePNG;
 use chillerlan\QRCode\Output\QRMarkupSVG;
 use InvalidArgumentException;
 
@@ -26,11 +27,14 @@ class QrGenerator
         return self::renderSvg($data, false);
     }
 
+    public static function generatePngData(string $data): string
+    {
+        return self::renderPng($data, false);
+    }
+
     private static function renderSvg(string $data, bool $outputBase64): string
     {
-        if (empty(trim($data))) {
-            throw new InvalidArgumentException('QR code data cannot be empty.');
-        }
+        self::assertData($data);
 
         $qrcode = new QRCode([
             'version'         => -1,
@@ -42,5 +46,28 @@ class QrGenerator
         ]);
 
         return $qrcode->render($data);
+    }
+
+    private static function renderPng(string $data, bool $outputBase64): string
+    {
+        self::assertData($data);
+
+        $qrcode = new QRCode([
+            'version'         => -1,
+            'outputInterface' => QRGdImagePNG::class,
+            'eccLevel'        => 'L',
+            'scale'           => 8,
+            'outputBase64'    => $outputBase64,
+            'imageTransparent' => false,
+        ]);
+
+        return $qrcode->render($data);
+    }
+
+    private static function assertData(string $data): void
+    {
+        if (empty(trim($data))) {
+            throw new InvalidArgumentException('QR code data cannot be empty.');
+        }
     }
 }
