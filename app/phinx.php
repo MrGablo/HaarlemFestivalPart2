@@ -6,11 +6,11 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 App\Utils\Env::load(__DIR__);
 
-$host = getenv('AIVEN_HOST') ?: getenv('DB_HOST') ?: 'mysql';
-$port = getenv('AIVEN_PORT') ?: getenv('DB_PORT') ?: '3306';
-$name = getenv('AIVEN_DB') ?: getenv('DB_DATABASE') ?: 'developmentdb';
-$user = getenv('AIVEN_USER') ?: getenv('DB_USERNAME') ?: 'root';
-$pass = getenv('AIVEN_PASSWORD') ?: getenv('DB_PASSWORD') ?: 'secret123';
+$host = getenv('AIVEN_HOST') ?: getenv('DB_HOST');
+$port = getenv('AIVEN_PORT') ?: getenv('DB_PORT');
+$name = getenv('AIVEN_DB') ?: getenv('DB_DATABASE');
+$user = getenv('AIVEN_USER') ?: getenv('DB_USERNAME');
+$pass = getenv('AIVEN_PASSWORD') ?: getenv('DB_PASSWORD');
 
 $baseConfig = [
     'adapter' => 'mysql',
