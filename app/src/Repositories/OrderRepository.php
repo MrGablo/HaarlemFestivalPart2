@@ -163,7 +163,7 @@ class OrderRepository extends Repository implements IOrderRepository
                 u.last_name,
                 u.email,
                 COALESCE(SUM(oi.quantity), 0) AS item_count,
-                         COALESCE(SUM(oi.quantity * COALESCE(j.price, d.price, h.price, p.base_price, 0)), 0) AS total_amount
+                         COALESCE(SUM(oi.quantity * COALESCE(j.price, d.price, h.price, p.base_price, y.price, 0)), 0) AS total_amount
              FROM `orders` o
              LEFT JOIN `User` u ON u.id = o.user_id
              LEFT JOIN `order_items` oi ON oi.order_id = o.order_id
@@ -171,6 +171,7 @@ class OrderRepository extends Repository implements IOrderRepository
              LEFT JOIN `DanceEvent` d ON d.event_id = oi.event_id
                      LEFT JOIN `HistoryEvent` h ON h.event_id = oi.event_id
                  LEFT JOIN `PassEvent` p ON p.event_id = oi.event_id
+             LEFT JOIN `YummyEvent` y ON y.event_id = oi.event_id
              GROUP BY
                 o.order_id,
                 o.user_id,
@@ -197,7 +198,7 @@ class OrderRepository extends Repository implements IOrderRepository
                 u.last_name,
                 u.email,
                 COALESCE(SUM(oi.quantity), 0) AS item_count,
-                         COALESCE(SUM(oi.quantity * COALESCE(j.price, d.price, h.price, p.base_price, 0)), 0) AS total_amount
+                         COALESCE(SUM(oi.quantity * COALESCE(j.price, d.price, h.price, p.base_price, y.price, 0)), 0) AS total_amount
              FROM `orders` o
              LEFT JOIN `User` u ON u.id = o.user_id
              LEFT JOIN `order_items` oi ON oi.order_id = o.order_id
@@ -205,6 +206,7 @@ class OrderRepository extends Repository implements IOrderRepository
              LEFT JOIN `DanceEvent` d ON d.event_id = oi.event_id
                      LEFT JOIN `HistoryEvent` h ON h.event_id = oi.event_id
                  LEFT JOIN `PassEvent` p ON p.event_id = oi.event_id
+             LEFT JOIN `YummyEvent` y ON y.event_id = oi.event_id
              WHERE o.order_id = :order_id
              GROUP BY
                 o.order_id,
@@ -422,7 +424,7 @@ class OrderRepository extends Repository implements IOrderRepository
                 j.artist_id,
                 a.name AS artist_name,
                 j.img_background,
-                     COALESCE(j.price, d.price, h.price, p.base_price, 0) AS price,
+                     COALESCE(j.price, d.price, h.price, p.base_price, y.price, 0) AS price,
                  h.family_price AS family_price,
                 j.page_id,
                  h.language,
@@ -439,6 +441,7 @@ class OrderRepository extends Repository implements IOrderRepository
              LEFT JOIN DanceEvent d ON d.event_id = e.event_id
                LEFT JOIN HistoryEvent h ON h.event_id = e.event_id
                  LEFT JOIN PassEvent p ON p.event_id = e.event_id
+             LEFT JOIN YummyEvent y ON y.event_id = e.event_id
              LEFT JOIN Artist a ON a.artist_id = j.artist_id
              LEFT JOIN {$vt} v ON v.{$vpk} = j.venue_id
              LEFT JOIN {$vt} vd ON vd.{$vpk} = d.venue_id
@@ -478,7 +481,7 @@ class OrderRepository extends Repository implements IOrderRepository
                 j.artist_id,
                 a.name AS artist_name,
                 j.img_background,
-                     COALESCE(j.price, d.price, h.price, p.base_price, 0) AS price,
+                     COALESCE(j.price, d.price, h.price, p.base_price, y.price, 0) AS price,
                  h.family_price AS family_price,
                 j.page_id,
                  h.language,
@@ -495,6 +498,7 @@ class OrderRepository extends Repository implements IOrderRepository
              LEFT JOIN DanceEvent d ON d.event_id = e.event_id
                LEFT JOIN HistoryEvent h ON h.event_id = e.event_id
                  LEFT JOIN PassEvent p ON p.event_id = e.event_id
+             LEFT JOIN YummyEvent y ON y.event_id = e.event_id
              LEFT JOIN Artist a ON a.artist_id = j.artist_id
              LEFT JOIN {$vt} v ON v.{$vpk} = j.venue_id
              LEFT JOIN {$vt} vd ON vd.{$vpk} = d.venue_id
@@ -607,7 +611,7 @@ class OrderRepository extends Repository implements IOrderRepository
                 j.artist_id,
                 a.name AS artist_name,
                 j.img_background,
-                     COALESCE(j.price, d.price, h.price, p.base_price, 0) AS price,
+                     COALESCE(j.price, d.price, h.price, p.base_price, y.price, 0) AS price,
                  h.family_price AS family_price,
                 j.page_id,
                 h.language,
@@ -623,6 +627,7 @@ class OrderRepository extends Repository implements IOrderRepository
              LEFT JOIN DanceEvent d ON d.event_id = e.event_id
              LEFT JOIN HistoryEvent h ON h.event_id = e.event_id
                  LEFT JOIN PassEvent p ON p.event_id = e.event_id
+             LEFT JOIN YummyEvent y ON y.event_id = e.event_id
              LEFT JOIN Artist a ON a.artist_id = j.artist_id
              LEFT JOIN {$vt} v ON v.{$vpk} = j.venue_id
              LEFT JOIN {$vt} vd ON vd.{$vpk} = d.venue_id
