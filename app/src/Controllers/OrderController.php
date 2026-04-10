@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Repositories\OrderRepository;
 use App\Services\EventModelBuilderService;
+use App\Services\HistoryBookingPricingService;
 use App\Services\OrderService;
 use App\Utils\AuthSessionData;
 use App\Utils\Csrf;
@@ -14,10 +15,12 @@ use App\Utils\Session;
 class OrderController
 {
     private OrderService $orderService;
+    private HistoryBookingPricingService $historyPricingService;
 
     public function __construct()
     {
         $this->orderService = new OrderService(new OrderRepository(), new EventModelBuilderService());
+        $this->historyPricingService = new HistoryBookingPricingService();
     }
 
     public function addItem(): void
@@ -38,9 +41,10 @@ class OrderController
             Csrf::assertPost('cart_csrf_token');
 
             $eventId = isset($_POST['event_id']) ? (int)$_POST['event_id'] : 0;
+            $quantity = isset($_POST['quantity']) ? (int)$_POST['quantity'] : 1;
             $passDate = isset($_POST['pass_date']) ? (string)$_POST['pass_date'] : null;
 
-            $order = $this->orderService->addEventToUserPendingOrder($userId, $eventId, $passDate);
+            $order = $this->orderService->addEventToUserPendingOrder($userId, $eventId, $quantity, $passDate);
             Flash::setSuccess('Ticket added to cart.');
             $this->jsonResponse([
                 'ok' => true,
@@ -248,6 +252,9 @@ class OrderController
                 'quantity' => (int)$item->quantity,
                 'unitPrice' => (float)$item->getUnitPrice(),
                 'unitPriceLabel' => number_format($item->getUnitPrice(), 2),
+                'totalPrice' => (float)$item->getTotalPrice(),
+                'totalPriceLabel' => number_format($item->getTotalPrice(), 2),
+                'maxQuantity' => strtolower((string)($item->event?->event_type ?? '')) === 'history' ? $this->historyPricingService->maxTicketsPerOrder() : 99,
             ];
         }
 

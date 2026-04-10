@@ -41,7 +41,7 @@ class Order
     {
         $total = 0.0;
         foreach ($this->items as $item) {
-            $total += ($item->getUnitPrice() * max(0, (int)$item->quantity));
+            $total += $item->getTotalPrice();
         }
 
         return $total;

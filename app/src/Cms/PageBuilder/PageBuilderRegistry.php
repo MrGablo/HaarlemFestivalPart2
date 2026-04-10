@@ -6,11 +6,14 @@ namespace App\Cms\PageBuilder;
 
 use App\Cms\PageBuilder\Builders\DanceHomePageBuilder;
 use App\Cms\PageBuilder\Builders\GenericPageBuilder;
+use App\Cms\PageBuilder\Builders\HistoryDetailPageBuilder;
+use App\Cms\PageBuilder\Builders\HistoryHomePageBuilder;
 use App\Cms\PageBuilder\Builders\HomePageBuilder;
 use App\Cms\PageBuilder\Builders\JazzArtistPageBuilder;
 use App\Cms\PageBuilder\Builders\JazzHomePageBuilder;
 use App\Cms\PageBuilder\Builders\StoriesHomePageBuilder;
 use App\Cms\PageBuilder\Builders\StoriesDetailPageBuilder;
+use App\Cms\PageBuilder\Builders\YummyDetailPageBuilder;
 
 final class PageBuilderRegistry
 {
@@ -29,6 +32,9 @@ final class PageBuilderRegistry
             new JazzArtistPageBuilder(),
             new StoriesHomePageBuilder(),
             new StoriesDetailPageBuilder(),
+            new YummyDetailPageBuilder(),
+            new HistoryHomePageBuilder(),
+            new HistoryDetailPageBuilder(),
         ];
 
         foreach ($builders as $builder) {

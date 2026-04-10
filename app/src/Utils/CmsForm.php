@@ -198,7 +198,10 @@ final class CmsForm
         $addLabel = (string)($field['addLabel'] ?? 'Add item');
         $repeaterId = self::inputId($path) . '_repeater';
 
-        echo '<div class="rounded-xl border border-slate-200 p-4" data-repeater data-next-index="' . self::h((string)$nextIndex) . '">';
+        $maxItems = isset($field['maxItems']) ? (int)$field['maxItems'] : 0;
+        $maxItemsAttr = $maxItems > 0 ? ' data-max-items="' . self::h((string)$maxItems) . '"' : '';
+
+        echo '<div class="rounded-xl border border-slate-200 p-4" data-repeater data-next-index="' . self::h((string)$nextIndex) . '"' . $maxItemsAttr . '>';
         echo '<div class="flex items-center justify-between gap-3">';
         echo '<div>';
         echo '<label class="block text-sm font-semibold text-slate-800">' . self::h($label) . '</label>';

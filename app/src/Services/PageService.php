@@ -18,6 +18,11 @@ class PageService
         return $this->pages->getAllPages();
     }
 
+    public function getPagesByType(string $pageType): array
+    {
+        return $this->pages->getPagesByType($pageType);
+    }
+
     public function createPage(string $pageTitle, string $pageType, array $content): int
     {
         return $this->pages->createPage($pageTitle, $pageType, $content);
