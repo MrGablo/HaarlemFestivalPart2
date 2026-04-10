@@ -296,6 +296,16 @@ $tailwindLoaded = true;
         </section>
     </main>
 
+    <button
+        id="cartToast"
+        type="button"
+        class="hidden fixed bottom-6 right-6 z-[1200] rounded-xl bg-zinc-900 px-4 py-3 text-left text-sm text-white shadow-xl ring-1 ring-white/15 transition hover:bg-zinc-800 max-[768px]:bottom-4 max-[768px]:left-4 max-[768px]:right-4"
+        aria-live="polite"
+    >
+        <span class="block font-semibold">Ticket added to cart</span>
+        <span class="block text-xs text-zinc-300 max-[768px]:text-sm">Click to open shopping cart</span>
+    </button>
+
     <script>
         (function () {
             var root = document.querySelector('[data-history-booking]');
