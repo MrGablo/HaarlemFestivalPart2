@@ -33,6 +33,7 @@ use App\Config; ?>
       <?php require __DIR__ . '/../partials/error_general.php'; ?>
 
       <form method="POST" action="/account/manage/update" enctype="multipart/form-data" class="mt-6 space-y-4">
+        <input type="hidden" name="_csrf" value="<?= htmlspecialchars(\App\Utils\Csrf::token('account_csrf_token'), ENT_QUOTES, 'UTF-8') ?>">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <label class="mb-1 block text-sm font-medium text-slate-700">First name</label>
@@ -107,6 +108,7 @@ use App\Config; ?>
         <p class="mt-1 text-sm text-slate-600">This action is permanent.</p>
 
         <form method="POST" action="/account/manage/delete" class="mt-4 space-y-3">
+          <input type="hidden" name="_csrf" value="<?= htmlspecialchars(\App\Utils\Csrf::token('account_csrf_token'), ENT_QUOTES, 'UTF-8') ?>">
           <label class="flex items-center gap-2 text-sm text-slate-700">
             <input type="checkbox" name="confirmDelete" value="DELETE" class="h-4 w-4 rounded border-slate-300 text-rose-600 focus:ring-rose-500">
             I understand and confirm account deletion

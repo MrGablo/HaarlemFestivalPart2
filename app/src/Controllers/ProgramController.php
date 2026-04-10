@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Config;
 use App\Repositories\OrderRepository;
+use App\Repositories\ReservationRepository;
 use App\Services\EventModelBuilderService;
 use App\Services\OrderService;
 use App\Services\TicketService;
@@ -61,9 +62,11 @@ class ProgramController
         $orderIds = array_values(array_filter($orderIds, static fn(int $id) => $id > 0));
 
         $ticketService = new TicketService();
+        $reservationRepository = new ReservationRepository();
 
         $paidEvents = [];
         $totalEvents = 0;
+        $reservations = $reservationRepository->getReservationsForUser($userId);
 
         if ($orderIds !== []) {
             $ticketRows = $ticketService->getPaidTicketsForUser($userId);
@@ -91,6 +94,8 @@ class ProgramController
         foreach ($unpaidEvents as $ev) {
             $totalEvents += max(0, (int)$ev['quantity']);
         }
+
+        $totalEvents += count($reservations);
 
         $cartCount = count($unpaidEvents);
 

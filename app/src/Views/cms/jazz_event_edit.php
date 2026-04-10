@@ -56,6 +56,19 @@
                         </div>
 
                         <div>
+                            <label class="block text-sm font-medium text-slate-700">Availability</label>
+                            <input
+                                name="availability"
+                                type="number"
+                                min="0"
+                                step="1"
+                                required
+                                value="<?= (int)($event->availability ?? 0) ?>"
+                                class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200">
+                            <p class="mt-1 text-xs text-slate-500">Total seats available for this jazz event.</p>
+                        </div>
+
+                        <div>
                             <label class="block text-sm font-medium text-slate-700">Event type</label>
                             <input
                                 type="text"

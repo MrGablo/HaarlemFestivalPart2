@@ -28,13 +28,7 @@
             <?php require __DIR__ . '/../partials/flash_success.php'; ?>
             <?php require __DIR__ . '/../partials/error_general.php'; ?>
 
-            <?php
-            $old = is_array($old ?? null) ? $old : [];
-
-            $v = static function (string $key, string $default = '') use ($old): string {
-                return htmlspecialchars((string)($old[$key] ?? $default));
-            };
-            ?>
+            <?php $old = is_array($old ?? null) ? $old : []; ?>
 
             <form method="POST"
                 enctype="multipart/form-data"
@@ -54,8 +48,21 @@
                                 type="text"
                                 maxlength="120"
                                 required
-                                value="<?= $v('title') ?>"
+                                value="<?= htmlspecialchars((string)($old['title'] ?? '')) ?>"
                                 class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700">Availability</label>
+                            <input
+                                name="availability"
+                                type="number"
+                                min="0"
+                                step="1"
+                                required
+                                value="<?= htmlspecialchars((string)($old['availability'] ?? '300')) ?>"
+                                class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
+                            <p class="mt-1 text-xs text-slate-500">Total seats available for this jazz event.</p>
                         </div>
                     </div>
                 </div>
@@ -71,7 +78,7 @@
                                 name="start_date"
                                 type="datetime-local"
                                 required
-                                value="<?= $v('start_date') ?>"
+                                value="<?= htmlspecialchars((string)($old['start_date'] ?? '')) ?>"
                                 class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
                         </div>
 
@@ -81,7 +88,7 @@
                                 name="end_date"
                                 type="datetime-local"
                                 required
-                                value="<?= $v('end_date') ?>"
+                                value="<?= htmlspecialchars((string)($old['end_date'] ?? '')) ?>"
                                 class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
                         </div>
 
@@ -93,6 +100,7 @@
                                 class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
                                 <option value="">Select venue</option>
                                 <?php foreach (($venues ?? []) as $venue): ?>
+                                    <?php if (!is_object($venue)) { continue; } ?>
                                     <?php $isSelected = ((string)($old['venue_id'] ?? '') === (string)$venue->venue_id) ? 'selected' : ''; ?>
                                     <option value="<?= (int)$venue->venue_id ?>" <?= $isSelected ?>>
                                         <?= htmlspecialchars((string)$venue->name) ?> (ID <?= (int)$venue->venue_id ?>)
@@ -109,6 +117,7 @@
                                 class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
                                 <option value="">Select artist</option>
                                 <?php foreach (($artists ?? []) as $artist): ?>
+                                    <?php if (!is_object($artist)) { continue; } ?>
                                     <?php $isSelected = ((string)($old['artist_id'] ?? '') === (string)$artist->artist_id) ? 'selected' : ''; ?>
                                     <option value="<?= (int)$artist->artist_id ?>" <?= $isSelected ?>>
                                         <?= htmlspecialchars((string)$artist->name) ?> (ID <?= (int)$artist->artist_id ?>)
@@ -136,7 +145,7 @@
                                 step="0.01"
                                 min="0"
                                 required
-                                value="<?= $v('price', '0.00') ?>"
+                                value="<?= htmlspecialchars((string)($old['price'] ?? '0.00')) ?>"
                                 class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
                         </div>
 

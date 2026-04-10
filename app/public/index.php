@@ -73,6 +73,7 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     //Yummy Festival routes
     $r->addRoute('GET', '/yummy', ['App\Controllers\YummyController', 'home']);
     $r->addRoute('GET', '/yummy/restaurant', ['App\Controllers\YummyController', 'gerRestaurant']);
+    $r->addRoute('POST', '/reservation/book', ['App\Controllers\ReservationController', 'book']);
 
     //user authorization
     $r->addRoute('GET',  '/login',    ['App\Controllers\AuthController', 'showLogin']);
@@ -106,6 +107,7 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     // Payment routes (Stripe checkout)
     $r->addRoute('POST', '/payment/checkout', ['App\Controllers\PaymentController', 'checkoutRedirect']);
     $r->addRoute('POST', '/api/payment/webhook', ['App\Controllers\PaymentController', 'handleWebhook']);
+    $r->addRoute('GET',  '/api/payment/status', ['App\Controllers\PaymentController', 'status']);
     $r->addRoute('GET',  '/payment/success', ['App\Controllers\PaymentController', 'success']);
     $r->addRoute('GET',  '/payment/cancel', ['App\Controllers\PaymentController', 'cancel']);
 

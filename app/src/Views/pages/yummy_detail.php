@@ -39,7 +39,12 @@ declare(strict_types=1);
 <body class="m-0 bg-white font-body text-black">
     <?php include __DIR__ . '/../partials/header.php'; ?>
 
+    <?php $old = is_array($old ?? null) ? $old : []; ?>
+
     <main class="max-w-6xl mx-auto px-6 py-12 font-sans text-gray-900">
+
+        <?php require __DIR__ . '/../partials/flash_success.php'; ?>
+        <?php require __DIR__ . '/../partials/error_general.php'; ?>
 
         <header class="mb-10">
             <a href="/yummy" class="text-gray-500 hover:text-gray-900 mb-4 inline-block">&larr; Yummy event -
@@ -134,19 +139,20 @@ declare(strict_types=1);
 
                 <div class="col-span-2 bg-[#F8E1AC] rounded-3xl p-6">
                     <form action="/reservation/book" method="POST" class="grid md:grid-cols-2 gap-6">
-                        <input type="hidden" name="event_id" value="<?= $vm->event->event_id ?>">
-                        <input type="hidden" name="yummy_event_id" value="<?= $vm->event->id ?>">
+                        <input type="hidden" name="_csrf" value="<?= htmlspecialchars(\App\Utils\Csrf::token('reservation_csrf_token'), ENT_QUOTES, 'UTF-8') ?>">
+                        <input type="hidden" name="event_id" value="<?= (int)($old['event_id'] ?? $vm->event->event_id) ?>">
+                        <input type="hidden" name="yummy_event_id" value="<?= (int)($old['yummy_event_id'] ?? $vm->event->id) ?>">
                         <div>
                             <label class="block text-sm mb-2">Number of guests</label>
                             <div class="flex gap-4 mb-4">
-                                <input type="number" name="adult_count" value="2" min="1"
+                                <input type="number" name="adult_count" value="<?= htmlspecialchars((string)($old['adult_count'] ?? '2'), ENT_QUOTES, 'UTF-8') ?>" min="1"
                                     class="w-16 p-2 rounded-xl text-center">
-                                <input type="number" name="child_count" value="0" min="0"
+                                <input type="number" name="child_count" value="<?= htmlspecialchars((string)($old['child_count'] ?? '0'), ENT_QUOTES, 'UTF-8') ?>" min="0"
                                     class="w-16 p-2 rounded-xl text-center">
                             </div>
                             <label class="block text-sm mb-2">Leave a note (optional)</label>
                             <textarea name="note" class="w-full p-3 rounded-xl h-24 text-sm"
-                                placeholder="Leave a note about allergies..."></textarea>
+                                placeholder="Leave a note about allergies..."><?= htmlspecialchars((string)($old['note'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
                         </div>
 
                         <div class="flex flex-col">

@@ -14,6 +14,25 @@ class PaymentRepository extends Repository
 {
     private ?string $orderItemPassDateColumn = null;
 
+    public function executeInTransaction(callable $callback): mixed
+    {
+        $pdo = $this->getConnection();
+        $pdo->beginTransaction();
+
+        try {
+            $result = $callback($pdo);
+            $pdo->commit();
+
+            return $result;
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            throw $e;
+        }
+    }
+
     public function findPendingOrderByUserId(int $userId): ?array
     {
         $stmt = $this->getConnection()->prepare(
@@ -34,6 +53,11 @@ class PaymentRepository extends Repository
     }
 
     public function getPendingOrderItemsWithPricing(int $orderId): array
+    {
+        return $this->getOrderItemsWithPricing($orderId);
+    }
+
+    public function getOrderItemsWithPricing(int $orderId): array
     {
         $stmt = $this->getConnection()->prepare(
             'SELECT
@@ -118,7 +142,12 @@ class PaymentRepository extends Repository
      */
     public function markOrderAsPaid(int $orderId, int $userId): void
     {
-        $stmt = $this->getConnection()->prepare(
+        $this->markOrderAsPaidUsingConnection($this->getConnection(), $orderId, $userId);
+    }
+
+    public function markOrderAsPaidUsingConnection(\PDO $connection, int $orderId, int $userId): void
+    {
+        $stmt = $connection->prepare(
             'UPDATE `orders`
              SET order_status = :status
              WHERE order_id = :order_id
@@ -140,6 +169,43 @@ class PaymentRepository extends Repository
         $status = $stmt->fetchColumn();
 
         return $status === 'payed';
+    }
+
+    public function getOrderStatusForUser(int $orderId, int $userId): ?string
+    {
+        $stmt = $this->getConnection()->prepare(
+            'SELECT order_status
+               FROM `orders`
+              WHERE order_id = :order_id
+                AND user_id = :user_id
+              LIMIT 1'
+        );
+        $stmt->execute([
+            ':order_id' => $orderId,
+            ':user_id' => $userId,
+        ]);
+        $status = $stmt->fetchColumn();
+
+        return is_string($status) ? strtolower(trim($status)) : null;
+    }
+
+    public function findLockedOrderByIdForUserUsingConnection(\PDO $connection, int $orderId, int $userId): ?array
+    {
+        $stmt = $connection->prepare(
+            'SELECT order_id, user_id, order_status, created_at
+               FROM `orders`
+              WHERE order_id = :order_id
+                AND user_id = :user_id
+              LIMIT 1
+              FOR UPDATE'
+        );
+        $stmt->execute([
+            ':order_id' => $orderId,
+            ':user_id' => $userId,
+        ]);
+        $row = $stmt->fetch();
+
+        return is_array($row) ? $row : null;
     }
 
     /**
@@ -183,9 +249,14 @@ class PaymentRepository extends Repository
 
     public function getOrderItemsByOrderId(int $orderId): array
     {
+        return $this->getOrderItemsByOrderIdUsingConnection($this->getConnection(), $orderId);
+    }
+
+    public function getOrderItemsByOrderIdUsingConnection(\PDO $connection, int $orderId): array
+    {
         $passDateExpr = $this->orderItemsPassDateSelectExpression('oi');
 
-        $stmt = $this->getConnection()->prepare(
+        $stmt = $connection->prepare(
             "SELECT
                 oi.order_item_id,
                 oi.order_id,
@@ -207,6 +278,7 @@ class PaymentRepository extends Repository
             'SELECT
                 o.order_id,
                 o.user_id,
+                o.created_at,
                 u.first_name,
                 u.last_name,
                 u.email

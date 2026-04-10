@@ -19,6 +19,7 @@
       <?php require __DIR__ . '/../partials/error_general.php'; ?>
 
       <form method="POST" action="/reset-password" class="mt-6 space-y-4">
+        <input type="hidden" name="_csrf" value="<?= htmlspecialchars(\App\Utils\Csrf::token('auth_csrf_token'), ENT_QUOTES, 'UTF-8') ?>">
         <input type="hidden" name="token" value="<?= htmlspecialchars($token ?? '') ?>">
 
         <div>

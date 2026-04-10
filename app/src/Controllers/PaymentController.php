@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Models\OrderStatus;
 use App\Repositories\PaymentRepository;
 use App\Services\PaymentService;
 use App\Utils\AuthSessionData;
@@ -154,23 +155,68 @@ class PaymentController
     {
         Session::ensureStarted();
 
+        $auth = AuthSessionData::read();
+        $userId = is_array($auth) ? (int)($auth['userId'] ?? 0) : 0;
         $pendingPayment = $_SESSION['pending_payment'] ?? null;
-        if (is_array($pendingPayment)) {
-            unset($_SESSION['pending_payment']);
+        $orderId = is_array($pendingPayment) ? (int)($pendingPayment['order_id'] ?? 0) : 0;
+        $paymentStatus = null;
+        $hasPaymentContext = $userId > 0 && $orderId > 0;
 
-            $userId  = (int)($pendingPayment['user_id']  ?? 0);
-            $orderId = (int)($pendingPayment['order_id'] ?? 0);
-
-            if ($userId > 0 && $orderId > 0) {
-                try {
-                    $this->paymentService->fulfillPendingOrder($userId, $orderId);
-                } catch (\Throwable $e) {
-                    error_log('Payment success fulfilment error: ' . $e->getMessage());
-                }
+        if ($hasPaymentContext) {
+            $paymentStatus = $this->paymentService->getOrderStatusForUser($userId, $orderId);
+            if ($paymentStatus === OrderStatus::PAYED->value) {
+                unset($_SESSION['pending_payment']);
             }
         }
 
         require __DIR__ . '/../Views/pages/payment_success.php';
+    }
+
+    // ---------------------------------------------------------------
+    // GET /api/payment/status
+    // Returns current order payment state for the order being checked out.
+    // ---------------------------------------------------------------
+    public function status(): void
+    {
+        Session::ensureStarted();
+
+        header('Content-Type: application/json; charset=utf-8');
+
+        $auth = AuthSessionData::read();
+        if (!is_array($auth)) {
+            http_response_code(401);
+            echo json_encode(['ok' => false, 'message' => 'Authentication required.']);
+            exit;
+        }
+
+        $userId = (int)($auth['userId'] ?? 0);
+        $requestedOrderId = isset($_GET['order_id']) ? (int)$_GET['order_id'] : 0;
+        $pendingPayment = $_SESSION['pending_payment'] ?? null;
+        $sessionOrderId = is_array($pendingPayment) ? (int)($pendingPayment['order_id'] ?? 0) : 0;
+
+        if ($userId <= 0 || $requestedOrderId <= 0 || $sessionOrderId <= 0 || $requestedOrderId !== $sessionOrderId) {
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'message' => 'Unknown payment context.']);
+            exit;
+        }
+
+        $status = $this->paymentService->getOrderStatusForUser($userId, $requestedOrderId);
+        if ($status === null) {
+            http_response_code(404);
+            echo json_encode(['ok' => false, 'message' => 'Order not found.']);
+            exit;
+        }
+
+        if ($status === OrderStatus::PAYED->value) {
+            unset($_SESSION['pending_payment']);
+        }
+
+        echo json_encode([
+            'ok' => true,
+            'status' => $status,
+            'completed' => $status === OrderStatus::PAYED->value,
+        ]);
+        exit;
     }
 
     // ---------------------------------------------------------------
@@ -179,6 +225,7 @@ class PaymentController
     public function cancel(): void
     {
         Session::ensureStarted();
+        unset($_SESSION['pending_payment']);
         require __DIR__ . '/../Views/pages/payment_cancel.php';
     }
 }

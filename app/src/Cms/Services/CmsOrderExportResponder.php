@@ -54,7 +54,7 @@ final class CmsOrderExportResponder
     /** @param array<string, string> $columnMap */
     private function streamExcel(array $rows, array $columns, array $columnMap): void
     {
-        $filename = 'orders_export_' . date('Ymd_His') . '.xml';
+        $filename = 'orders_export_' . date('Ymd_His') . '_excel2003.xml';
 
         header('Content-Type: application/vnd.ms-excel; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $filename . '"');

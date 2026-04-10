@@ -105,7 +105,8 @@ class EmailService
         string $firstName,
         string $orderNumber,
         string $ticketPdfPath,
-        array $tickets
+        array $tickets,
+        string $invoicePdfPath = ''
     ): bool {
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return false;
@@ -115,7 +116,7 @@ class EmailService
             $mailer = $this->createMailer();
             $mailer->addAddress($email);
             $mailer->isHTML(true);
-            $mailer->Subject = "Your Haarlem Festival tickets (Order {$orderNumber})";
+            $mailer->Subject = "Your Haarlem Festival tickets and invoice (Order {$orderNumber})";
 
             $htmlTickets = [];
             $textTickets = [];
@@ -180,19 +181,23 @@ class EmailService
 
             $mailer->Body = '<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#111827;">'
                 . '<p style="margin:0 0 16px;">Hi ' . htmlspecialchars($firstName, ENT_QUOTES, 'UTF-8') . ',</p>'
-                . '<p style="margin:0 0 16px;">Thank you for your payment. Your ticket PDF is attached below, and each QR code is included in this e-mail for quick entry at the venue.</p>'
+                . '<p style="margin:0 0 16px;">Thank you for your payment. Your ticket PDF and invoice are attached below, and each QR code is included in this e-mail for quick entry at the venue.</p>'
                 . '<p style="margin:0 0 20px;"><strong>Order number:</strong> ' . htmlspecialchars($orderNumber, ENT_QUOTES, 'UTF-8') . '</p>'
                 . implode('', $htmlTickets)
                 . '<p style="margin:24px 0 0;">Enjoy the festival!<br>Haarlem Festival</p>'
                 . '</div>';
             $mailer->AltBody = "Hi {$firstName},\n\n"
-                . "Thank you for your payment. Your ticket PDF is attached to this email.\n"
+                . "Thank you for your payment. Your ticket PDF and invoice are attached to this email.\n"
                 . "Order number: {$orderNumber}\n\n"
                 . implode("\n\n", $textTickets)
                 . "\n\nEnjoy the festival!\nHaarlem Festival";
 
             if ($ticketPdfPath !== '' && is_file($ticketPdfPath) && is_readable($ticketPdfPath)) {
                 $mailer->addAttachment($ticketPdfPath, 'tickets.pdf');
+            }
+
+            if ($invoicePdfPath !== '' && is_file($invoicePdfPath) && is_readable($invoicePdfPath)) {
+                $mailer->addAttachment($invoicePdfPath, 'invoice.pdf');
             }
 
             $mailer->send();

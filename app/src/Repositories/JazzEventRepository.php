@@ -143,10 +143,12 @@ class JazzEventRepository extends Repository implements IJazzEventRepository
             $stmt1 = $pdo->prepare("
             UPDATE Event
             SET title = :title
+              , availability = :availability
             WHERE event_id = :id
         ");
             $stmt1->execute([
                 ':title' => $event->title,
+                ':availability' => $event->availability,
                 ':id' => $event->event_id,
             ]);
 

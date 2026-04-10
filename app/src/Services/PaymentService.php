@@ -16,6 +16,7 @@ class PaymentService
     private TicketService $ticketService;
     private EmailService $emailService;
     private TicketPdfGenerator $ticketPdfGenerator;
+    private InvoicePdfGenerator $invoicePdfGenerator;
     private OrderService $orderService;
 
     public function __construct(
@@ -23,6 +24,7 @@ class PaymentService
         ?TicketService $ticketService = null,
         ?EmailService $emailService = null,
         ?TicketPdfGenerator $ticketPdfGenerator = null,
+        ?InvoicePdfGenerator $invoicePdfGenerator = null,
         ?OrderService $orderService = null
     )
     {
@@ -30,6 +32,7 @@ class PaymentService
         $this->ticketService = $ticketService ?? new TicketService();
         $this->emailService = $emailService ?? new EmailService();
         $this->ticketPdfGenerator = $ticketPdfGenerator ?? new TicketPdfGenerator();
+        $this->invoicePdfGenerator = $invoicePdfGenerator ?? new InvoicePdfGenerator();
         $this->orderService = $orderService ?? new OrderService(new OrderRepository(), new EventModelBuilderService());
     }
 
@@ -103,27 +106,45 @@ class PaymentService
      */
     public function fulfillPendingOrder(int $userId, int $orderId): void
     {
-        if ($this->repo->isOrderPaid($orderId)) {
+        $fulfilled = $this->repo->executeInTransaction(function (\PDO $connection) use ($userId, $orderId): bool {
+            $order = $this->repo->findLockedOrderByIdForUserUsingConnection($connection, $orderId, $userId);
+            if ($order === null) {
+                throw new \RuntimeException('Pending order not found for payment fulfilment.');
+            }
+
+            $status = strtolower(trim((string)($order['order_status'] ?? '')));
+            if ($status === 'payed') {
+                return false;
+            }
+
+            if ($status !== 'pending') {
+                throw new \RuntimeException('Order is not pending and cannot be fulfilled.');
+            }
+
+            $items = $this->repo->getOrderItemsByOrderIdUsingConnection($connection, $orderId);
+            if ($items === []) {
+                throw new \RuntimeException('Cannot fulfil an order without order items.');
+            }
+
+            $plan = $this->ticketService->buildFulfillmentPlan($items);
+            $this->ticketService->validateAvailabilityForRequirementsUsingConnection($connection, $plan['requirements']);
+            $this->ticketService->decrementAvailabilityForRequirementsUsingConnection($connection, $plan['requirements']);
+            $this->ticketService->createTicketsForPlansUsingConnection($connection, $userId, $plan['items']);
+            $this->repo->markOrderAsPaidUsingConnection($connection, $orderId, $userId);
+
+            return true;
+        });
+
+        if (!$fulfilled) {
             return;
         }
 
-        $this->repo->markOrderAsPaid($orderId, $userId);
+        $deliverySent = $this->sendTicketDeliveryEmail($orderId, $userId);
 
-        $items = $this->repo->getOrderItemsByOrderId($orderId);
-        foreach ($items as $item) {
-            $orderItemId = (int)($item['order_item_id'] ?? 0);
-            $eventId = (int)($item['event_id'] ?? 0);
-            $quantity    = (int)($item['quantity'] ?? 0);
-            $passDate = isset($item['pass_date']) ? (string)$item['pass_date'] : null;
-
-            if ($orderItemId <= 0 || $eventId <= 0 || $quantity <= 0) {
-                continue;
-            }
-
-            $this->ticketService->createTicketsForOrderItem($orderItemId, $userId, $eventId, $quantity, $passDate);
+        if (!$deliverySent) {
+            error_log("Payment OK but delivery pending: order=$orderId user=$userId");
+            return;
         }
-
-        $this->sendTicketDeliveryEmail($orderId, $userId);
 
         error_log("Payment OK: order=$orderId user=$userId");
     }
@@ -133,8 +154,9 @@ class PaymentService
      */
     public function handleCheckoutCompleted(object $session): void
     {
-        $userId           = (int) ($session->metadata->user_id ?? 0);
-        $pendingOrderId   = (int) ($session->metadata->pending_order_id ?? 0);
+        $metadata = is_object($session->metadata ?? null) ? $session->metadata : null;
+        $userId = (int)($metadata->user_id ?? 0);
+        $pendingOrderId = (int)($metadata->pending_order_id ?? 0);
 
         if ($userId <= 0) {
             throw new \RuntimeException('Payment: invalid metadata - user_id=' . $userId);
@@ -145,6 +167,15 @@ class PaymentService
         }
 
         $this->fulfillPendingOrder($userId, $pendingOrderId);
+    }
+
+    public function getOrderStatusForUser(int $userId, int $orderId): ?string
+    {
+        if ($userId <= 0 || $orderId <= 0) {
+            return null;
+        }
+
+        return $this->repo->getOrderStatusForUser($orderId, $userId);
     }
 
     private function getStripeSecretKey(): string
@@ -160,21 +191,21 @@ class PaymentService
         return $key;
     }
 
-    private function sendTicketDeliveryEmail(int $orderId, int $userId): void
+    private function sendTicketDeliveryEmail(int $orderId, int $userId): bool
     {
         $recipient = $this->repo->getOrderDeliveryRecipient($orderId, $userId);
         if (!is_array($recipient)) {
-            return;
+            return false;
         }
 
         $email = trim((string)($recipient['email'] ?? ''));
         if ($email === '') {
-            return;
+            return false;
         }
 
         $tickets = $this->repo->getIssuedTicketsForOrder($orderId);
         if ($tickets === []) {
-            return;
+            return false;
         }
 
         foreach ($tickets as &$ticket) {
@@ -196,8 +227,10 @@ class PaymentService
         $firstName = trim((string)($recipient['first_name'] ?? 'Festival guest'));
         $lastName = trim((string)($recipient['last_name'] ?? ''));
         $orderNumber = sprintf('HF-%06d', $orderId);
+        $invoiceItems = $this->repo->getOrderItemsWithPricing($orderId);
 
         $pdfPath = '';
+        $invoicePdfPath = '';
 
         try {
             $pdfPath = $this->ticketPdfGenerator->generateTicketsPdf(
@@ -206,23 +239,39 @@ class PaymentService
                 $tickets
             );
 
+            $invoicePdfPath = $this->invoicePdfGenerator->generateInvoicePdf(
+                $orderNumber,
+                trim($firstName . ' ' . $lastName),
+                $invoiceItems,
+                isset($recipient['created_at']) ? (string)$recipient['created_at'] : null
+            );
+
             $sent = $this->emailService->sendTicketDelivery(
                 $email,
                 $firstName !== '' ? $firstName : 'Festival guest',
                 $orderNumber,
                 $pdfPath,
-                $tickets
+                $tickets,
+                $invoicePdfPath
             );
 
             if (!$sent) {
                 error_log('Ticket delivery email was not sent for order ' . $orderId);
             }
+
+            return $sent;
         } catch (\Throwable $e) {
             error_log('Ticket delivery preparation failed for order ' . $orderId . ': ' . $e->getMessage());
         } finally {
             if ($pdfPath !== '' && is_file($pdfPath)) {
                 @unlink($pdfPath);
             }
+
+            if ($invoicePdfPath !== '' && is_file($invoicePdfPath)) {
+                @unlink($invoicePdfPath);
+            }
         }
+
+        return false;
     }
 }

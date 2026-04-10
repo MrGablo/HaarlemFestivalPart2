@@ -47,6 +47,7 @@ class JazzEventService
     public function hydrateEventFromInput(JazzEvent $event, array $input): void
     {
         $event->title = $this->requireText($input, 'title', 'Title');
+        $event->availability = $this->parseNonNegativeInt((string)($input['availability'] ?? ''), 'Availability');
         $event->start_date = $this->normalizeDateTime((string)($input['start_date'] ?? ''));
         $event->end_date = $this->normalizeDateTime((string)($input['end_date'] ?? ''));
         $event->venue_id = $this->parseRequiredPositiveInt((string)($input['venue_id'] ?? ''), 'Venue');
@@ -147,6 +148,20 @@ class JazzEventService
         }
 
         return $value;
+    }
+
+    private function parseNonNegativeInt(string $raw, string $label): int
+    {
+        $raw = trim($raw);
+        if ($raw === '') {
+            throw new \RuntimeException($label . ' is required.');
+        }
+
+        if (!ctype_digit($raw)) {
+            throw new \RuntimeException($label . ' must be a whole number.');
+        }
+
+        return (int)$raw;
     }
 
     private function normalizeDateTime(string $input): string

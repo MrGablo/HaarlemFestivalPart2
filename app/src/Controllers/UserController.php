@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Config;
 use App\Services\UserService;
 use App\Utils\AuthSessionData;
+use App\Utils\Csrf;
 use App\Utils\Flash;
 use App\Utils\Session;
 
@@ -55,6 +56,7 @@ class UserController
             'email' => $_POST['email'] ?? '',
         ]);
         try {
+            Csrf::assertPost('account_csrf_token');
             $this->userService->updateAccount($userId, $_POST, $_FILES);
             $updatedUser = $this->userService->getAccountById($userId);
             if ($updatedUser !== null) {
@@ -80,6 +82,7 @@ class UserController
         }
 
         try {
+            Csrf::assertPost('account_csrf_token');
             $this->userService->deleteAccount($userId, $_POST);
 
             $_SESSION = [];
@@ -117,6 +120,7 @@ class UserController
         }
 
         try {
+            Csrf::assertPost('account_csrf_token');
             $data = $this->getRequestData();
             $this->userService->updateAccount($userId, $data, $_FILES);
             $this->json(['message' => 'Account updated successfully.'], 200);
@@ -134,6 +138,7 @@ class UserController
         }
 
         try {
+            Csrf::assertPost('account_csrf_token');
             $data = $this->getRequestData();
             $this->userService->deleteAccount($userId, $data);
 

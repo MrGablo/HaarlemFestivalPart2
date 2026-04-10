@@ -19,7 +19,7 @@ final class Csrf
     {
         Session::ensureStarted();
         $sessionToken = (string)($_SESSION[$sessionKey] ?? '');
-        $postedToken = (string)($_POST[$field] ?? '');
+        $postedToken = (string)($_POST[$field] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? ''));
 
         if ($sessionToken === '' || $postedToken === '' || !hash_equals($sessionToken, $postedToken)) {
             throw new CsrfException('Invalid form token. Please refresh and try again.');

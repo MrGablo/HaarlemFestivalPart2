@@ -1,10 +1,16 @@
 <?php
 declare(strict_types=1);
 
-use App\Utils\AuthSessionData;
-
-$auth = AuthSessionData::read() ?? [];
-$userName = $auth['userName'] ?? 'Guest';
+$status = is_string($paymentStatus ?? null) ? strtolower(trim((string)$paymentStatus)) : null;
+$isPaid = $status === 'payed';
+$isPending = $status === 'pending';
+$hasContext = (bool)($hasPaymentContext ?? false);
+$statusBadge = $isPaid ? 'Payment confirmed' : ($isPending ? 'Waiting for Stripe confirmation' : 'Payment status unavailable');
+$statusCopy = $isPaid
+    ? 'Stripe confirmed your payment. We are preparing your tickets and invoice for delivery.'
+    : ($isPending
+        ? 'Your payment return was received, but the webhook confirmation has not finished yet. This page will refresh automatically.'
+        : 'We could not confirm this payment from your current browser session. You can check your program shortly or try the status refresh below.');
 ?>
 <!doctype html>
 <html lang="en">
@@ -24,18 +30,28 @@ $userName = $auth['userName'] ?? 'Guest';
 
         <section class="relative z-[2] mx-auto max-w-[460px] pt-2 text-center">
             <div class="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-[#b8dfff] text-[26px] font-bold text-[#1b8fe8]" aria-hidden="true">&#10003;</div>
-            <h1 class="mb-6 text-[49px] font-bold uppercase leading-tight text-black">Payment Successful!</h1>
+            <h1 class="mb-4 text-[49px] font-bold uppercase leading-tight text-black">
+                <?= $isPaid ? 'Payment Confirmed' : 'Payment Processing' ?>
+            </h1>
+            <p id="payment-status-copy" class="mb-6 text-sm leading-6 text-neutral-600"><?= htmlspecialchars($statusCopy, ENT_QUOTES, 'UTF-8') ?></p>
 
             <a href="/program" class="mb-2.5 block w-full rounded-none bg-[#1f98eb] px-5 py-4 text-center text-[25px] font-bold uppercase leading-[30px] text-white no-underline transition duration-150 hover:-translate-y-px hover:brightness-[0.98]">View My Program</a>
             <a href="/" class="mb-[18px] block w-full rounded-none bg-black px-5 py-[7px] text-center text-[13px] font-bold uppercase leading-[19.5px] text-white no-underline transition duration-150 hover:-translate-y-px hover:brightness-[0.98]">Back to Home Page</a>
 
             <div class="rounded-md border border-[#c0d3ef] bg-[#d9e2f2] px-4 py-3.5 text-left text-[#4b5563]">
-                <p class="mb-1 text-[13px] font-semibold leading-[19.5px] text-[#3f4754]"><span class="mr-2 font-bold text-[#1f98eb]">i</span>Confirmation Email Sent</p>
-                <p class="m-0 text-[13px] font-normal leading-[19.5px] text-[#6b7280]">
-                    A confirmation email with your tickets and QR codes has been sent to your email address, <?= htmlspecialchars($userName) ?>.
-                    Please present these at the venue entrance.
+                <p id="payment-status-badge" class="mb-1 text-[13px] font-semibold leading-[19.5px] text-[#3f4754]"><span class="mr-2 font-bold text-[#1f98eb]">i</span><?= htmlspecialchars($statusBadge, ENT_QUOTES, 'UTF-8') ?></p>
+                <p id="payment-status-detail" class="m-0 text-[13px] font-normal leading-[19.5px] text-[#6b7280]">
+                    <?= $isPaid
+                        ? 'Once delivery completes, your tickets, invoice, and QR codes will be available in your inbox and from your program overview.'
+                        : 'Do not refresh away from this page yet if you want to wait for the Stripe confirmation. If the confirmation takes too long, open My Program to check the latest order state.' ?>
                 </p>
             </div>
+
+            <?php if ($hasContext): ?>
+                <p id="payment-status-refresh" class="mt-4 text-xs text-neutral-500" data-order-id="<?= (int)($orderId ?? 0) ?>">
+                    Order #<?= (int)($orderId ?? 0) ?> is being checked for webhook confirmation.
+                </p>
+            <?php endif; ?>
         </section>
     </main>
 
@@ -73,6 +89,68 @@ $userName = $auth['userName'] ?? 'Guest';
                     }
                 }));
             }, 220);
+        })();
+
+        (function () {
+            const refreshTarget = document.getElementById('payment-status-refresh');
+            if (!refreshTarget) return;
+
+            const orderId = refreshTarget.dataset.orderId;
+            if (!orderId) return;
+
+            const statusCopy = document.getElementById('payment-status-copy');
+            const statusBadge = document.getElementById('payment-status-badge');
+            const statusDetail = document.getElementById('payment-status-detail');
+            let attempts = 0;
+            const maxAttempts = 20;
+
+            const applyPaidState = function () {
+                if (statusCopy) {
+                    statusCopy.textContent = 'Stripe confirmed your payment. We are preparing your tickets and invoice for delivery.';
+                }
+                if (statusBadge) {
+                    statusBadge.innerHTML = '<span class="mr-2 font-bold text-[#1f98eb]">i</span>Payment confirmed';
+                }
+                if (statusDetail) {
+                    statusDetail.textContent = 'Your order is now marked as paid. Delivery email preparation continues separately, so allow a short delay before checking your inbox.';
+                }
+                refreshTarget.textContent = 'Payment confirmation received.';
+            };
+
+            const poll = function () {
+                attempts += 1;
+
+                fetch('/api/payment/status?order_id=' + encodeURIComponent(orderId), {
+                    headers: { 'Accept': 'application/json' },
+                    credentials: 'same-origin'
+                })
+                    .then(function (response) {
+                        return response.ok ? response.json() : Promise.reject(new Error('status'));
+                    })
+                    .then(function (payload) {
+                        if (payload && payload.completed) {
+                            applyPaidState();
+                            return;
+                        }
+
+                        if (attempts >= maxAttempts) {
+                            refreshTarget.textContent = 'Still waiting for confirmation. You can open My Program and refresh there shortly.';
+                            return;
+                        }
+
+                        window.setTimeout(poll, 2000);
+                    })
+                    .catch(function () {
+                        if (attempts >= maxAttempts) {
+                            refreshTarget.textContent = 'Live status refresh is unavailable right now. Please check My Program in a moment.';
+                            return;
+                        }
+
+                        window.setTimeout(poll, 2000);
+                    });
+            };
+
+            <?= $isPaid ? 'applyPaidState();' : 'poll();' ?>
         })();
     </script>
 </body>

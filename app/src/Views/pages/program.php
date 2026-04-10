@@ -141,6 +141,39 @@ $subtotal = (float)($subtotal ?? 0);
             </section>
         <?php endif; ?>
 
+        <?php if (!empty($reservations)): ?>
+            <section>
+                <h2 class="mb-2 text-lg font-bold text-black">Restaurant reservations</h2>
+                <p class="mb-6 text-base text-neutral-600">Your booked Yummy reservations appear here with guest counts and timeslots.</p>
+
+                <?php foreach ($reservations as $reservation): ?>
+                    <div class="mb-2.5 rounded-lg border border-neutral-200 px-4 py-3">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="min-w-0 flex-1">
+                                <div class="font-bold"><?= htmlspecialchars((string)($reservation['title'] ?? 'Restaurant reservation'), ENT_QUOTES, 'UTF-8') ?></div>
+                                <div class="text-sm text-neutral-600">
+                                    <?= htmlspecialchars((string)($reservation['reservation_time'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                                </div>
+                                <div class="mt-1 text-sm text-neutral-700">
+                                    Guests: <?= (int)($reservation['guest_total'] ?? 0) ?>
+                                    <?php if ((int)($reservation['adult_count'] ?? 0) > 0): ?>
+                                        · Adults: <?= (int)($reservation['adult_count'] ?? 0) ?>
+                                    <?php endif; ?>
+                                    <?php if ((int)($reservation['children_count'] ?? 0) > 0): ?>
+                                        · Children: <?= (int)($reservation['children_count'] ?? 0) ?>
+                                    <?php endif; ?>
+                                </div>
+                                <?php if (!empty($reservation['note'])): ?>
+                                    <div class="mt-1 text-sm text-neutral-600">Note: <?= htmlspecialchars((string)$reservation['note'], ENT_QUOTES, 'UTF-8') ?></div>
+                                <?php endif; ?>
+                            </div>
+                            <span class="shrink-0 text-xs font-bold uppercase text-[#2F80ED]">Reserved</span>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </section>
+        <?php endif; ?>
+
         <p class="text-2xl font-bold text-black">Subtotal (unpaid): €<?= number_format($subtotal, 2, '.', '') ?></p>
 
         <div class="flex flex-wrap gap-4">

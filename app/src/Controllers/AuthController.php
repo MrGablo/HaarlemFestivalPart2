@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Config;
 use App\Services\AuthService;
 use App\Utils\AuthSessionData;
+use App\Utils\Csrf;
 use App\Utils\Flash;
 use App\Utils\Session;
 
@@ -47,6 +48,8 @@ class AuthController
 
     public function requestPasswordReset(): void
     {
+        Csrf::assertPost('auth_csrf_token');
+
         Flash::setOld([
             'email' => $_POST['email'] ?? '',
         ]);
@@ -76,6 +79,8 @@ class AuthController
 
     public function resetPassword(): void
     {
+        Csrf::assertPost('auth_csrf_token');
+
         $token = trim((string)($_POST['token'] ?? ''));
 
         Flash::setOld([
@@ -100,6 +105,8 @@ class AuthController
 
     public function register(): void
     {
+        Csrf::assertPost('auth_csrf_token');
+
         // Do not store old input in session; if validation fails we'll render
         // the register view directly using the POST data so the form can
         // be re-filled without using Flash::setOld.
@@ -134,6 +141,8 @@ class AuthController
 
     public function login(): void
     {
+        Csrf::assertPost('auth_csrf_token');
+
         Flash::setOld([
             'userName' => $_POST['userName'] ?? '',
         ]);

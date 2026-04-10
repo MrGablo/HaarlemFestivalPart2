@@ -20,6 +20,7 @@
             <?php require __DIR__ . '/../partials/error_general.php'; ?>
 
             <form method="POST" action="/register">
+              <input type="hidden" name="_csrf" value="<?= htmlspecialchars(\App\Utils\Csrf::token('auth_csrf_token'), ENT_QUOTES, 'UTF-8') ?>">
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label class="form-label">First name</label>

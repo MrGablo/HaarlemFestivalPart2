@@ -98,7 +98,7 @@
                         </button>
                         <button type="submit" name="format" value="excel"
                             class="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
-                            Export Excel
+                            Export Excel XML
                         </button>
                     </div>
                 </div>

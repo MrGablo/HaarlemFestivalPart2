@@ -12,6 +12,7 @@ enum EventTypes: string
     case STORIES = 'stories';
     case DANCE = 'dance';
     case HISTORY = 'history';
+    case YUMMY = 'yummy';
 }
 
 class EventService

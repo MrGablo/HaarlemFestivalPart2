@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Config;
 use App\Repositories\PageRepository;
 use App\Repositories\YummyEventRepository;
+use App\Utils\Flash;
 use App\Services\YummyHomeService;
 use App\Services\YummyDetailService;
 use App\Utils\AuthSessionData;
@@ -42,7 +43,23 @@ class YummyController
 
             require __DIR__ . '/../Views/pages/yummy_home.php';
         } catch (\Throwable $e) {
-            $vm = new YummyHomePageViewModel();
+            $vm = new YummyHomePageViewModel([
+                'pageTitle' => 'Yummy',
+                'hero' => [
+                    'titleHtml' => 'Yummy',
+                    'bgImage' => '',
+                ],
+                'intro' => [],
+                'gallery' => [
+                    'images' => [],
+                    'captions' => [],
+                ],
+                'map' => [
+                    'image' => '',
+                    'imageCaption' => '',
+                ],
+                'restaurants' => [],
+            ], []);
             $isLoggedIn = false;
             $profilePicturePath = Config::DEFAULT_USER_PROFILE_IMAGE_PATH;
             $activeNav = 'yummy';
@@ -76,6 +93,9 @@ class YummyController
         $auth = AuthSessionData::read();
         $isLoggedIn = $auth !== null;
         $activeNav = 'yummy';
+        $errors = Flash::getErrors();
+        $flashSuccess = Flash::getSuccess();
+        $old = Flash::getOld();
 
         require __DIR__ . '/../Views/pages/yummy_detail.php';
     }
