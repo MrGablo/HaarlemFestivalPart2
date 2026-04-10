@@ -80,10 +80,11 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     // Personal Program (My Program) page
     $r->addRoute('GET', '/program', ['App\Controllers\ProgramController', 'show']);
     $r->addRoute('POST', '/program/cancel-awaiting-payment', ['App\Controllers\ProgramController', 'cancelAwaitingPayment']);
-    
+
     //Yummy Festival routes
     $r->addRoute('GET', '/yummy', ['App\Controllers\YummyController', 'home']);
     $r->addRoute('GET', '/yummy/restaurant', ['App\Controllers\YummyController', 'gerRestaurant']);
+    $r->addRoute('POST', '/reservation/book', ['App\Controllers\ReservationController', 'book']);
 
     //user authorization
     $r->addRoute('GET', '/login', ['App\Controllers\AuthController', 'showLogin']);
@@ -173,8 +174,8 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     $r->addRoute('GET', '/cms/events/stories/{id:\d+}', ['App\Cms\Controllers\CMSStoriesEventController', 'edit']);
     $r->addRoute('POST', '/cms/events/stories/{id:\d+}', ['App\Cms\Controllers\CMSStoriesEventController', 'update']);
     $r->addRoute('POST', '/cms/events/stories/{id:\d+}/delete', ['App\Cms\Controllers\CMSStoriesEventController', 'delete']);
-    
- 
+
+
     // Jazz CMS routes (admin only)
     $r->addRoute('GET', '/cms/events/jazz', ['App\Cms\Controllers\CMSJazzController', 'index']);
     $r->addRoute('GET', '/cms/events/jazz/create', ['App\Cms\Controllers\CMSJazzController', 'createForm']);
