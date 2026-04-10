@@ -294,6 +294,7 @@ final class CmsPageEditorService
         }
 
         return match ($pageType) {
+            'Dance_Detail_Page' => 'Dance Artist Detail Page',
             default => ucwords(strtolower(str_replace(['_', '-'], ' ', $pageType))),
         };
     }

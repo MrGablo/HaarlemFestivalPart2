@@ -10,6 +10,149 @@ use App\Support\VenueSchemaHelper;
 final class DanceHomeRepository extends Repository
 {
     /** @return list<array<string, mixed>> */
+    public function findDanceArtistEventsByPageId(int $pageId): array
+    {
+        if ($pageId <= 0) {
+            return [];
+        }
+
+        $pdo = $this->getConnection();
+        $vpk = VenueSchemaHelper::primaryKeyColumn($pdo);
+        $locExpr = VenueSchemaHelper::displayNameExpression($pdo, 'v');
+        $venueTable = str_replace('`', '``', VenueSchemaHelper::venueTableName($pdo));
+
+        $sqlNew = 'SELECT e.event_id,
+                          e.title,
+                          ' . $locExpr . ' AS location_name,
+                          d.price,
+                          d.start_date AS session_start,
+                          d.end_date AS session_end,
+                          d.event_date AS day_display_label,
+                          d.sort_order
+                     FROM DanceEvent d
+                     INNER JOIN Event e ON e.event_id = d.event_id AND e.event_type = \'dance\'
+                     LEFT JOIN `' . $venueTable . '` v ON v.`' . $vpk . '` = d.venue_id
+                    WHERE d.page_id = :page_id
+                      AND (d.row_kind IS NULL OR TRIM(d.row_kind) = \'\' OR LOWER(TRIM(d.row_kind)) NOT IN (\'all_access\', \'day_pass\'))
+                    ORDER BY d.sort_order ASC, d.start_date ASC, e.event_id ASC';
+
+        $sqlLegacy = 'SELECT e.event_id,
+                             e.title,
+                             ' . $locExpr . ' AS location_name,
+                             d.price,
+                             d.session_start,
+                             d.session_end,
+                             d.day_display_label,
+                             d.sort_order
+                        FROM DanceEvent d
+                        INNER JOIN Event e ON e.event_id = d.event_id AND e.event_type = \'dance\'
+                        LEFT JOIN `' . $venueTable . '` v ON v.`' . $vpk . '` = d.venue_id
+                       WHERE d.page_id = :page_id
+                         AND (d.row_kind IS NULL OR TRIM(d.row_kind) = \'\' OR LOWER(TRIM(d.row_kind)) NOT IN (\'all_access\', \'day_pass\'))
+                       ORDER BY d.sort_order ASC, d.session_start ASC, e.event_id ASC';
+
+        $rows = $this->tryFetchRowsPrepared($pdo, $sqlNew, [':page_id' => $pageId]);
+        if ($rows === null) {
+            $rows = $this->tryFetchRowsPrepared($pdo, $sqlLegacy, [':page_id' => $pageId]);
+        }
+
+        return $rows ?? [];
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function findDanceArtistEventsByArtistName(string $artistName): array
+    {
+        $artistName = trim($artistName);
+        if ($artistName === '') {
+            return [];
+        }
+
+        $pdo = $this->getConnection();
+        $vpk = VenueSchemaHelper::primaryKeyColumn($pdo);
+        $locExpr = VenueSchemaHelper::displayNameExpression($pdo, 'v');
+        $venueTable = str_replace('`', '``', VenueSchemaHelper::venueTableName($pdo));
+        $needle = '%' . $artistName . '%';
+
+        // Prefer artist table when DanceEvent.artist_id exists and is populated.
+        $sqlWithArtist = 'SELECT e.event_id,
+                                 e.title,
+                                 ' . $locExpr . ' AS location_name,
+                                 d.price,
+                                 d.start_date AS session_start,
+                                 d.end_date AS session_end,
+                                 d.event_date AS day_display_label,
+                                 d.sort_order
+                            FROM DanceEvent d
+                            INNER JOIN Event e ON e.event_id = d.event_id AND e.event_type = \'dance\'
+                            LEFT JOIN Artist a ON a.artist_id = d.artist_id
+                            LEFT JOIN `' . $venueTable . '` v ON v.`' . $vpk . '` = d.venue_id
+                           WHERE (d.row_kind IS NULL OR TRIM(d.row_kind) = \'\' OR LOWER(TRIM(d.row_kind)) NOT IN (\'all_access\', \'day_pass\'))
+                             AND (UPPER(COALESCE(a.name, \'\')) LIKE UPPER(:needle)
+                                  OR UPPER(e.title) LIKE UPPER(:needle))
+                           ORDER BY d.sort_order ASC, d.start_date ASC, e.event_id ASC';
+
+        $sqlWithArtistLegacyDate = 'SELECT e.event_id,
+                                           e.title,
+                                           ' . $locExpr . ' AS location_name,
+                                           d.price,
+                                           d.session_start,
+                                           d.session_end,
+                                           d.day_display_label,
+                                           d.sort_order
+                                      FROM DanceEvent d
+                                      INNER JOIN Event e ON e.event_id = d.event_id AND e.event_type = \'dance\'
+                                      LEFT JOIN Artist a ON a.artist_id = d.artist_id
+                                      LEFT JOIN `' . $venueTable . '` v ON v.`' . $vpk . '` = d.venue_id
+                                     WHERE (d.row_kind IS NULL OR TRIM(d.row_kind) = \'\' OR LOWER(TRIM(d.row_kind)) NOT IN (\'all_access\', \'day_pass\'))
+                                       AND (UPPER(COALESCE(a.name, \'\')) LIKE UPPER(:needle)
+                                            OR UPPER(e.title) LIKE UPPER(:needle))
+                                     ORDER BY d.sort_order ASC, d.session_start ASC, e.event_id ASC';
+
+        $sqlNoArtist = 'SELECT e.event_id,
+                               e.title,
+                               ' . $locExpr . ' AS location_name,
+                               d.price,
+                               d.start_date AS session_start,
+                               d.end_date AS session_end,
+                               d.event_date AS day_display_label,
+                               d.sort_order
+                          FROM DanceEvent d
+                          INNER JOIN Event e ON e.event_id = d.event_id AND e.event_type = \'dance\'
+                          LEFT JOIN `' . $venueTable . '` v ON v.`' . $vpk . '` = d.venue_id
+                         WHERE (d.row_kind IS NULL OR TRIM(d.row_kind) = \'\' OR LOWER(TRIM(d.row_kind)) NOT IN (\'all_access\', \'day_pass\'))
+                           AND UPPER(e.title) LIKE UPPER(:needle)
+                         ORDER BY d.sort_order ASC, d.start_date ASC, e.event_id ASC';
+
+        $sqlNoArtistLegacyDate = 'SELECT e.event_id,
+                                         e.title,
+                                         ' . $locExpr . ' AS location_name,
+                                         d.price,
+                                         d.session_start,
+                                         d.session_end,
+                                         d.day_display_label,
+                                         d.sort_order
+                                    FROM DanceEvent d
+                                    INNER JOIN Event e ON e.event_id = d.event_id AND e.event_type = \'dance\'
+                                    LEFT JOIN `' . $venueTable . '` v ON v.`' . $vpk . '` = d.venue_id
+                                   WHERE (d.row_kind IS NULL OR TRIM(d.row_kind) = \'\' OR LOWER(TRIM(d.row_kind)) NOT IN (\'all_access\', \'day_pass\'))
+                                     AND UPPER(e.title) LIKE UPPER(:needle)
+                                   ORDER BY d.sort_order ASC, d.session_start ASC, e.event_id ASC';
+
+        $rows = $this->tryFetchRowsPrepared($pdo, $sqlWithArtist, [':needle' => $needle]);
+        if ($rows === null) {
+            $rows = $this->tryFetchRowsPrepared($pdo, $sqlWithArtistLegacyDate, [':needle' => $needle]);
+        }
+        if ($rows === null) {
+            $rows = $this->tryFetchRowsPrepared($pdo, $sqlNoArtist, [':needle' => $needle]);
+        }
+        if ($rows === null) {
+            $rows = $this->tryFetchRowsPrepared($pdo, $sqlNoArtistLegacyDate, [':needle' => $needle]);
+        }
+
+        return $rows ?? [];
+    }
+
+    /** @return list<array<string, mixed>> */
     public function findDanceTimetableRows(): array
     {
         $pdo = $this->getConnection();
@@ -265,6 +408,24 @@ final class DanceHomeRepository extends Repository
             return is_array($rows) ? $rows : [];
         } catch (\Throwable $e) {
             error_log('DanceHomeRepository::findDanceTimetableRows variant failed: ' . $e->getMessage());
+
+            return null;
+        }
+    }
+
+    /** @param array<string, mixed> $params
+     *  @return list<array<string, mixed>>|null
+     */
+    private function tryFetchRowsPrepared(\PDO $pdo, string $sql, array $params): ?array
+    {
+        try {
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            return is_array($rows) ? $rows : [];
+        } catch (\Throwable $e) {
+            error_log('DanceHomeRepository prepared query failed: ' . $e->getMessage());
 
             return null;
         }

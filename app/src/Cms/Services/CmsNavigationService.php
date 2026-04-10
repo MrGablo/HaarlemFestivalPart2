@@ -37,6 +37,15 @@ final class CmsNavigationService
                 'showOnOverview' => true,
             ],
             [
+                'key' => 'dance-events',
+                'title' => 'Dance Events',
+                'type' => 'dance_events',
+                'href' => '/cms/events/dance',
+                'label' => 'Open',
+                'match' => ['/cms/events/dance'],
+                'showOnOverview' => true,
+            ],
+            [
                 'key' => 'jazz-events',
                 'title' => 'Jazz Events',
                 'type' => 'jazz_events',
