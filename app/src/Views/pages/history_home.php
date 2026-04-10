@@ -45,6 +45,7 @@ $formatPriceSummary = static function (array $events, string $key, string $fallb
 };
 $singlePriceSummary = $formatPriceSummary($bookingEvents, 'price', 'EUR 17.50');
 $familyPriceSummary = $formatPriceSummary($bookingEvents, 'family_price', 'EUR 60.00');
+$tailwindLoaded = true;
 ?>
 <!doctype html>
 <html lang="en">
@@ -53,28 +54,29 @@ $familyPriceSummary = $formatPriceSummary($bookingEvents, 'family_price', 'EUR 6
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= htmlspecialchars((string)($hero['title'] ?? 'A Stroll Through History')) ?></title>
-    <script>
-        tailwind = { config: { corePlugins: { preflight: false } } };
-    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="/assets/js/history-tailwind-config.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="m-0 bg-[#faf7ef] text-[#171717] font-['Segoe_UI',Tahoma,Geneva,Verdana,sans-serif]">
+<body class="m-0 bg-history-paper text-history-ink font-historySans">
     <?php include __DIR__ . '/../partials/header.php'; ?>
-    <div class="mx-auto w-full max-w-[1200px] px-8">
+    <div class="mx-auto w-full max-w-history px-8">
         <?php require __DIR__ . '/../partials/flash_success.php'; ?>
     </div>
 
-    <section class="relative overflow-hidden bg-[#121212] text-white">
+    <section class="relative overflow-hidden bg-history-charcoal text-white">
         <?php if (!empty($hero['background_image'])): ?>
             <img src="/<?= htmlspecialchars((string)$hero['background_image']) ?>" alt="History hero" class="absolute inset-0 h-full w-full object-cover opacity-60">
         <?php endif; ?>
         <div class="absolute inset-0 bg-gradient-to-r from-black/75 to-black/30"></div>
-        <div class="relative mx-auto max-w-[1200px] px-8 py-28">
+        <div class="relative mx-auto max-w-history px-8 py-28">
             <?php if (!empty($hero['kicker'])): ?>
-                <div class="text-sm font-bold uppercase tracking-[0.3em] text-[#f3d6a2]"><?= htmlspecialchars((string)$hero['kicker']) ?></div>
+                <div class="text-sm font-bold uppercase tracking-[0.3em] text-history-gold"><?= htmlspecialchars((string)$hero['kicker']) ?></div>
             <?php endif; ?>
-            <h1 class="max-w-[700px] text-5xl font-black uppercase leading-none md:text-7xl">
+            <h1 class="max-w-[700px] font-historyDisplay text-5xl font-bold uppercase leading-none md:text-7xl">
                 <?= htmlspecialchars((string)($hero['title'] ?? 'A Stroll Through History')) ?>
             </h1>
             <?php if (!empty($hero['subtitle_html'])): ?>
@@ -85,12 +87,12 @@ $familyPriceSummary = $formatPriceSummary($bookingEvents, 'family_price', 'EUR 6
         </div>
     </section>
 
-    <main class="mx-auto max-w-[1200px] px-8 py-16">
+    <main class="mx-auto max-w-history px-8 py-16">
         <section class="grid gap-8 lg:grid-cols-3">
             <?php foreach (['lead_html', 'route_html', 'break_html'] as $copyKey): ?>
                 <?php if (!empty($overview[$copyKey])): ?>
-                    <article class="rounded-[28px] bg-white p-8 shadow-[0_18px_60px_rgba(0,0,0,0.08)]">
-                        <div class="text-[15px] leading-7 text-[#444]">
+                    <article class="rounded-historyLg bg-white p-8 shadow-historySoft">
+                        <div class="text-[15px] leading-7 text-history-muted">
                             <?= $overview[$copyKey] ?>
                         </div>
                     </article>
@@ -99,7 +101,7 @@ $familyPriceSummary = $formatPriceSummary($bookingEvents, 'family_price', 'EUR 6
         </section>
 
         <section class="mt-16 grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
-            <div class="rounded-[32px] bg-[#fffaf1] p-8 shadow-[0_18px_60px_rgba(0,0,0,0.06)]"
+            <div class="rounded-historyXl bg-history-cream p-8 shadow-historyCard"
                 data-history-booking
                 data-empty-message="<?= htmlspecialchars((string)($booking['empty_selection_message'] ?? 'Choose a date, time and language to book a tour.')) ?>"
                 data-no-events-message="<?= htmlspecialchars((string)($booking['no_events_message'] ?? 'No history tours are available right now.')) ?>"
@@ -107,13 +109,13 @@ $familyPriceSummary = $formatPriceSummary($bookingEvents, 'family_price', 'EUR 6
                 data-slot-count-label="<?= htmlspecialchars((string)($booking['slot_count_label'] ?? 'tour(s) available')) ?>"
                 data-family-size="4">
                 <div class="flex items-center justify-between gap-4">
-                    <h2 class="text-3xl font-black"><?= htmlspecialchars((string)($booking['title'] ?? 'Choose your tour')) ?></h2>
-                    <a href="#history-schedule" class="rounded-full border border-[#d7cfbf] bg-white px-5 py-3 text-sm font-bold text-[#171717] no-underline transition hover:bg-[#f5efe3]">
+                    <h2 class="font-historyDisplay text-3xl font-bold"><?= htmlspecialchars((string)($booking['title'] ?? 'Choose your tour')) ?></h2>
+                    <a href="#history-schedule" class="rounded-full border border-history-sand bg-white px-5 py-3 text-sm font-bold text-history-ink no-underline transition hover:bg-history-paper">
                         <?= htmlspecialchars((string)($booking['schedule_title'] ?? 'Tour Schedule')) ?>
                     </a>
                 </div>
                 <?php if (!empty($booking['description_html'])): ?>
-                    <div class="mt-4 text-[15px] leading-7 text-[#444]">
+                    <div class="mt-4 text-[15px] leading-7 text-history-muted">
                         <?= $booking['description_html'] ?>
                     </div>
                 <?php endif; ?>
@@ -122,61 +124,61 @@ $familyPriceSummary = $formatPriceSummary($bookingEvents, 'family_price', 'EUR 6
 
                 <div class="mt-8 space-y-6">
                     <section>
-                        <div class="mb-3 text-sm font-bold uppercase tracking-[0.2em] text-[#6d644f]">
+                        <div class="mb-3 text-sm font-bold uppercase tracking-[0.2em] text-history-warm">
                             <?= htmlspecialchars((string)($booking['date_label'] ?? 'Select Date')) ?>
                         </div>
                         <div class="flex flex-wrap gap-3" data-history-picker="date"></div>
                     </section>
 
                     <section>
-                        <div class="mb-3 text-sm font-bold uppercase tracking-[0.2em] text-[#6d644f]">
+                        <div class="mb-3 text-sm font-bold uppercase tracking-[0.2em] text-history-warm">
                             <?= htmlspecialchars((string)($booking['time_label'] ?? 'Select Time')) ?>
                         </div>
                         <div class="flex flex-wrap gap-3" data-history-picker="time"></div>
                     </section>
 
                     <section>
-                        <div class="mb-3 text-sm font-bold uppercase tracking-[0.2em] text-[#6d644f]">
+                        <div class="mb-3 text-sm font-bold uppercase tracking-[0.2em] text-history-warm">
                             <?= htmlspecialchars((string)($booking['language_label'] ?? 'Select Language')) ?>
                         </div>
                         <div class="flex flex-wrap gap-3" data-history-picker="language"></div>
                     </section>
 
                     <section>
-                        <div class="mb-3 text-sm font-bold uppercase tracking-[0.2em] text-[#6d644f]">
+                        <div class="mb-3 text-sm font-bold uppercase tracking-[0.2em] text-history-warm">
                             <?= htmlspecialchars((string)($booking['tickets_label'] ?? 'Tickets')) ?>
                         </div>
                         <div class="flex flex-wrap gap-3" data-history-picker="quantity"></div>
                     </section>
                 </div>
 
-                <div class="mt-8 rounded-[28px] bg-white p-6 shadow-[0_12px_40px_rgba(0,0,0,0.05)]">
+                <div class="mt-8 rounded-historyLg bg-white p-6 shadow-historyInset">
                     <div class="grid gap-4 md:grid-cols-2">
                         <div>
-                            <div class="text-xs font-bold uppercase tracking-[0.2em] text-[#7a715f]">
+                            <div class="text-xs font-bold uppercase tracking-[0.2em] text-history-warm">
                                 <?= htmlspecialchars((string)($booking['selected_tour_label'] ?? 'Selected Tour')) ?>
                             </div>
-                            <div class="mt-2 text-lg font-black text-[#171717]" data-history-selected-tour>
+                            <div class="mt-2 text-lg font-bold text-history-ink" data-history-selected-tour>
                                 <?= htmlspecialchars((string)($booking['empty_selection_message'] ?? 'Choose a date, time and language to book a tour.')) ?>
                             </div>
                         </div>
                         <div>
-                            <div class="text-xs font-bold uppercase tracking-[0.2em] text-[#7a715f]">
+                            <div class="text-xs font-bold uppercase tracking-[0.2em] text-history-warm">
                                 <?= htmlspecialchars((string)($booking['selected_location_label'] ?? 'Meeting Point')) ?>
                             </div>
-                            <div class="mt-2 text-base font-semibold text-[#2b2b2b]" data-history-selected-location>-</div>
+                            <div class="mt-2 text-base font-semibold text-history-ink" data-history-selected-location>-</div>
                         </div>
                         <div>
-                            <div class="text-xs font-bold uppercase tracking-[0.2em] text-[#7a715f]">
+                            <div class="text-xs font-bold uppercase tracking-[0.2em] text-history-warm">
                                 <?= htmlspecialchars((string)($booking['selected_availability_label'] ?? 'Seats Left')) ?>
                             </div>
-                            <div class="mt-2 text-base font-semibold text-[#2b2b2b]" data-history-selected-availability>-</div>
+                            <div class="mt-2 text-base font-semibold text-history-ink" data-history-selected-availability>-</div>
                         </div>
                         <div>
-                            <div class="text-xs font-bold uppercase tracking-[0.2em] text-[#7a715f]">
+                            <div class="text-xs font-bold uppercase tracking-[0.2em] text-history-warm">
                                 <?= htmlspecialchars((string)($booking['selected_price_label'] ?? 'Price')) ?>
                             </div>
-                            <div class="mt-2 text-base font-semibold text-[#2b2b2b]" data-history-selected-price>-</div>
+                            <div class="mt-2 text-base font-semibold text-history-ink" data-history-selected-price>-</div>
                         </div>
                     </div>
 
@@ -184,14 +186,14 @@ $familyPriceSummary = $formatPriceSummary($bookingEvents, 'family_price', 'EUR 6
                         <input type="hidden" name="_csrf" value="<?= htmlspecialchars($cartCsrfToken, ENT_QUOTES, 'UTF-8') ?>">
                         <input type="hidden" name="event_id" value="" data-history-event-id>
                         <input type="hidden" name="quantity" value="1" data-history-quantity>
-                        <button type="submit" class="w-full cursor-pointer rounded-full border-0 bg-[#7e8552] px-6 py-4 text-sm font-bold uppercase tracking-[0.18em] text-white transition hover:bg-[#697043] disabled:cursor-not-allowed disabled:bg-[#b4b29f]" data-history-submit>
+                        <button type="submit" class="w-full cursor-pointer rounded-full border-0 bg-history-olive px-6 py-4 text-sm font-bold uppercase tracking-[0.18em] text-white transition hover:bg-history-oliveDark disabled:cursor-not-allowed disabled:bg-[#b4b29f]" data-history-submit>
                             <?= htmlspecialchars((string)($booking['reserve_button_label'] ?? 'Reserve now')) ?>
                         </button>
                     </form>
                 </div>
 
                 <?php if (!empty($booking['selection_help_html'])): ?>
-                    <div class="mt-4 text-xs leading-6 text-[#666]">
+                    <div class="mt-4 text-xs leading-6 text-history-muted">
                         <?= $booking['selection_help_html'] ?>
                     </div>
                 <?php endif; ?>
@@ -201,18 +203,18 @@ $familyPriceSummary = $formatPriceSummary($bookingEvents, 'family_price', 'EUR 6
                     <span><strong><?= htmlspecialchars((string)($booking['family_price_label'] ?? 'Family')) ?>:</strong> <?= htmlspecialchars($familyPriceSummary) ?></span>
                 </div>
                 <?php if (!empty($booking['availability_note_html'])): ?>
-                    <div class="mt-4 text-xs leading-6 text-[#666]">
+                    <div class="mt-4 text-xs leading-6 text-history-muted">
                         <?= $booking['availability_note_html'] ?>
                     </div>
                 <?php endif; ?>
             </div>
 
-            <div id="history-schedule" class="rounded-[32px] bg-white p-8 shadow-[0_18px_60px_rgba(0,0,0,0.06)]">
-                <h2 class="text-2xl font-black"><?= htmlspecialchars((string)($booking['schedule_title'] ?? 'Tour Schedule')) ?></h2>
+            <div id="history-schedule" class="rounded-historyXl bg-white p-8 shadow-historyCard">
+                <h2 class="font-historyDisplay text-2xl font-bold"><?= htmlspecialchars((string)($booking['schedule_title'] ?? 'Tour Schedule')) ?></h2>
                 <div class="mt-6 overflow-x-auto">
                     <table class="min-w-full text-left text-sm">
                         <thead>
-                            <tr class="border-b border-[#ece7d8] text-[#666]">
+                            <tr class="border-b border-[#ece7d8] text-history-muted">
                                 <th class="pb-3 pr-6 font-semibold">Date</th>
                                 <th class="pb-3 pr-6 font-semibold">Day</th>
                                 <th class="pb-3 pr-6 font-semibold">Time</th>
@@ -244,9 +246,9 @@ $familyPriceSummary = $formatPriceSummary($bookingEvents, 'family_price', 'EUR 6
         <section class="mt-16">
             <div class="mb-6 flex items-end justify-between gap-4">
                 <div>
-                    <h2 class="text-3xl font-black"><?= htmlspecialchars((string)($map['title'] ?? 'Route Map')) ?></h2>
+                    <h2 class="font-historyDisplay text-3xl font-bold"><?= htmlspecialchars((string)($map['title'] ?? 'Route Map')) ?></h2>
                     <?php if (!empty($map['description_html'])): ?>
-                        <div class="mt-3 max-w-[760px] text-[15px] leading-7 text-[#555]">
+                        <div class="mt-3 max-w-[760px] text-[15px] leading-7 text-history-muted">
                             <?= $map['description_html'] ?>
                         </div>
                     <?php endif; ?>
@@ -255,22 +257,24 @@ $familyPriceSummary = $formatPriceSummary($bookingEvents, 'family_price', 'EUR 6
 
             <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                 <?php foreach ($vm->locations as $location): ?>
-                    <article class="overflow-hidden rounded-[28px] bg-white shadow-[0_18px_60px_rgba(0,0,0,0.08)]">
-                        <?php if (!empty($location['image'])): ?>
-                            <img src="/<?= htmlspecialchars((string)$location['image']) ?>" alt="<?= htmlspecialchars((string)$location['title']) ?>" class="block h-52 w-full object-cover">
-                        <?php endif; ?>
-                        <div class="p-6">
-                            <h3 class="text-2xl font-black"><?= htmlspecialchars((string)$location['title']) ?></h3>
-                            <?php if (!empty($location['summary'])): ?>
-                                <p class="mt-3 text-[15px] leading-7 text-[#555]">
-                                    <?= htmlspecialchars((string)$location['summary']) ?>
-                                </p>
+                    <a href="<?= htmlspecialchars((string)$location['detail_url']) ?>" class="group block overflow-hidden rounded-historyLg bg-white no-underline shadow-historySoft transition duration-200 hover:-translate-y-1 hover:shadow-historyMedia focus:outline-none focus:ring-2 focus:ring-history-olive focus:ring-offset-2">
+                        <article>
+                            <?php if (!empty($location['image'])): ?>
+                                <img src="/<?= htmlspecialchars((string)$location['image']) ?>" alt="<?= htmlspecialchars((string)$location['title']) ?>" class="block h-52 w-full object-cover transition duration-300 group-hover:scale-[1.02]">
                             <?php endif; ?>
-                            <a href="<?= htmlspecialchars((string)$location['detail_url']) ?>" class="mt-5 inline-block rounded-full bg-[#121212] px-5 py-3 text-sm font-bold text-white no-underline">
-                                <?= htmlspecialchars((string)($map['card_button_label'] ?? 'Bekijk locatie')) ?>
-                            </a>
-                        </div>
-                    </article>
+                            <div class="p-6">
+                                <h3 class="font-historyDisplay text-2xl font-bold text-history-ink"><?= htmlspecialchars((string)$location['title']) ?></h3>
+                                <?php if (!empty($location['summary'])): ?>
+                                    <p class="mt-3 text-[15px] leading-7 text-history-muted">
+                                        <?= htmlspecialchars((string)$location['summary']) ?>
+                                    </p>
+                                <?php endif; ?>
+                                <span class="mt-5 inline-block rounded-full bg-history-charcoal px-5 py-3 text-sm font-bold text-white">
+                                    <?= htmlspecialchars((string)($map['card_button_label'] ?? 'Bekijk locatie')) ?>
+                                </span>
+                            </div>
+                        </article>
+                    </a>
                 <?php endforeach; ?>
             </div>
         </section>

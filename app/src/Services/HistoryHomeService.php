@@ -46,17 +46,18 @@ class HistoryHomeService
             $detail = $this->detailBuilder->buildViewModel($content);
             $meta = $detail->meta;
             $hero = $detail->hero;
+            $slug = $this->normalizeSlug((string)($meta['slug'] ?? ''), (string)($meta['listing_title'] ?? $hero['title'] ?? ($row['Page_Title'] ?? '')));
 
             $locations[] = [
                 'page_id' => $pageId,
                 'title' => (string)($meta['listing_title'] ?? $hero['title'] ?? ($row['Page_Title'] ?? 'History stop')),
                 'summary' => (string)($meta['listing_summary'] ?? ''),
                 'image' => (string)($meta['listing_image'] ?? $hero['main_image'] ?? ''),
-                'slug' => (string)($meta['slug'] ?? ''),
+                'slug' => $slug,
                 'sort_order' => (int)($meta['sort_order'] ?? 0),
                 'map_x' => (float)($meta['map_marker']['x'] ?? 50),
                 'map_y' => (float)($meta['map_marker']['y'] ?? 50),
-                'detail_url' => '/history/detail?page_id=' . $pageId,
+                'detail_url' => $slug !== '' ? '/history/' . rawurlencode($slug) : '/history/detail?page_id=' . $pageId,
             ];
         }
 
@@ -188,5 +189,17 @@ class HistoryHomeService
             'CH' => 'Chinese',
             default => $languageCode,
         };
+    }
+
+    private function normalizeSlug(string $slug, string $fallback): string
+    {
+        $candidate = trim($slug);
+        if ($candidate === '') {
+            $candidate = strtolower($fallback);
+        }
+
+        $candidate = strtolower($candidate);
+        $candidate = preg_replace('/[^a-z0-9]+/', '-', $candidate) ?? '';
+        return trim($candidate, '-');
     }
 }
