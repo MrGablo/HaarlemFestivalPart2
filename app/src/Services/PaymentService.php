@@ -222,11 +222,32 @@ class PaymentService
 
     private function resolveBaseUrl(): string
     {
+        $host = $this->readValidatedRequestHost();
+        if ($host === null) {
+            $host = 'localhost';
+        }
+
         $isHttps = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
         $scheme = $isHttps ? 'https' : 'http';
-        $host = (string)($_SERVER['HTTP_HOST'] ?? 'localhost');
 
         return $scheme . '://' . $host;
+    }
+
+    private function readValidatedRequestHost(): ?string
+    {
+        $rawHost = trim((string)($_SERVER['HTTP_HOST'] ?? ''));
+        if ($rawHost === '') {
+            return null;
+        }
+
+        if (!preg_match('/^[A-Za-z0-9.-]+(?::\d{1,5})?$/', $rawHost)) {
+            return null;
+        }
+
+        $host = strtolower($rawHost);
+        $localHosts = ['localhost', 'localhost:80', 'localhost:443', '127.0.0.1', '127.0.0.1:80', '127.0.0.1:443'];
+
+        return in_array($host, $localHosts, true) ? $rawHost : null;
     }
 
     private function buildStripeLineItem(object $item): array
