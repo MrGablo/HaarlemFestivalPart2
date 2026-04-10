@@ -12,6 +12,7 @@ class YummyEvent extends Event
     public ?int $page_id;
     public string $start_time;
     public string $end_time;
+    public string $location;
 
     public function __construct(array $row)
     {
@@ -28,5 +29,6 @@ class YummyEvent extends Event
         $this->page_id = isset($row['page_id']) ? (int)$row['page_id'] : null;
         $this->start_time = (string)($row['start_time'] ?? '');
         $this->end_time = (string)($row['end_time'] ?? '');
+        $this->location = (string)($row['location'] ?? '');
     }
 }

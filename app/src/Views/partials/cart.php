@@ -37,10 +37,10 @@ $headerCanCheckout = $headerIsLoggedIn && $headerCartItems !== [];
             <p class="mt-2 text-[0.95rem] text-[#2f2f2f]">Your cart is empty.</p>
         <?php else: ?>
             <?php foreach ($headerCartItems as $item): ?>
-                <?php $event = $item->event; ?>
+                <?php $cartEvent = $item->event; ?>
                 <?php $passDateLabel = method_exists($item, 'getPassDateLabel') ? (string)$item->getPassDateLabel() : ''; ?>
                 <article class="mb-[10px] rounded-xl border border-[#ececec] bg-white px-3 py-[10px] text-[#171717]">
-                    <h3 class="m-0 text-[0.98rem] font-extrabold text-[#0f0f0f]"><?= htmlspecialchars((string) ($event?->title ?? 'Event')) ?></h3>
+                    <h3 class="m-0 text-[0.98rem] font-extrabold text-[#0f0f0f]"><?= htmlspecialchars((string) ($cartEvent?->title ?? 'Event')) ?></h3>
                     <p class="my-[6px] mb-[10px] text-[0.9rem] text-[#2d2d2d]"><?= htmlspecialchars((string) $item->getLocation()) ?></p>
                     <?php if ($passDateLabel !== ''): ?>
                         <p class="my-[6px] mb-[10px] text-[0.9rem] font-semibold text-[#2d2d2d]">Date: <?= htmlspecialchars($passDateLabel) ?></p>
@@ -59,7 +59,7 @@ $headerCanCheckout = $headerIsLoggedIn && $headerCartItems !== [];
                                     class="h-[30px] w-[30px] rounded-lg border border-[#2f80ed] bg-[#2f80ed] font-bold text-white transition-colors duration-200 hover:bg-[#1d6ed8] disabled:cursor-wait disabled:opacity-60"
                                     data-cart-qty-button
                                     data-direction="decrease"
-                                    aria-label="Decrease quantity for <?= htmlspecialchars((string) ($event?->title ?? 'Event')) ?>"
+                                    aria-label="Decrease quantity for <?= htmlspecialchars((string) ($cartEvent?->title ?? 'Event')) ?>"
                                 >-</button>
                                 <button
                                     type="button"
@@ -67,7 +67,7 @@ $headerCanCheckout = $headerIsLoggedIn && $headerCartItems !== [];
                                     data-cart-qty-button
                                     data-direction="increase"
                                     <?= (int)$item->quantity >= $maxQuantity ? 'disabled' : '' ?>
-                                    aria-label="Increase quantity for <?= htmlspecialchars((string) ($event?->title ?? 'Event')) ?>"
+                                    aria-label="Increase quantity for <?= htmlspecialchars((string) ($cartEvent?->title ?? 'Event')) ?>"
                                 >+</button>
                             </div>
                         </div>
