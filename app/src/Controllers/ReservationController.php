@@ -12,7 +12,7 @@ use App\Utils\AuthSessionData;
 use App\Utils\Flash;
 use App\Utils\Session;
 
-final class ReservationController
+class ReservationController
 {
     private ReservationService $reservationService;
     private OrderService $orderService;

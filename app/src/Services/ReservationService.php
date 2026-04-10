@@ -7,7 +7,7 @@ namespace App\Services;
 use App\Repositories\Interfaces\IReservationRepository;
 use App\Repositories\ReservationRepository;
 
-final class ReservationService
+class ReservationService
 {
     private IReservationRepository $reservationRepository;
 

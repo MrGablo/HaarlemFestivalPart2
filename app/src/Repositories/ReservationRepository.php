@@ -7,7 +7,7 @@ namespace App\Repositories;
 use App\Framework\Repository;
 use App\Repositories\Interfaces\IReservationRepository;
 
-final class ReservationRepository extends Repository implements IReservationRepository
+class ReservationRepository extends Repository implements IReservationRepository
 {
     public function createReservation(int $userId, int $yummyEventId, int $adultCount, int $childrenCount, string $note): void
     {
