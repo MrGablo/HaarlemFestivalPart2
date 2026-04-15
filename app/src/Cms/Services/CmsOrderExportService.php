@@ -192,6 +192,77 @@ final class CmsOrderExportService
         $orderIds = array_values(array_filter($orderIds, fn(int $id): bool => $id > 0));
 
         $allItems = $this->orders->getOrderItemsForOrders($orderIds);
-        return $this->rowBuilder->buildRows($orders, $allItems);
+        $rows = $this->rowBuilder->buildRows($orders, $allItems);
+        return $this->moveOrderTotalsToFooterRows($rows);
+    }
+
+    /** @param array<int, array<string, string>> $rows */
+    /** @return array<int, array<string, string>> */
+    private function moveOrderTotalsToFooterRows(array $rows): array
+    {
+        if ($rows === []) {
+            return [];
+        }
+
+        $result = [];
+        $currentOrderId = null;
+        $currentOrderTotal = '';
+        $currentHasItems = false;
+
+        foreach ($rows as $row) {
+            $orderId = (string)($row['order_id'] ?? '');
+
+            if ($currentOrderId !== null && $orderId !== $currentOrderId && $currentHasItems) {
+                $result[] = $this->buildOrderTotalFooterRow($currentOrderId, $currentOrderTotal);
+            }
+
+            if ($currentOrderId === null || $orderId !== $currentOrderId) {
+                $currentOrderId = $orderId;
+                $currentOrderTotal = '';
+                $currentHasItems = false;
+            }
+
+            $totalValue = trim((string)($row['order_total'] ?? ''));
+            if ($totalValue !== '') {
+                $currentOrderTotal = $totalValue;
+            }
+
+            if (trim((string)($row['order_item_id'] ?? '')) !== '') {
+                $currentHasItems = true;
+            }
+
+            $row['order_total'] = '';
+            $result[] = $row;
+        }
+
+        if ($currentOrderId !== null && $currentHasItems) {
+            $result[] = $this->buildOrderTotalFooterRow($currentOrderId, $currentOrderTotal);
+        }
+
+        return $result;
+    }
+
+    /** @return array<string, string> */
+    private function buildOrderTotalFooterRow(string $orderId, string $orderTotal): array
+    {
+        return [
+            'order_id' => $orderId,
+            'user_id' => '',
+            'customer_name' => 'ORDER TOTAL',
+            'customer_email' => '',
+            'status' => '',
+            'order_created_at' => '',
+            'order_item_id' => '',
+            'event_id' => '',
+            'event_title' => '',
+            'event_type' => '',
+            'artist_name' => '',
+            'venue_name' => '',
+            'event_start_date' => '',
+            'quantity' => '',
+            'unit_price' => '',
+            'line_total' => '',
+            'order_total' => $orderTotal,
+        ];
     }
 }
