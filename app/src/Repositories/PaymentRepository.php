@@ -3,6 +3,8 @@
 namespace App\Repositories;
 
 use App\Framework\Repository;
+use App\Models\OrderStatus;
+use App\Models\Payment;
 use App\Repositories\Interfaces\IPaymentRepository;
 use App\Support\VenueSchemaHelper;
 
@@ -14,10 +16,10 @@ class PaymentRepository extends Repository implements IPaymentRepository
 
     private ?string $orderItemPassDateColumn = null;
 
-    public function findPendingOrderByUserId(int $userId): ?array
+    public function findPendingOrderByUserId(int $userId): ?Payment
     {
         $stmt = $this->getConnection()->prepare(
-            'SELECT order_id, user_id
+            'SELECT order_id, user_id, order_status, payment_deadline_at
                FROM `orders`
               WHERE user_id = :user_id
                 AND order_status = :status
@@ -34,7 +36,24 @@ class PaymentRepository extends Repository implements IPaymentRepository
         ]);
         $row = $stmt->fetch();
 
-        return is_array($row) ? $row : null;
+        if (!is_array($row)) {
+            return null;
+        }
+
+        $statusRaw = strtolower(trim((string)($row['order_status'] ?? '')));
+        $orderStatus = match ($statusRaw) {
+            OrderStatus::PENDING->value => OrderStatus::PENDING,
+            OrderStatus::PAYED->value => OrderStatus::PAYED,
+            OrderStatus::CANCELLED->value => OrderStatus::CANCELLED,
+            default => OrderStatus::PENDING,
+        };
+
+        return new Payment(
+            (int)($row['order_id'] ?? 0),
+            (int)($row['user_id'] ?? 0),
+            $orderStatus,
+            isset($row['payment_deadline_at']) ? (string)$row['payment_deadline_at'] : null
+        );
     }
 
     public function markOrderAsPaid(int $orderId, int $userId): bool

@@ -7,9 +7,11 @@ use chillerlan\QRCode\Output\QRMarkupSVG;
 
 /** @var int $totalEvents */
 /** @var float $subtotal */
+// Totals for the editable cart (not paid yet).
 $totalEvents = (int)($totalEvents ?? 0);
 $subtotal = (float)($subtotal ?? 0);
 /** @var array<int, array<string, mixed>> $awaitingPaymentEvents */
+// Items currently in checkout-in-progress (waiting for payment).
 $awaitingPaymentEvents = $awaitingPaymentEvents ?? [];
 $awaitingSubtotal = (float)($awaitingSubtotal ?? 0);
 $paymentDeadlineAt = trim((string)($paymentDeadlineAt ?? ''));
@@ -20,6 +22,7 @@ $cancelledOrdersDisplay = $cancelledOrdersDisplay ?? [];
 $programFlashSuccess = \App\Utils\Flash::getSuccess();
 $programFlashErrors = \App\Utils\Flash::getErrors();
 
+// Convert raw DB datetime to a user-friendly deadline string.
 $formatProgramDeadline = static function (string $raw): string {
     $raw = trim($raw);
     if ($raw === '') {
@@ -232,12 +235,16 @@ $formatProgramDeadline = static function (string $raw): string {
                 <p class="mb-4 text-xl font-bold text-black">Total due: €<?= number_format($awaitingSubtotal, 2, '.', '') ?></p>
 
                 <div class="flex flex-wrap items-center gap-3">
+                    <?php // Resume the same pending checkout in Stripe. ?>
                     <form action="/payment/checkout" method="POST" class="m-0 inline">
+                        <?php // CSRF token for payment POST endpoint. ?>
                         <input type="hidden" name="_csrf" value="<?= htmlspecialchars(\App\Utils\Csrf::token('payment_csrf_token'), ENT_QUOTES, 'UTF-8') ?>">
                         <button type="submit" class="cursor-pointer rounded-lg border-0 bg-[#2F80ED] px-7 py-3.5 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-[#1c6ddb]">Continue to payment</button>
                     </form>
                     <?php if ($awaitingPaymentOrderId > 0): ?>
+                        <?php // User can cancel this pending checkout and unlock cart editing again. ?>
                         <form action="/program/cancel-awaiting-payment" method="POST" class="m-0 inline" onsubmit="return confirm('Cancel this checkout? You can add tickets again afterwards.');">
+                            <?php // Separate CSRF token for cancel action. ?>
                             <input type="hidden" name="_csrf" value="<?= htmlspecialchars(\App\Utils\Csrf::token('program_cancel_awaiting_csrf_token'), ENT_QUOTES, 'UTF-8') ?>">
                             <input type="hidden" name="order_id" value="<?= $awaitingPaymentOrderId ?>">
                             <button type="submit" class="cursor-pointer rounded-lg border-2 border-neutral-300 bg-white px-7 py-3.5 text-sm font-bold uppercase tracking-wide text-neutral-800 transition hover:bg-neutral-50">Cancel checkout</button>
@@ -275,7 +282,9 @@ $formatProgramDeadline = static function (string $raw): string {
         <div class="flex flex-wrap gap-4">
             <a href="/" class="inline-block rounded-lg border-0 bg-[#2F80ED] px-7 py-3.5 text-sm font-bold uppercase tracking-wide text-white no-underline transition hover:bg-[#1c6ddb]">Add more events</a>
             <?php if (!empty($unpaidEvents) && empty($awaitingPaymentEvents)): ?>
+                <?php // Start a new Stripe checkout only when no checkout is already pending. ?>
                 <form action="/payment/checkout" method="POST" class="inline m-0">
+                    <?php // CSRF token used by PaymentController::checkoutRedirect(). ?>
                     <input type="hidden" name="_csrf" value="<?= htmlspecialchars(\App\Utils\Csrf::token('payment_csrf_token'), ENT_QUOTES, 'UTF-8') ?>">
                     <button type="submit" class="cursor-pointer rounded-lg border-0 bg-[#2F80ED] px-7 py-3.5 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-[#1c6ddb]">Pay from cart</button>
                 </form>

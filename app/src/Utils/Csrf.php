@@ -9,7 +9,7 @@ final class Csrf
         Session::ensureStarted();
         $token = (string)($_SESSION[$sessionKey] ?? '');
         if ($token !== '') return $token;
-
+        // Convert to a hexadecimal string using bin2hex
         $token = bin2hex(random_bytes(32));
         $_SESSION[$sessionKey] = $token;
         return $token;

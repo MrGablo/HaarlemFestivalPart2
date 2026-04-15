@@ -26,7 +26,14 @@ class PaymentController
         try {
             // Normal path: CSRF ok, user logged in, Stripe returns a checkout URL.
             Csrf::assertPost('payment_csrf_token');
-            $userId = $this->requireAuthenticatedUserId();
+            $auth = AuthSessionData::read();
+            if (!is_array($auth)) {
+                $this->redirect('/login');
+            }
+            $userId = (int)($auth['userId'] ?? 0);
+            if ($userId <= 0) {
+                $this->redirect('/login');
+            }
 
             $checkoutUrl = $this->paymentService->createCheckoutUrlForPendingCart($userId);
             $this->redirectSeeOther($checkoutUrl);
@@ -60,7 +67,7 @@ class PaymentController
         try {
             // Proves the request really came from Stripe (uses STRIPE_WEBHOOK_SECRET).
             $event = \Stripe\Webhook::constructEvent((string)$payload, $sigHeader, $secret);
-        } catch (\Throwable $e) {
+        } catch (\Throwable $e) { 
             error_log('Webhook signature verification failed: ' . $e->getMessage());
             $this->respondAndExit(400, 'Invalid signature');
         }
@@ -101,21 +108,6 @@ class PaymentController
     {
         Session::ensureStarted();
         require __DIR__ . '/../Views/pages/payment_cancel.php';
-    }
-
-    private function requireAuthenticatedUserId(): int
-    {
-        $auth = AuthSessionData::read();
-        if (!is_array($auth)) {
-            $this->redirect('/login');
-        }
-
-        $userId = (int)($auth['userId'] ?? 0);
-        if ($userId <= 0) {
-            $this->redirect('/program');
-        }
-
-        return $userId;
     }
 
     private function redirect(string $url, int $statusCode = 302): void

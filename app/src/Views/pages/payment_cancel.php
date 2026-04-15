@@ -18,7 +18,7 @@ declare(strict_types=1);
         <div class="mb-5 text-[64px] leading-none text-red-500" aria-hidden="true">&#10007;</div>
         <h1 class="mb-2 text-3xl font-extrabold text-red-500">Payment Cancelled</h1>
         <p class="mb-1 text-neutral-600">Your payment was not completed. No charges were made.</p>
-        <p class="text-neutral-600">Open <strong>My Program</strong> to continue payment within 24 hours, or add new tickets to your cart after that order expires.</p>
+        <p class="text-neutral-600">Open <strong>My Program</strong> to continue payment within 24 hours, or add new tickets to your cart after that order expires or cancel the order.</p>
         <a href="/program"
             class="mt-8 inline-block rounded-lg border-0 bg-black px-7 py-3 text-sm font-bold uppercase tracking-wide text-white no-underline transition hover:bg-neutral-800">
             My Program

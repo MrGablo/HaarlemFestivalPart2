@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Payment;
 use App\Repositories\OrderRepository;
 use App\Repositories\PaymentRepository;
 use App\Utils\QrGenerator;
@@ -112,7 +113,6 @@ class PaymentService
             $this->createTicketsFromPaidOrderItem($item, $userId);
         }
 
-        // Errors inside are logged there; paid order and tickets stay valid.
         $this->sendTicketDeliveryEmail($orderId, $userId);
     }
 
@@ -159,11 +159,11 @@ class PaymentService
         }
 
         $pendingOrder = $this->repo->findPendingOrderByUserId($userId);
-        if (!is_array($pendingOrder)) {
+        if (!$pendingOrder instanceof Payment) {
             throw new \RuntimeException('Payment: no payable pending order for user_id=' . $userId);
         }
 
-        $pendingOrderIdInDb = (int)($pendingOrder['order_id'] ?? 0);
+        $pendingOrderIdInDb = (int)$pendingOrder->order_id;
         if ($pendingOrderIdInDb <= 0 || $pendingOrderIdInDb !== $pendingOrderId) {
             throw new \RuntimeException(
                 'Payment: pending order mismatch. metadata=' . $pendingOrderId . ', db=' . $pendingOrderIdInDb
