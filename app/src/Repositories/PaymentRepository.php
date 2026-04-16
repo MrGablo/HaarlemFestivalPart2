@@ -14,8 +14,6 @@ class PaymentRepository extends Repository implements IPaymentRepository
     private const ORDER_STATUS_PENDING = 'pending';
     private const ORDER_STATUS_PAID = 'payed';
 
-    private ?string $orderItemPassDateColumn = null;
-
     public function findPendingOrderByUserId(int $userId): ?Payment
     {
         $stmt = $this->getConnection()->prepare(
@@ -89,15 +87,13 @@ class PaymentRepository extends Repository implements IPaymentRepository
 
     public function getOrderItemsByOrderId(int $orderId): array
     {
-        $passDateExpr = $this->orderItemsPassDateSelectExpression('oi');
-
         $stmt = $this->getConnection()->prepare(
             "SELECT
                 oi.order_item_id,
                 oi.order_id,
                 oi.event_id,
                 oi.quantity,
-                {$passDateExpr} AS pass_date
+                oi.pass_date_key AS pass_date
              FROM `order_items` oi
              WHERE order_id = :order_id"
         );
@@ -139,13 +135,12 @@ class PaymentRepository extends Repository implements IPaymentRepository
         $vt = '`' . str_replace('`', '``', VenueSchemaHelper::venueTableName($pdo)) . '`';
         $vpk = '`' . str_replace('`', '``', VenueSchemaHelper::primaryKeyColumn($pdo)) . '`';
         $danceVenueName = VenueSchemaHelper::displayNameExpression($pdo, 'vd');
-        $passDateExpr = $this->orderItemsPassDateSelectExpression('oi');
 
         $stmt = $pdo->prepare(
             "SELECT
                 oi.order_item_id,
                 oi.quantity,
-                {$passDateExpr} AS pass_date,
+                oi.pass_date_key AS pass_date,
                 e.title,
                 e.event_type,
                 COALESCE(j.start_date, d.start_date, h.start_date, y.start_time, s.start_date) AS event_start_time,
@@ -214,36 +209,4 @@ class PaymentRepository extends Repository implements IPaymentRepository
         return is_array($rows) ? $rows : [];
     }
 
-    private function orderItemsPassDateColumn(): ?string
-    {
-        if ($this->orderItemPassDateColumn !== null) {
-            return $this->orderItemPassDateColumn;
-        }
-
-        $stmt = $this->getConnection()->query("SHOW COLUMNS FROM `order_items` LIKE 'pass_date_key'");
-        $row = $stmt ? $stmt->fetch() : false;
-        if (is_array($row)) {
-            $this->orderItemPassDateColumn = 'pass_date_key';
-            return $this->orderItemPassDateColumn;
-        }
-
-        $stmt = $this->getConnection()->query("SHOW COLUMNS FROM `order_items` LIKE 'pass_date'");
-        $row = $stmt ? $stmt->fetch() : false;
-        if (is_array($row)) {
-            $this->orderItemPassDateColumn = 'pass_date';
-            return $this->orderItemPassDateColumn;
-        }
-
-        return null;
-    }
-
-    private function orderItemsPassDateSelectExpression(string $tableAlias): string
-    {
-        $column = $this->orderItemsPassDateColumn();
-        if ($column === null) {
-            return 'NULL';
-        }
-
-        return $tableAlias . '.' . $column;
-    }
 }
